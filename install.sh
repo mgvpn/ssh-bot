@@ -679,8 +679,8 @@ Elija una opción:
         await client.sendMessage(phone, `PLANES SSH PREMIUM !
 
 Elija una opción:
-🗓 1 - PLANES SSH DIARIOS (7, 15 DÍAS)
-🗓 2 - PLANES SSH MENSUALES (30, 50 DÍAS)
+🗓 1 - PLANES SSH DIARIOS
+🗓 2 - PLANES SSH MENSUALES
 ⬅️ 0 - VOLVER`, { sendSeen: false });
     }
     // SUBMENÚ COMPRAS
@@ -746,8 +746,8 @@ ${config.links.support}`, { sendSeen: false });
             await client.sendMessage(phone, `PLANES SSH PREMIUM !
 
 Elija una opción:
-🗓 1 - PLANES SSH DIARIOS (7, 15 DÍAS)
-🗓 2 - PLANES SSH MENSUALES (30, 50 DÍAS)
+🗓 1 - PLANES SSH DIARIOS
+🗓 2 - PLANES SSH MENSUALES
 ⬅️ 0 - VOLVER`, { sendSeen: false });
         }
     }
@@ -783,8 +783,8 @@ ${config.links.support}`, { sendSeen: false });
             await client.sendMessage(phone, `PLANES SSH PREMIUM !
 
 Elija una opción:
-🗓 1 - PLANES SSH DIARIOS (7, 15 DÍAS)
-🗓 2 - PLANES SSH MENSUALES (30, 50 DÍAS)
+🗓 1 - PLANES SSH DIARIOS
+🗓 2 - PLANES SSH MENSUALES
 ⬅️ 0 - VOLVER`, { sendSeen: false });
         }
     }
