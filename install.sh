@@ -1,7 +1,8 @@
 #!/bin/bash
 # ================================================
-# BOT MG VPN - INSTALADOR COMPLETO CON SOLUCIÓN NODE.JS
-# Versión con APK enviada directamente por WhatsApp como archivo
+# SSH BOT PRO - INSTALADOR COMPLETO CON SOLUCIÓN NODE.JS
+# Versión completa con planes separados, notificaciones, MercadoPago
+# CON ENVÍO DE APK POR ARCHIVO
 # ================================================
 
 set -e
@@ -22,12 +23,12 @@ echo -e "${CYAN}${BOLD}"
 cat << "BANNER"
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
-║                BOT MG VPN - INSTALADOR COMPLETO            ║
+║                SSH BOT PRO - INSTALADOR COMPLETO            ║
 ║               CON SOLUCIÓN PARA NODE.JS                     ║
 ║               📅 PLANES SEPARADOS                          ║
-║               ⏰ NOTIFICACIONES AL CLIENTE                 ║
+║               📢 NOTIFICACIONES                            ║
 ║               💰 MERCADOPAGO                               ║
-║               📱 APK ENVIADA COMO ARCHIVO                  ║
+║               📱 APK POR ARCHIVO                           ║
 ║               🚫 SIN CUPONES                               ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
@@ -39,9 +40,9 @@ echo -e "  📅 Planes DIARIOS: 7, 15 días"
 echo -e "  📅 Planes MENSUALES: 30, 50 días"
 echo -e "  ⏰ Test gratuito: 2 horas"
 echo -e "  🔐 Contraseña fija: mgvpn247"
-echo -e "  ⏰ Sistema de notificaciones al cliente"
+echo -e "  📢 Sistema de notificaciones"
 echo -e "  💰 MercadoPago integrado"
-echo -e "  📱 APK enviada como archivo directo"
+echo -e "  📱 APK enviada como archivo"
 echo -e "  🚫 Sin cupones de descuento"
 echo -e "  🎛️ Panel de control completo"
 echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}\n"
@@ -179,17 +180,18 @@ main_installation() {
 
     echo -e "${GREEN}✅ IP detectada: ${CYAN}$SERVER_IP${NC}\n"
     
-    # Solicitar enlace de APK por defecto
-    echo -e "${YELLOW}📱 CONFIGURACIÓN DE APK${NC}"
-    echo -e "${CYAN}Ingresa el enlace de descarga de la APK${NC}"
-    echo -e "Ejemplo: https://www.mediafire.com/file/ejemplo/app.apk"
-    echo -e "Deja vacío para usar un valor por defecto\n"
+    # Solicitar grupo de notificaciones
+    echo -e "${YELLOW}📢 CONFIGURACIÓN DE NOTIFICACIONES${NC}"
+    echo -e "${CYAN}Ingresa el ID del grupo de WhatsApp para notificaciones${NC}"
+    echo -e "Ejemplo: 1234567890-123456@g.us"
+    echo -e "Deja vacío si no quieres notificaciones en grupo\n"
     
-    read -p "Enlace de descarga de la APK: " APK_URL
+    read -p "ID del grupo para notificaciones: " NOTIFICATION_GROUP
     
-    if [[ -z "$APK_URL" ]]; then
-        APK_URL="https://www.mediafire.com/file/p8kgthxbsid7xws/MAJ/DNI_AND_FIL"
-        echo -e "${YELLOW}⚠️ Usando enlace por defecto${NC}"
+    if [[ -n "$NOTIFICATION_GROUP" ]]; then
+        echo -e "${GREEN}✅ Grupo configurado: ${CYAN}$NOTIFICATION_GROUP${NC}"
+    else
+        echo -e "${YELLOW}⚠️ Notificaciones en grupo desactivadas${NC}"
     fi
     
     # Confirmar instalación
@@ -203,10 +205,9 @@ main_installation() {
     echo -e "   • Test gratuito: 2 horas"
     echo -e "   • CONTRASEÑA FIJA: mgvpn247"
     echo -e "   • MercadoPago integrado"
-    echo -e "   • APK enviada por WhatsApp"
+    echo -e "   • APK enviada como archivo"
     echo -e "   • Sin cupones de descuento"
     echo -e "   • Panel de control completo"
-    echo -e "   • Notificaciones de vencimiento al cliente"
     
     read -p "$(echo -e "${YELLOW}¿Continuar con la instalación? (s/N): ${NC}")" -n 1 -r
     echo
@@ -268,6 +269,12 @@ main_installation() {
     chmod -R 755 "$INSTALL_DIR"
     chmod -R 700 /root/.wwebjs_auth
     
+    # Crear archivo APK por defecto (mensaje)
+    echo -e "${YELLOW}📱 Preparando directorio APK...${NC}"
+    APK_DIR="$INSTALL_DIR/apk"
+    touch "$APK_DIR/.apk_placeholder"
+    echo "Suba su archivo APK aquí y renómbrelo a 'app.apk'" > "$APK_DIR/LEEME.txt"
+    
     # Crear configuración COMPLETA
     CONFIG_FILE="$INSTALL_DIR/config/config.json"
     DB_FILE="$INSTALL_DIR/data/users.db"
@@ -278,7 +285,8 @@ main_installation() {
         "name": "SSH Bot Pro",
         "version": "1.0-COMPLETO",
         "server_ip": "$SERVER_IP",
-        "default_password": "mgvpn247"
+        "default_password": "mgvpn247",
+        "notification_group": "$NOTIFICATION_GROUP"
     },
     "prices": {
         "test_hours": 2,
@@ -297,9 +305,9 @@ main_installation() {
         "enabled": false
     },
     "apk": {
-        "url": "$APK_URL",
+        "path": "$APK_DIR/app.apk",
         "filename": "MGVPN.apk",
-        "caption": "📱 MGVPN - APP\n\n💡 Instrucciones:\n1. Descarga la app click en mas detalles\n2. Instalar de todas formas\n3. Una vez instalada necesita internet para actualizar la app"
+        "caption": "📱 MGVPN - Cliente SSH Premium\n\n🔐 Contraseña: mgvpn247\n📍 IP: $SERVER_IP\n\n💡 Instrucciones:\n1. Permite instalación de fuentes desconocidas\n2. Instala la aplicación\n3. Configura con tus credenciales SSH"
     },
     "links": {
         "tutorial": "https://youtube.com",
@@ -398,9 +406,7 @@ SQL
         "chalk": "^4.1.2",
         "node-cron": "^3.0.3",
         "mercadopago": "^2.0.15",
-        "axios": "^1.6.5",
-        "https": "^1.0.0",
-        "fs": "0.0.1-security"
+        "axios": "^1.6.5"
     }
 }
 PKGEOF
@@ -414,8 +420,8 @@ PKGEOF
     
     echo -e "${GREEN}✅ Dependencias instaladas${NC}"
     
-    # Crear bot.js COMPLETO CORREGIDO
-    echo -e "${YELLOW}📝 Creando bot.js completo y corregido...${NC}"
+    # Crear bot.js COMPLETO (versión simplificada pero funcional)
+    echo -e "${YELLOW}📝 Creando bot.js completo...${NC}"
     
     cat > "bot.js" << 'BOTEOF'
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
@@ -429,7 +435,6 @@ const chalk = require('chalk');
 const cron = require('node-cron');
 const fs = require('fs');
 const path = require('path');
-const https = require('https');
 
 const execPromise = util.promisify(exec);
 
@@ -449,8 +454,8 @@ console.log(chalk.green('✅ Sistema de planes separados'));
 console.log(chalk.green('✅ Planes DIARIOS: 7, 15 días'));
 console.log(chalk.green('✅ Planes MENSUALES: 30, 50 días'));
 console.log(chalk.green('✅ Test: 2 horas'));
-console.log(chalk.green('✅ Sistema de notificaciones al cliente'));
-console.log(chalk.green('✅ APK por archivo desde enlace'));
+console.log(chalk.green('✅ Sistema de notificaciones'));
+console.log(chalk.green('✅ APK por archivo'));
 console.log(chalk.red('🚫 Sin cupones de descuento\n'));
 
 // Funciones de estado
@@ -533,127 +538,31 @@ function registerTest(phone) {
     db.run('INSERT OR IGNORE INTO daily_tests (phone, date) VALUES (?, ?)', [phone, moment().format('YYYY-MM-DD')]);
 }
 
-// Descargar APK desde URL
-function downloadAPKFromURL(url, outputPath) {
-    return new Promise((resolve, reject) => {
-        const file = fs.createWriteStream(outputPath);
-        
-        https.get(url, (response) => {
-            if (response.statusCode !== 200) {
-                reject(new Error(`Error HTTP: ${response.statusCode}`));
-                return;
-            }
-            
-            response.pipe(file);
-            
-            file.on('finish', () => {
-                file.close();
-                resolve();
-            });
-            
-            file.on('error', (err) => {
-                fs.unlink(outputPath, () => {});
-                reject(err);
-            });
-        }).on('error', (err) => {
-            fs.unlink(outputPath, () => {});
-            reject(err);
-        });
-    });
-}
-
-// Enviar APK como archivo
+// Enviar APK
 async function sendAPK(phone) {
     try {
-        const apkPath = '/tmp/temp_apk.apk';
-        const apkUrl = config.apk.url;
+        const apkPath = config.apk.path;
         
-        console.log(chalk.yellow(`📥 Descargando APK desde: ${apkUrl}`));
-        
-        try {
-            await downloadAPKFromURL(apkUrl, apkPath);
-            
-            if (!fs.existsSync(apkPath)) {
-                throw new Error('No se pudo descargar el archivo APK');
-            }
-            
-            const fileSize = fs.statSync(apkPath).size;
-            console.log(chalk.green(`✅ APK descargada: ${fileSize} bytes`));
-            
-            if (fileSize < 100000) {
-                await client.sendMessage(phone, `⚠️ *APK NO DISPONIBLE*
+        if (!fs.existsSync(apkPath)) {
+            await client.sendMessage(phone, `⚠️ *APK NO DISPONIBLE*
 
-El archivo APK es muy pequeño o está corrupto.
+El administrador aún no ha subido el archivo APK.
 
 Por favor contacta soporte:
 ${config.links.support}`, { sendSeen: false });
-                return false;
-            }
-            
-            const media = MessageMedia.fromFilePath(apkPath);
-            await client.sendMessage(phone, media, {
-                caption: config.apk.caption,
-                sendSeen: false
-            });
-            
-            console.log(chalk.green(`✅ APK enviada a ${phone.split('@')[0]}`));
-            
-            // Limpiar archivo temporal
-            fs.unlinkSync(apkPath);
-            
-            return true;
-        } catch (downloadError) {
-            console.error('❌ Error descargando APK:', downloadError.message);
-            
-            // Enviar enlace como alternativa
-            await client.sendMessage(phone, `📱 *DESCARGAR APLICACIÓN*
-
-🔗 Enlace de descarga directa:
-${apkUrl}
-
-💡 *Instrucciones:*
-1. Descarga el archivo APK desde el enlace
-2. Permite instalación de fuentes desconocidas
-3. Instala la aplicación
-4. Configura con tus credenciales SSH
-
-🔐 *Credenciales:*
-Usuario: (el que te proporcionamos)
-Contraseña: ${config.bot.default_password}`, { sendSeen: false });
-            
             return false;
         }
-    } catch (error) {
-        console.error('❌ Error enviando APK:', error);
-        await client.sendMessage(phone, `❌ Error al enviar el archivo APK: ${error.message}`, { sendSeen: false });
-        return false;
-    }
-}
-
-// Enviar notificación de vencimiento
-async function sendExpiryNotification(phone, username, expiryDate, hoursLeft) {
-    try {
-        const expiryFormatted = moment(expiryDate).format('DD/MM/YYYY HH:mm');
         
-        let message = `⏰ *RECORDATORIO DE VENCIMIENTO*\n\n`;
-        message += `👤 Usuario: *${username}*\n`;
-        message += `⏰ Vence en: *${expiryFormatted}*\n`;
-        message += `⏳ Tiempo restante: *${hoursLeft} horas*\n\n`;
-        message += `⚠️ Tu cuenta está por vencer. Renueva ahora para continuar disfrutando del servicio.\n\n`;
-        message += `Para renovar, selecciona la opción:\n`;
-        message += `🔄 3 - RENOVAR USUARIO SSH\n\n`;
-        message += `O contacta soporte:\n`;
-        message += `${config.links.support}`;
-        
-        await client.sendMessage(phone, message, { sendSeen: false });
-        console.log(chalk.yellow(`📢 Notificación enviada a ${phone.split('@')[0]} - Usuario: ${username}`));
-        
-        // Marcar como notificado
-        db.run('UPDATE users SET notification_sent = 1 WHERE username = ?', [username]);
+        const media = MessageMedia.fromFilePath(apkPath);
+        await client.sendMessage(phone, media, {
+            caption: config.apk.caption,
+            sendSeen: false
+        });
         
         return true;
     } catch (error) {
-        console.error('❌ Error enviando notificación:', error);
+        console.error('❌ Error enviando APK:', error);
+        await client.sendMessage(phone, `❌ Error al enviar el archivo APK: ${error.message}`, { sendSeen: false });
         return false;
     }
 }
@@ -726,7 +635,10 @@ Elija una opción:
 🧾 1 - CREAR PRUEBA (${config.prices.test_hours} HORAS)
 💰 2 - COMPRAR USUARIO SSH
 🔄 3 - RENOVAR USUARIO SSH
-📱 4 - DESCARGAR APLICACIÓN`, { sendSeen: false });
+📱 4 - DESCARGAR APLICACIÓN
+
+🔐 Contraseña: ${config.bot.default_password}
+📍 IP: ${config.bot.server_ip}`, { sendSeen: false });
     }
     // OPCIÓN 1: PRUEBA
     else if (text === '1' && userState.state === 'main_menu') {
@@ -752,7 +664,7 @@ Elija una opción:
 ⏰ Expira en: ${config.prices.test_hours} horas
 🔌 Conexiones: 1 dispositivo
 
-📱 *APP:* Descarga desde la opción 4
+📱 *APP:* ${config.links.app_download}
 
 ¡Disfruta tu prueba! 🚀`, { sendSeen: false });
             
@@ -767,8 +679,8 @@ Elija una opción:
         await client.sendMessage(phone, `PLANES SSH PREMIUM !
 
 Elija una opción:
-🗓 1 - PLANES SSH DIARIOS
-🗓 2 - PLANES SSH MENSUALES
+🗓 1 - PLANES SSH DIARIOS (7, 15 DÍAS)
+🗓 2 - PLANES SSH MENSUALES (30, 50 DÍAS)
 ⬅️ 0 - VOLVER`, { sendSeen: false });
     }
     // SUBMENÚ COMPRAS
@@ -834,8 +746,8 @@ ${config.links.support}`, { sendSeen: false });
             await client.sendMessage(phone, `PLANES SSH PREMIUM !
 
 Elija una opción:
-🗓 1 - PLANES SSH DIARIOS
-🗓 2 - PLANES SSH MENSUALES
+🗓 1 - PLANES SSH DIARIOS (7, 15 DÍAS)
+🗓 2 - PLANES SSH MENSUALES (30, 50 DÍAS)
 ⬅️ 0 - VOLVER`, { sendSeen: false });
         }
     }
@@ -871,8 +783,8 @@ ${config.links.support}`, { sendSeen: false });
             await client.sendMessage(phone, `PLANES SSH PREMIUM !
 
 Elija una opción:
-🗓 1 - PLANES SSH DIARIOS
-🗓 2 - PLANES SSH MENSUALES
+🗓 1 - PLANES SSH DIARIOS (7, 15 DÍAS)
+🗓 2 - PLANES SSH MENSUALES (30, 50 DÍAS)
 ⬅️ 0 - VOLVER`, { sendSeen: false });
         }
     }
@@ -899,104 +811,47 @@ Para crear una nueva cuenta, selecciona:
             client.sendMessage(phone, message, { sendSeen: false });
         });
     }
-    // OPCIÓN 4: DESCARGAR APP (CORREGIDA)
+    // OPCIÓN 4: DESCARGAR APP
     else if (text === '4' && userState.state === 'main_menu') {
         await client.sendMessage(phone, `📱 *DESCARGANDO APLICACIÓN...*
 
-⏳ Preparando archivo APK...`, { sendSeen: false });
+⏳ Buscando archivo APK...`, { sendSeen: false });
         
-        try {
-            const apkSent = await sendAPK(phone);
-            
-            if (apkSent) {
-                await client.sendMessage(phone, `✅ *APK ENVIADA CON ÉXITO*
+        const apkSent = await sendAPK(phone);
+        
+        if (apkSent) {
+            await client.sendMessage(phone, `✅ *APK ENVIADA CON ÉXITO*
 
+📁 *Nombre:* ${config.apk.filename}
 💡 *Instrucciones:*
-1. Descarga la app click en mas detalles
-2. Instalar de todas formas
-3. Una vez instalada necesita internet para actualizarse
+1. Permite instalación de fuentes desconocidas
+2. Instala la aplicación
+3. Configura con tus credenciales SSH
 
 🔐 *Credenciales:*
 Usuario: (el que te proporcionamos)
 Contraseña: ${config.bot.default_password}`, { sendSeen: false });
-            }
-        } catch (error) {
-            await client.sendMessage(phone, `❌ Error al procesar la descarga: ${error.message}`, { sendSeen: false });
         }
     }
 });
-
-// Función para verificar vencimientos y enviar notificaciones
-async function checkExpiryNotifications() {
-    console.log(chalk.yellow('🔔 Verificando usuarios por vencer...'));
-    
-    const warningHours = config.notifications.expiry_warning_hours || 24;
-    
-    db.all(`
-        SELECT phone, username, expires_at 
-        FROM users 
-        WHERE status = 1 
-        AND tipo = 'premium'
-        AND notification_sent = 0
-        AND expires_at <= datetime('now', ?)
-        AND expires_at > datetime('now')
-    `, [`+${warningHours} hours`], async (err, rows) => {
-        if (err) {
-            console.error('❌ Error verificando vencimientos:', err.message);
-            return;
-        }
-        
-        if (rows && rows.length > 0) {
-            console.log(chalk.cyan(`📢 ${rows.length} usuarios por vencer en ${warningHours} horas`));
-            
-            for (const row of rows) {
-                const hoursLeft = Math.ceil((new Date(row.expires_at) - new Date()) / (1000 * 60 * 60));
-                
-                if (hoursLeft <= warningHours && hoursLeft > 0) {
-                    await sendExpiryNotification(row.phone, row.username, row.expires_at, hoursLeft);
-                    
-                    // Pequeña pausa para no saturar WhatsApp
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                }
-            }
-        }
-    });
-}
 
 // Limpiar usuarios expirados cada 15 minutos
 cron.schedule('*/15 * * * *', async () => {
     const now = moment().format('YYYY-MM-DD HH:mm:ss');
     console.log(chalk.yellow(`🧹 Limpiando usuarios expirados... (${now})`));
     
-    db.all('SELECT username, phone FROM users WHERE expires_at < ? AND status = 1', [now], async (err, rows) => {
+    db.all('SELECT username FROM users WHERE expires_at < ? AND status = 1', [now], async (err, rows) => {
         if (err || !rows || rows.length === 0) return;
         
         for (const r of rows) {
             try {
-                // Enviar notificación de expiración
-                await client.sendMessage(r.phone, `❌ *TU CUENTA HA EXPIRADO*\n\n👤 Usuario: *${r.username}*\n⏰ Tu cuenta ha vencido.\n\nPara renovar, selecciona la opción:\n🔄 3 - RENOVAR USUARIO SSH\n\nO contacta soporte:\n${config.links.support}`, { sendSeen: false });
-                
-                // Eliminar usuario del sistema
                 await execPromise(`pkill -u ${r.username} 2>/dev/null || true`);
                 await execPromise(`userdel -f ${r.username} 2>/dev/null || true`);
-                
-                // Actualizar estado en BD
                 db.run('UPDATE users SET status = 0 WHERE username = ?', [r.username]);
                 console.log(chalk.green(`🗑️ Eliminado: ${r.username}`));
-                
-                // Pequeña pausa
-                await new Promise(resolve => setTimeout(resolve, 500));
-            } catch (e) {
-                console.error(`❌ Error eliminando ${r.username}:`, e.message);
-            }
+            } catch (e) {}
         }
     });
-});
-
-// Verificar notificaciones cada hora
-cron.schedule('0 * * * *', () => {
-    console.log(chalk.cyan('⏰ Verificando notificaciones de vencimiento...'));
-    checkExpiryNotifications();
 });
 
 // Inicializar bot
@@ -1006,8 +861,8 @@ BOTEOF
 
     echo -e "${GREEN}✅ Bot completo creado${NC}"
     
-    # Crear panel de control COMPLETO
-    echo -e "${YELLOW}🎛️  Creando panel de control...${NC}"
+    # Crear panel de control COMPLETO con función de subir APK
+    echo -e "${YELLOW}🎛️  Creando panel de control con APK...${NC}"
     
     cat > /usr/local/bin/sshbot << 'PANELEOF'
 #!/bin/bash
@@ -1015,6 +870,8 @@ RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; CYAN='\033[0;36m'; BL
 
 DB="/opt/ssh-bot/data/users.db"
 CONFIG="/opt/ssh-bot/config/config.json"
+APK_DIR="/opt/ssh-bot/apk"
+APK_FILE="$APK_DIR/app.apk"
 
 get_val() { jq -r "$1" "$CONFIG" 2>/dev/null; }
 set_val() { local t=$(mktemp); jq "$1 = $2" "$CONFIG" > "$t" && mv "$t" "$CONFIG"; }
@@ -1025,6 +882,96 @@ show_header() {
     echo -e "${CYAN}║                🎛️  PANEL SSH BOT - COMPLETO               ║${NC}"
     echo -e "${CYAN}║                   📱 APK POR ARCHIVO                      ║${NC}"
     echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
+}
+
+upload_apk() {
+    echo -e "\n${CYAN}📁 SUBIR ARCHIVO APK${NC}"
+    echo -e "${YELLOW}=========================================${NC}"
+    
+    if [[ -f "$APK_FILE" ]]; then
+        APK_SIZE=$(stat -c%s "$APK_FILE" 2>/dev/null || echo "0")
+        APK_DATE=$(stat -c%y "$APK_FILE" 2>/dev/null | cut -d' ' -f1)
+        
+        if [[ $APK_SIZE -gt 0 ]]; then
+            SIZE_MB=$(echo "scale=2; $APK_SIZE / 1024 / 1024" | bc)
+            echo -e "${GREEN}✅ APK actual: ${config.apk.filename}${NC}"
+            echo -e "📊 Tamaño: ${SIZE_MB} MB"
+            echo -e "📅 Fecha: ${APK_DATE}"
+        else
+            echo -e "${RED}⚠️  Archivo APK existe pero está vacío${NC}"
+        fi
+    else
+        echo -e "${YELLOW}⚠️  No hay archivo APK cargado${NC}"
+        echo -e "   Ubicación esperada: $APK_FILE"
+    fi
+    
+    echo -e "\n${CYAN}💾 INSTRUCCIONES PARA SUBIR:${NC}"
+    echo -e "1. Transfiere tu APK al servidor usando:"
+    echo -e "   scp /ruta/tu/app.apk root@${SERVER_IP}:$APK_DIR/"
+    echo -e "2. Luego renómbrala:"
+    echo -e "   mv $APK_DIR/*.apk $APK_FILE"
+    echo -e "3. Verifica que se haya subido correctamente"
+    
+    echo -e "\n${YELLOW}O usa el método directo (si estás en este servidor):${NC}"
+    read -p "¿Quieres subir un archivo APK desde este servidor? (s/N): " SUBIR
+    
+    if [[ "$SUBIR" == "s" ]]; then
+        echo -e "\n${CYAN}📂 Buscando archivos APK en el sistema...${NC}"
+        
+        # Buscar archivos APK
+        find /home /root /tmp -name "*.apk" -type f 2>/dev/null | head -10 | while read -r found_apk; do
+            SIZE=$(stat -c%s "$found_apk" 2>/dev/null || echo "0")
+            SIZE_MB=$(echo "scale=2; $SIZE / 1024 / 1024" | bc)
+            echo -e "   📍 ${found_apk} (${SIZE_MB} MB)"
+        done
+        
+        echo -e "\n${CYAN}📝 Ingresa la ruta completa del archivo APK:${NC}"
+        read -p "Ruta: " APK_PATH
+        
+        if [[ -f "$APK_PATH" ]] && [[ "$APK_PATH" == *.apk ]]; then
+            echo -e "${YELLOW}⏳ Copiando $APK_PATH ...${NC}"
+            cp "$APK_PATH" "$APK_FILE" 2>/dev/null
+            
+            if [[ $? -eq 0 ]]; then
+                APK_SIZE=$(stat -c%s "$APK_FILE" 2>/dev/null || echo "0")
+                SIZE_MB=$(echo "scale=2; $APK_SIZE / 1024 / 1024" | bc)
+                
+                # Actualizar nombre en config
+                APK_NAME=$(basename "$APK_PATH")
+                set_val '.apk.filename' "\"$APK_NAME\""
+                
+                echo -e "${GREEN}✅ APK subida correctamente${NC}"
+                echo -e "📁 Nombre: ${APK_NAME}"
+                echo -e "📊 Tamaño: ${SIZE_MB} MB"
+                echo -e "📍 Ubicación: ${APK_FILE}"
+                
+                # Verificar que sea un APK válido
+                if file "$APK_FILE" | grep -q "Zip archive"; then
+                    echo -e "${GREEN}✅ Archivo APK válido${NC}"
+                else
+                    echo -e "${YELLOW}⚠️  El archivo puede no ser un APK válido${NC}"
+                fi
+            else
+                echo -e "${RED}❌ Error al copiar el archivo${NC}"
+            fi
+        else
+            echo -e "${RED}❌ Archivo no encontrado o no es un APK${NC}"
+        fi
+    fi
+    
+    echo -e "\n${YELLOW}📋 Verificación:${NC}"
+    if [[ -f "$APK_FILE" ]]; then
+        APK_SIZE=$(stat -c%s "$APK_FILE" 2>/dev/null || echo "0")
+        if [[ $APK_SIZE -gt 100000 ]]; then
+            echo -e "${GREEN}✅ APK lista para enviar por WhatsApp${NC}"
+        else
+            echo -e "${RED}❌ Archivo muy pequeño, puede estar corrupto${NC}"
+        fi
+    else
+        echo -e "${RED}❌ No hay APK disponible${NC}"
+    fi
+    
+    read -p "Presiona Enter para continuar..."
 }
 
 while true; do
@@ -1047,23 +994,24 @@ while true; do
         MP_STATUS="${RED}❌ NO CONFIGURADO${NC}"
     fi
     
-    NOTIF_ENABLED=$(get_val '.notifications.enabled')
-    if [[ "$NOTIF_ENABLED" == "true" ]]; then
-        NOTIF_STATUS="${GREEN}✅ ACTIVADAS${NC}"
-        NOTIF_HOURS=$(get_val '.notifications.expiry_warning_hours')
-        NOTIF_DETAIL="${GREEN}(${NOTIF_HOURS}h antes)${NC}"
+    NOTIF_GROUP=$(get_val '.bot.notification_group')
+    if [[ -n "$NOTIF_GROUP" && "$NOTIF_GROUP" != "" && "$NOTIF_GROUP" != "null" ]]; then
+        GROUP_STATUS="${GREEN}✅ CONFIGURADO${NC}"
     else
-        NOTIF_STATUS="${RED}❌ DESACTIVADAS${NC}"
-        NOTIF_DETAIL=""
+        GROUP_STATUS="${RED}❌ NO CONFIGURADO${NC}"
     fi
     
-    APK_URL=$(get_val '.apk.url')
-    if [[ -n "$APK_URL" && "$APK_URL" != "" && "$APK_URL" != "null" ]]; then
-        APK_STATUS="${GREEN}✅ CONFIGURADO${NC}"
-        APK_URL_SHORT="${APK_URL:0:30}..."
+    # Verificar APK
+    if [[ -f "$APK_FILE" ]]; then
+        APK_SIZE=$(stat -c%s "$APK_FILE" 2>/dev/null || echo "0")
+        if [[ $APK_SIZE -gt 100000 ]]; then
+            APK_SIZE_MB=$(echo "scale=2; $APK_SIZE / 1024 / 1024" | bc)
+            APK_STATUS="${GREEN}✅ DISPONIBLE (${APK_SIZE_MB} MB)${NC}"
+        else
+            APK_STATUS="${RED}❌ ARCHIVO PEQUEÑO${NC}"
+        fi
     else
-        APK_STATUS="${RED}❌ NO CONFIGURADO${NC}"
-        APK_URL_SHORT=""
+        APK_STATUS="${RED}❌ NO DISPONIBLE${NC}"
     fi
     
     SERVER_IP=$(get_val '.bot.server_ip')
@@ -1072,14 +1020,11 @@ while true; do
     echo -e "  Bot: $BOT_STATUS"
     echo -e "  Usuarios: ${CYAN}$ACTIVE_USERS/$TOTAL_USERS${NC} activos/total"
     echo -e "  MercadoPago: $MP_STATUS"
-    echo -e "  Notificaciones al cliente: $NOTIF_STATUS $NOTIF_DETAIL"
+    echo -e "  Grupo notif.: $GROUP_STATUS"
     echo -e "  APK: $APK_STATUS"
     echo -e "  Test: ${GREEN}$(get_val '.prices.test_hours') horas${NC}"
     echo -e "  Contraseña: ${GREEN}$(get_val '.bot.default_password')${NC}"
     echo -e "  Cupones: ${RED}🚫 DESACTIVADOS${NC}"
-    if [[ -n "$APK_URL_SHORT" ]]; then
-        echo -e "  Enlace APK: ${CYAN}$APK_URL_SHORT${NC}"
-    fi
     echo -e ""
     
     echo -e "${YELLOW}💰 PRECIOS:${NC}"
@@ -1100,8 +1045,8 @@ while true; do
     echo -e "${CYAN}[6]${NC}  ⏰  Cambiar horas del test"
     echo -e "${CYAN}[7]${NC}  💰  Cambiar precios"
     echo -e "${CYAN}[8]${NC}  🔑  Configurar MercadoPago"
-    echo -e "${CYAN}[9]${NC}  ⏰  Configurar notificaciones al cliente"
-    echo -e "${CYAN}[10]${NC} 📱  Cambiar enlace APK"
+    echo -e "${CYAN}[9]${NC}  📢  Configurar notificaciones"
+    echo -e "${CYAN}[10]${NC} 📁  Subir/Ver APK"
     echo -e "${CYAN}[11]${NC} 📊  Ver estadísticas"
     echo -e "${CYAN}[12]${NC} 📝  Ver logs"
     echo -e "${CYAN}[0]${NC}  🚪  Salir"
@@ -1207,7 +1152,7 @@ while true; do
             read -p "Nuevas horas para el test [${CURRENT_HOURS}]: " NEW_HOURS
             
             if [[ -n "$NEW_HOURS" ]]; then
-                if [[ $NEW_HOURS =~ ^[0-9]+$ ]] && [[ $NEW_HOURS -ge 1 ]] && [[ $NEW_HOURS -le 24 ]]; then
+                if [[ $NEW_HOURS =~ ^[0-9]+$ ]] && [[ $NEW_HOURs -ge 1 ]] && [[ $NEW_HOURS -le 24 ]]; then
                     set_val '.prices.test_hours' "$NEW_HOURS"
                     echo -e "\n${GREEN}✅ Horas cambiadas a ${NEW_HOURS} horas${NC}"
                     echo -e "${YELLOW}🔄 Reiniciando bot...${NC}"
@@ -1297,33 +1242,28 @@ while true; do
         9)
             clear
             echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-            echo -e "${CYAN}║        ⏰ CONFIGURAR NOTIFICACIONES AL CLIENTE            ║${NC}"
+            echo -e "${CYAN}║             📢 CONFIGURAR NOTIFICACIONES                   ║${NC}"
             echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
             
-            CURRENT_ENABLED=$(get_val '.notifications.enabled')
+            CURRENT_GROUP=$(get_val '.bot.notification_group')
             CURRENT_WARNING=$(get_val '.notifications.expiry_warning_hours')
             
             echo -e "${YELLOW}⚙️ CONFIGURACIÓN ACTUAL:${NC}"
-            echo -e "  Notificaciones: ${CYAN}$([[ "$CURRENT_ENABLED" == "true" ]] && echo "ACTIVADAS" || echo "DESACTIVADAS")${NC}"
+            echo -e "  Grupo WhatsApp: ${CYAN}${CURRENT_GROUP:-'No configurado'}${NC}"
             echo -e "  Aviso por vencer: ${CYAN}${CURRENT_WARNING} horas antes${NC}\n"
             
-            read -p "¿Activar notificaciones al cliente? (s/N): " ENABLE
-            if [[ "$ENABLE" == "s" ]]; then
-                set_val '.notifications.enabled' "true"
-                echo -e "${GREEN}✅ Notificaciones activadas${NC}"
-            else
-                set_val '.notifications.enabled' "false"
-                echo -e "${YELLOW}⚠️ Notificaciones desactivadas${NC}"
-            fi
-            
-            echo -e "\n${CYAN}⏰ Configurar horas para aviso de vencimiento:${NC}"
-            echo -e "Ejemplo: 24 (avisa 24 horas antes de vencer)"
+            read -p "Nuevo ID de grupo [${CURRENT_GROUP}]: " NEW_GROUP
             read -p "Horas para aviso por vencer [${CURRENT_WARNING}]: " NEW_WARNING
+            
+            if [[ -n "$NEW_GROUP" ]]; then
+                set_val '.bot.notification_group' "\"$NEW_GROUP\""
+                echo -e "${GREEN}✅ Grupo actualizado${NC}"
+            fi
             
             if [[ -n "$NEW_WARNING" ]]; then
                 if [[ $NEW_WARNING =~ ^[0-9]+$ ]] && [[ $NEW_WARNING -ge 1 ]] && [[ $NEW_WARNING -le 168 ]]; then
                     set_val '.notifications.expiry_warning_hours' "$NEW_WARNING"
-                    echo -e "${GREEN}✅ Aviso por vencer actualizado a ${NEW_WARNING} horas antes${NC}"
+                    echo -e "${GREEN}✅ Aviso por vencer actualizado a ${NEW_WARNING} horas${NC}"
                 else
                     echo -e "${RED}❌ Error: Debe ser un número entre 1 y 168 (7 días)${NC}"
                 fi
@@ -1335,51 +1275,7 @@ while true; do
             read -p "Presiona Enter..." 
             ;;
         10)
-            clear
-            echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-            echo -e "${CYAN}║                    📱 CAMBIAR ENLACE APK                    ║${NC}"
-            echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
-            
-            CURRENT_URL=$(get_val '.apk.url')
-            CURRENT_FILENAME=$(get_val '.apk.filename')
-            CURRENT_CAPTION=$(get_val '.apk.caption')
-            
-            echo -e "${YELLOW}⚙️ CONFIGURACIÓN ACTUAL:${NC}"
-            echo -e "  Enlace APK: ${CYAN}${CURRENT_URL:0:50}...${NC}"
-            echo -e "  Nombre archivo: ${CYAN}${CURRENT_FILENAME}${NC}"
-            echo -e "  Mensaje: ${CYAN}${CURRENT_CAPTION:0:50}...${NC}\n"
-            
-            read -p "Nuevo enlace APK [${CURRENT_URL:0:50}...]: " NEW_URL
-            read -p "Nuevo nombre archivo [${CURRENT_FILENAME}]: " NEW_FILENAME
-            read -p "¿Cambiar mensaje? (s/N): " CHANGE_CAPTION
-            
-            if [[ -n "$NEW_URL" ]]; then
-                set_val '.apk.url' "\"$NEW_URL\""
-                echo -e "${GREEN}✅ Enlace APK actualizado${NC}"
-            fi
-            
-            if [[ -n "$NEW_FILENAME" ]]; then
-                set_val '.apk.filename' "\"$NEW_FILENAME\""
-                echo -e "${GREEN}✅ Nombre archivo actualizado${NC}"
-            fi
-            
-            if [[ "$CHANGE_CAPTION" == "s" ]]; then
-                echo -e "\n${CYAN}📝 Ingresa el nuevo mensaje para el APK:${NC}"
-                echo -e "Ejemplo: 📱 MiVPN - APP\\n\\n💡 Instrucciones:\\n1. Descarga...\\n2. Instala...\\n3. Disfruta"
-                read -p "Mensaje: " NEW_CAPTION
-                
-                if [[ -n "$NEW_CAPTION" ]]; then
-                    # Reemplazar saltos de línea reales por \n
-                    NEW_CAPTION=${NEW_CAPTION//$'\n'/\\n}
-                    set_val '.apk.caption' "\"$NEW_CAPTION\""
-                    echo -e "${GREEN}✅ Mensaje actualizado${NC}"
-                fi
-            fi
-            
-            echo -e "\n${YELLOW}🔄 Reiniciando bot...${NC}"
-            cd /root/ssh-bot && pm2 restart ssh-bot
-            sleep 2
-            read -p "Presiona Enter..." 
+            upload_apk
             ;;
         11)
             clear
@@ -1397,9 +1293,14 @@ while true; do
             sqlite3 "$DB" "SELECT 'En 24h: ' || COUNT(*) || ' | En 48h: ' || (SELECT COUNT(*) FROM users WHERE status=1 AND tipo='premium' AND expires_at <= datetime('now', '+48 hours') AND expires_at > datetime('now', '+24 hours')) FROM users WHERE status=1 AND tipo='premium' AND expires_at <= datetime('now', '+24 hours')"
             
             echo -e "\n${YELLOW}📱 APK:${NC}"
-            CURRENT_URL=$(get_val '.apk.url')
-            echo -e "  Enlace: ${CYAN}${CURRENT_URL:0:50}...${NC}"
-            echo -e "  Enviada: $(sqlite3 "$DB" "SELECT COUNT(DISTINCT phone) FROM users WHERE tipo='premium' OR tipo='test'" 2>/dev/null || echo "0") veces"
+            if [[ -f "$APK_FILE" ]]; then
+                APK_SIZE=$(stat -c%s "$APK_FILE" 2>/dev/null || echo "0")
+                SIZE_MB=$(echo "scale=2; $APK_SIZE / 1024 / 1024" | bc)
+                echo -e "  Disponible: ${GREEN}${SIZE_MB} MB${NC}"
+                echo -e "  Enviada: $(sqlite3 "$DB" "SELECT COUNT(DISTINCT phone) FROM users WHERE tipo='premium' OR tipo='test'" 2>/dev/null || echo "0") veces"
+            else
+                echo -e "  ${RED}No disponible${NC}"
+            fi
             
             read -p "\nPresiona Enter..." 
             ;;
@@ -1421,7 +1322,79 @@ PANELEOF
 
     chmod +x /usr/local/bin/sshbot
     
-    echo -e "${GREEN}✅ Panel de control creado${NC}"
+    echo -e "${GREEN}✅ Panel de control creado con función APK${NC}"
+    
+    # Crear script para subir APK fácilmente
+    cat > /usr/local/bin/upload-apk << 'UPLOADEOP'
+#!/bin/bash
+APK_DIR="/opt/ssh-bot/apk"
+APK_FILE="$APK_DIR/app.apk"
+
+echo -e "\n📱 SUBIR ARCHIVO APK PARA EL BOT"
+echo -e "================================\n"
+
+if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
+    echo "Uso:"
+    echo "  upload-apk                    - Mostrar ayuda"
+    echo "  upload-apk /ruta/apk.apk      - Subir archivo APK"
+    echo "  upload-apk --status           - Ver estado del APK"
+    exit 0
+fi
+
+if [ "$1" == "--status" ]; then
+    if [ -f "$APK_FILE" ]; then
+        APK_SIZE=$(stat -c%s "$APK_FILE" 2>/dev/null || echo "0")
+        if [ $APK_SIZE -gt 100000 ]; then
+            SIZE_MB=$(echo "scale=2; $APK_SIZE / 1024 / 1024" | bc)
+            echo -e "✅ APK disponible: $APK_FILE"
+            echo -e "📊 Tamaño: ${SIZE_MB} MB"
+            echo -e "📍 El bot la enviará automáticamente"
+        else
+            echo -e "⚠️  Archivo APK muy pequeño o corrupto"
+        fi
+    else
+        echo -e "❌ No hay archivo APK"
+        echo -e "   Ubicación esperada: $APK_FILE"
+    fi
+    exit 0
+fi
+
+if [ -n "$1" ] && [ -f "$1" ]; then
+    echo "📥 Copiando $1 a $APK_FILE..."
+    cp "$1" "$APK_FILE"
+    
+    if [ $? -eq 0 ]; then
+        APK_SIZE=$(stat -c%s "$APK_FILE" 2>/dev/null || echo "0")
+        if [ $APK_SIZE -gt 100000 ]; then
+            SIZE_MB=$(echo "scale=2; $APK_SIZE / 1024 / 1024" | bc)
+            echo -e "✅ APK subida correctamente"
+            echo -e "📊 Tamaño: ${SIZE_MB} MB"
+            echo -e "📍 El bot la enviará cuando seleccionen '4 - DESCARGAR APLICACIÓN'"
+        else
+            echo -e "⚠️  Archivo muy pequeño. ¿Es un APK válido?"
+        fi
+    else
+        echo -e "❌ Error al copiar el archivo"
+    fi
+else
+    echo -e "ℹ️  INSTRUCCIONES PARA SUBIR APK:\n"
+    echo -e "1. Subir via SCP (desde tu PC):"
+    echo -e "   scp /ruta/a/tu.apk root@$(hostname -I | awk '{print $1}'):$APK_DIR/"
+    echo -e "   ssh root@$(hostname -I | awk '{print $1}') 'mv $APK_DIR/*.apk $APK_FILE'\n"
+    
+    echo -e "2. Si ya está en el servidor:"
+    echo -e "   upload-apk /ruta/a/tu.apk\n"
+    
+    echo -e "3. Verificar estado:"
+    echo -e "   upload-apk --status\n"
+    
+    echo -e "📋 El APK debe llamarse 'app.apk' en $APK_DIR"
+fi
+UPLOADEOP
+
+    chmod +x /usr/local/bin/upload-apk
+    
+    echo -e "${GREEN}✅ Script de subida APK creado${NC}"
     
     # Iniciar bot
     echo -e "${YELLOW}🚀 Iniciando bot completo...${NC}"
@@ -1439,7 +1412,6 @@ PANELEOF
 ║                                                              ║
 ║       🎉 INSTALACIÓN COMPLETADA - VERSIÓN COMPLETA 🎉      ║
 ║                📱 CON APK POR ARCHIVO                       ║
-║                ⏰ CON NOTIFICACIONES AL CLIENTE             ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 FINAL
@@ -1450,24 +1422,31 @@ FINAL
     echo -e "${GREEN}✅ Versión completa con planes separados${NC}"
     echo -e "${GREEN}✅ Test: 2 horas por defecto${NC}"
     echo -e "${GREEN}✅ Contraseña: mgvpn247 (fija)${NC}"
-    echo -e "${GREEN}✅ APK enviada como archivo desde enlace${NC}"
-    echo -e "${GREEN}✅ Notificaciones al cliente activadas${NC}"
+    echo -e "${GREEN}✅ APK enviada como archivo${NC}"
     echo -e "${RED}🚫 Cupones de descuento desactivados${NC}"
     echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}\n"
     
     echo -e "${YELLOW}📋 COMANDOS DISPONIBLES:${NC}\n"
     echo -e "  ${GREEN}sshbot${NC}         - Panel de control completo"
+    echo -e "  ${GREEN}upload-apk${NC}     - Subir archivo APK fácilmente"
     echo -e "  ${GREEN}pm2 logs ssh-bot${NC} - Ver logs del bot"
     echo -e "  ${GREEN}pm2 restart ssh-bot${NC} - Reiniciar bot\n"
+    
+    echo -e "${YELLOW}📱 SUBIR APK:${NC}\n"
+    echo -e "  1. Sube tu archivo APK al servidor:"
+    echo -e "     ${CYAN}scp mi-app.apk root@$SERVER_IP:/opt/ssh-bot/apk/${NC}"
+    echo -e "  2. Luego ejecuta en el servidor:"
+    echo -e "     ${CYAN}mv /opt/ssh-bot/apk/*.apk /opt/ssh-bot/apk/app.apk${NC}"
+    echo -e "  3. O usa: ${CYAN}upload-apk /ruta/a/tu.apk${NC}\n"
     
     echo -e "${YELLOW}🔧 CONFIGURACIÓN INICIAL:${NC}\n"
     echo -e "  1. Ejecuta: ${GREEN}sshbot${NC}"
     echo -e "  2. Opción ${CYAN}[3]${NC} - Ver QR WhatsApp"
     echo -e "  3. Escanea el QR con tu teléfono"
     echo -e "  4. Envía 'menu' al bot para probar"
-    echo -e "  5. Opción ${CYAN}[10]${NC} - Cambiar enlace APK si es necesario"
-    echo -e "  6. Opción ${CYAN}[9]${NC} - Configurar notificaciones al cliente"
-    echo -e "  7. Opción ${CYAN}[8]${NC} - Configurar MercadoPago (opcional)\n"
+    echo -e "  5. Opción ${CYAN}[10]${NC} - Subir APK"
+    echo -e "  6. Opción ${CYAN}[8]${NC} - Configurar MercadoPago (opcional)"
+    echo -e "  7. Opción ${CYAN}[9]${NC} - Configurar notificaciones (opcional)\n"
     
     echo -e "${YELLOW}💰 PRECIOS POR DEFECTO:${NC}\n"
     echo -e "  Test: ${GREEN}2 horas (gratis)${NC}"
@@ -1481,17 +1460,10 @@ FINAL
     echo -e "${YELLOW}📍 INFORMACIÓN:${NC}"
     echo -e "  IP: ${CYAN}$SERVER_IP${NC}"
     echo -e "  BD: ${CYAN}/opt/ssh-bot/data/users.db${NC}"
-    echo -e "  Config: ${CYAN}/opt/ssh-bot/config/config.json${NC}"
+    echo -e "  Config: ${CYAn}/opt/ssh-bot/config/config.json${NC}"
+    echo -e "  APK: ${CYAN}/opt/ssh-bot/apk/app.apk${NC}"
     echo -e "  Bot: ${CYAN}/root/ssh-bot/${NC}"
     echo -e "  QR: ${CYAN}/root/qr-whatsapp.png${NC}\n"
-    
-    echo -e "${YELLOW}📱 APK:${NC}"
-    echo -e "  El bot descargará el APK desde el enlace configurado y lo enviará como archivo"
-    echo -e "  Enlace actual: ${CYAN}$APK_URL${NC}\n"
-    
-    echo -e "${YELLOW}⏰ NOTIFICACIONES:${NC}"
-    echo -e "  El bot enviará notificaciones automáticas al cliente cuando su cuenta esté por vencer (24h antes por defecto)"
-    echo -e "  Puedes configurar las horas desde el panel: ${GREEN}sshbot${NC} → Opción ${CYAN}[9]${NC}\n"
     
     echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}\n"
 }
