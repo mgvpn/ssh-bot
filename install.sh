@@ -1,15 +1,9 @@
+cat > install_ssh_bot_phone.sh << 'INSTALLPHONEEOF'
 #!/bin/bash
+
 # ================================================
-# SSH BOT PRO v8.6 - TODOS LOS FIXES APLICADOS
-# Correcciones aplicadas:
-# 1. ✅ Validación token MercadoPago FIXED
-# 2. ✅ Fechas ISO 8601 correctas (MP SDK v2.x)
-# 3. ✅ Parche error markedUnread de WhatsApp Web
-# 4. ✅ Inicialización MP SDK corregida
-# 5. ✅ Panel de control funcionando 100%
-# AJUSTES ESPECÍFICOS:
-# 6. ✅ Test cambiado a 2 horas
-# 7. ✅ Cron limpieza cambiado a cada 15 minutos
+# SSH BOT PRO - AUTH POR TELÉFONO/CÓDIGO
+# No requiere QR, usa número de WhatsApp + código
 # ================================================
 
 set -e
@@ -38,31 +32,29 @@ cat << "BANNER"
 ║     ╚══════╝╚══════╝╚═╝  ╚═╝    ╚═════╝  ╚═════╝    ╚═╝     ║
 ╠══════════════════════════════════════════════════════════════╣
 ║                                                              ║
-║           🚀 SSH BOT PRO v8.6 - ALL FIXES APPLIED           ║
-║               💳 MercadoPago SDK v2.x FULLY FIXED           ║
-║               📅 ISO 8601 Dates Corrected                   ║
-║               🔑 Token Validation Fixed                      ║
-║               🤖 WhatsApp markedUnread Patched              ║
-║               📱 APK Auto + 2h Test                         ║
+║                SSH BOT PRO - AUTH POR TELÉFONO              ║
+║               📱 SIN QR - USA NÚMERO + CÓDIGO              ║
+║               🔐 CONTRASEÑA FIJA: mgvpn247                 ║
+║               💰 MERCADOPAGO INTEGRADO                     ║
+║               🚀 CONEXIÓN PERMANENTE                       ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 BANNER
 echo -e "${NC}"
 
-echo -e "${GREEN}✅ CORRECCIONES APLICADAS EN ESTA VERSIÓN:${NC}"
-echo -e "  🔴 ${RED}FIX 1:${NC} Validación token MP corregida (regex fija)"
-echo -e "  🟡 ${YELLOW}FIX 2:${NC} Fechas ISO 8601 formato correcto para MP v2.x"
-echo -e "  🟢 ${GREEN}FIX 3:${NC} Parche error 'markedUnread' de WhatsApp Web"
-echo -e "  🔵 ${BLUE}FIX 4:${NC} Inicialización MP SDK corregida"
-echo -e "  🟣 ${PURPLE}FIX 5:${NC} Panel de control 100% funcional"
-echo -e "  ⏰ ${CYAN}FIX 6:${NC} Test ajustado a 2 horas"
-echo -e "  ⚡ ${CYAN}FIX 7:${NC} Cron limpieza ajustado a cada 15 minutos"
+echo -e "${GREEN}✅ CARACTERÍSTICAS:${NC}"
+echo -e "  📱 ${CYAN}Autenticación por teléfono${NC} (sin QR)"
+echo -e "  🔐 ${CYAN}Contraseña fija: mgvpn247${NC}"
+echo -e "  💰 ${CYAN}MercadoPago integrado${NC}"
+echo -e "  ⏰ ${CYAN}Test 1 hora${NC}"
+echo -e "  📊 ${CYAN}Panel de control${NC}"
+echo -e "  🔄 ${CYAN}Auto-reconexión${NC}"
 echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}\n"
 
 # Verificar root
 if [[ $EUID -ne 0 ]]; then
     echo -e "${RED}${BOLD}❌ ERROR: Debes ejecutar como root${NC}"
-    echo -e "${YELLOW}Usa: sudo bash $0${NC}"
+    echo -e "${YELLOW}Usa: sudo bash install_ssh_bot_phone.sh${NC}"
     exit 1
 fi
 
@@ -79,12 +71,15 @@ echo -e "${GREEN}✅ IP detectada: ${CYAN}$SERVER_IP${NC}\n"
 # Confirmar instalación
 echo -e "${YELLOW}⚠️  ESTE INSTALADOR HARÁ:${NC}"
 echo -e "   • Instalar Node.js 20.x + Chrome"
-echo -e "   • Crear SSH Bot Pro v8.6 CON TODOS LOS FIXES"
-echo -e "   • Aplicar parche error WhatsApp Web"
-echo -e "   • Configurar fechas ISO 8601 correctas"
-echo -e "   • Panel de control 100% funcional"
-echo -e "   • APK automático + Test 2h"
-echo -e "   • Cron limpieza cada 15 minutos"
+echo -e "   • Instalar WPPConnect (auth por teléfono)"
+echo -e "   • Crear SSH Bot con auth por número"
+echo -e "   • Sistema de estados inteligente"
+echo -e "   • Menú: 1=Prueba, 2=Comprar, 3=Renovar, 4=APP"
+echo -e "   • Planes: 7, 15, 30, 50 días"
+echo -e "   • MercadoPago integrado"
+echo -e "   • Panel de control web"
+echo -e "   • Auto-reinicio automático"
+echo -e "   • 🔐 CONTRASEÑA FIJA: mgvpn247 para todos"
 echo -e "\n${RED}⚠️  Se eliminarán instalaciones anteriores${NC}"
 
 read -p "$(echo -e "${YELLOW}¿Continuar con la instalación? (s/N): ${NC}")" -n 1 -r
@@ -99,43 +94,62 @@ fi
 # ================================================
 echo -e "\n${CYAN}${BOLD}📦 INSTALANDO DEPENDENCIAS...${NC}"
 
-echo -e "${YELLOW}🔄 Actualizando sistema...${NC}"
-export DEBIAN_FRONTEND=noninteractive
-apt-get update -qq > /dev/null 2>&1
+# Actualizar sistema
+apt-get update -y
+apt-get upgrade -y
 
-echo -e "${YELLOW}📥 Instalando paquetes básicos...${NC}"
-apt-get install -y -qq \
-    curl wget git unzip \
-    sqlite3 jq nano htop \
-    cron build-essential \
-    ca-certificates gnupg \
-    software-properties-common \
-    libgbm-dev libxshmfence-dev \
-    sshpass at \
-    > /dev/null 2>&1
+# Instalar Node.js 20.x
+echo -e "${YELLOW}📦 Instalando Node.js 20.x...${NC}"
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt-get install -y nodejs
+apt-get install -y gcc g++ make
 
-# Habilitar servicio 'at'
-systemctl enable atd 2>/dev/null || true
-systemctl start atd 2>/dev/null || true
+# Instalar Chromium
+echo -e "${YELLOW}🌐 Instalando Chrome...${NC}"
+apt-get install -y wget gnupg
+wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add -
+echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
+apt-get update -y
+apt-get install -y google-chrome-stable
 
-# Google Chrome
-echo -e "${YELLOW}🌐 Instalando Google Chrome...${NC}"
-if ! command -v google-chrome &> /dev/null; then
-    wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O /tmp/chrome.deb
-    apt-get install -y -qq /tmp/chrome.deb > /dev/null 2>&1
-    rm -f /tmp/chrome.deb
-fi
+# Instalar dependencias del sistema
+echo -e "${YELLOW}⚙️ Instalando utilidades...${NC}"
+apt-get install -y \
+    git \
+    curl \
+    wget \
+    sqlite3 \
+    jq \
+    build-essential \
+    libcairo2-dev \
+    libpango1.0-dev \
+    libjpeg-dev \
+    libgif-dev \
+    librsvg2-dev \
+    pkg-config \
+    python3 \
+    python3-pip \
+    ffmpeg \
+    unzip \
+    cron \
+    ufw \
+    screen \
+    htop \
+    net-tools
 
-# Node.js 20.x
-echo -e "${YELLOW}🟢 Instalando Node.js 20.x...${NC}"
-if ! command -v node &> /dev/null; then
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - > /dev/null 2>&1
-    apt-get install -y -qq nodejs > /dev/null 2>&1
-fi
+# Instalar PM2 globalmente
+echo -e "${YELLOW}🔄 Instalando PM2...${NC}"
+npm install -g pm2
+pm2 update
 
-# PM2 global
-echo -e "${YELLOW}⚡ Instalando PM2...${NC}"
-npm install -g pm2 --silent > /dev/null 2>&1
+# Configurar firewall
+echo -e "${YELLOW}🛡️ Configurando firewall...${NC}"
+ufw allow 22/tcp
+ufw allow 80/tcp
+ufw allow 443/tcp
+ufw allow 3000/tcp
+ufw allow 8000/tcp
+ufw --force enable
 
 echo -e "${GREEN}✅ Dependencias instaladas${NC}"
 
@@ -144,38 +158,39 @@ echo -e "${GREEN}✅ Dependencias instaladas${NC}"
 # ================================================
 echo -e "\n${CYAN}${BOLD}📁 CREANDO ESTRUCTURA...${NC}"
 
-INSTALL_DIR="/opt/ssh-bot"
-USER_HOME="/root/ssh-bot"
+INSTALL_DIR="/opt/ssh-bot-phone"
+USER_HOME="/root/ssh-bot-phone"
 DB_FILE="$INSTALL_DIR/data/users.db"
 CONFIG_FILE="$INSTALL_DIR/config/config.json"
 
 # Limpiar instalaciones anteriores
 echo -e "${YELLOW}🧹 Limpiando instalaciones anteriores...${NC}"
-pm2 delete ssh-bot 2>/dev/null || true
+pm2 delete ssh-bot-phone 2>/dev/null || true
 pm2 flush 2>/dev/null || true
 rm -rf "$INSTALL_DIR" "$USER_HOME" 2>/dev/null || true
-rm -rf /root/.wwebjs_auth /root/.wwebjs_cache 2>/dev/null || true
+rm -rf /root/.wwebjs_auth 2>/dev/null || true
 
 # Crear directorios
-mkdir -p "$INSTALL_DIR"/{data,config,qr_codes,logs}
+mkdir -p "$INSTALL_DIR"/{data,config,logs,sessions}
 mkdir -p "$USER_HOME"
-mkdir -p /root/.wwebjs_auth
 chmod -R 755 "$INSTALL_DIR"
-chmod -R 700 /root/.wwebjs_auth
+chmod -R 700 "$INSTALL_DIR/sessions"
 
 # Crear configuración
 cat > "$CONFIG_FILE" << EOF
 {
     "bot": {
-        "name": "SSH Bot Pro",
-        "version": "8.6-ALL-FIXES",
-        "server_ip": "$SERVER_IP"
+        "name": "SSH Bot Phone Auth",
+        "version": "2.0",
+        "server_ip": "$SERVER_IP",
+        "default_password": "mgvpn247",
+        "test_hours": 1
     },
     "prices": {
-        "test_hours": 2,
-        "price_7d": 500.00,
-        "price_15d": 800.00,
-        "price_30d": 1200.00,
+        "price_7d": 1500.00,
+        "price_15d": 2500.00,
+        "price_30d": 5500.00,
+        "price_50d": 8500.00,
         "currency": "ARS"
     },
     "mercadopago": {
@@ -184,12 +199,13 @@ cat > "$CONFIG_FILE" << EOF
     },
     "links": {
         "tutorial": "https://youtube.com",
-        "support": "https://t.me/soporte"
+        "support": "https://wa.me/543435071016",
+        "app_download": "https://www.mediafire.com/file/p8kgthxbsid7xws/MAJ/DNI_AND_FIL"
     },
-    "paths": {
-        "database": "$DB_FILE",
-        "chromium": "/usr/bin/google-chrome",
-        "qr_codes": "$INSTALL_DIR/qr_codes"
+    "whatsapp": {
+        "session_path": "/opt/ssh-bot-phone/sessions",
+        "headless": true,
+        "useChrome": true
     }
 }
 EOF
@@ -200,7 +216,7 @@ CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     phone TEXT,
     username TEXT UNIQUE,
-    password TEXT,
+    password TEXT DEFAULT 'mgvpn247',
     tipo TEXT DEFAULT 'test',
     expires_at DATETIME,
     max_connections INTEGER DEFAULT 1,
@@ -221,9 +237,10 @@ CREATE TABLE payments (
     plan TEXT,
     days INTEGER,
     amount REAL,
+    discount_code TEXT,
+    final_amount REAL,
     status TEXT DEFAULT 'pending',
     payment_url TEXT,
-    qr_code TEXT,
     preference_id TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     approved_at DATETIME
@@ -237,54 +254,50 @@ CREATE TABLE logs (
 );
 CREATE INDEX idx_users_phone ON users(phone);
 CREATE INDEX idx_users_status ON users(status);
-CREATE INDEX idx_payments_status ON payments(status);
 SQL
 
 echo -e "${GREEN}✅ Estructura creada${NC}"
 
 # ================================================
-# CREAR BOT CON TODOS LOS FIXES
+# INSTALAR WPPCONNECT (AUTH POR TELÉFONO)
 # ================================================
-echo -e "\n${CYAN}${BOLD}🤖 CREANDO BOT CON TODOS LOS FIXES...${NC}"
+echo -e "\n${CYAN}${BOLD}📱 INSTALANDO WPPCONNECT...${NC}"
 
 cd "$USER_HOME"
 
-# package.json con MercadoPago SDK correcto
+# package.json
 cat > package.json << 'PKGEOF'
 {
-    "name": "ssh-bot-pro",
-    "version": "8.6.0",
+    "name": "ssh-bot-phone",
+    "version": "2.0.0",
     "main": "bot.js",
     "dependencies": {
-        "whatsapp-web.js": "^1.24.0",
+        "@wppconnect-team/wppconnect": "^1.29.4",
         "qrcode-terminal": "^0.12.0",
         "qrcode": "^1.5.3",
         "moment": "^2.30.1",
         "sqlite3": "^5.1.7",
         "chalk": "^4.1.2",
         "node-cron": "^3.0.3",
-        "mercadopago": "^2.0.15",
-        "axios": "^1.6.5"
+        "axios": "^1.6.5",
+        "express": "^4.18.2",
+        "body-parser": "^1.20.2",
+        "pm2": "^5.3.0"
     }
 }
 PKGEOF
 
 echo -e "${YELLOW}📦 Instalando paquetes Node.js...${NC}"
-npm install --silent 2>&1 | grep -v "npm WARN" || true
+npm install --silent
 
-# ✅ APLICAR PARCHE PARA ERROR markedUnread (FIX 3)
-echo -e "${YELLOW}🔧 Aplicando parche para error WhatsApp Web...${NC}"
-find node_modules/whatsapp-web.js -name "Client.js" -type f -exec sed -i 's/if (chat && chat.markedUnread)/if (false \&\& chat.markedUnread)/g' {} \; 2>/dev/null || true
-find node_modules/whatsapp-web.js -name "Client.js" -type f -exec sed -i 's/const sendSeen = async (chatId) => {/const sendSeen = async (chatId) => { console.log("[DEBUG] sendSeen deshabilitado"); return;/g' {} \; 2>/dev/null || true
-
-echo -e "${GREEN}✅ Parche markedUnread aplicado${NC}"
-
-# Crear bot.js CON TODOS LOS FIXES (INCLUYENDO AJUSTES DE 2h Y CRON 15min)
-echo -e "${YELLOW}📝 Creando bot.js con todos los fixes...${NC}"
+# ================================================
+# CREAR BOT CON AUTH POR TELÉFONO
+# ================================================
+echo -e "\n${CYAN}${BOLD}🤖 CREANDO BOT CON AUTH POR TELÉFONO...${NC}"
 
 cat > "bot.js" << 'BOTEOF'
-const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
-const qrcodeTerminal = require('qrcode-terminal');
+const wppconnect = require('@wppconnect-team/wppconnect');
+const qrcode = require('qrcode-terminal');
 const QRCode = require('qrcode');
 const moment = require('moment');
 const sqlite3 = require('sqlite3').verbose();
@@ -294,855 +307,475 @@ const chalk = require('chalk');
 const cron = require('node-cron');
 const fs = require('fs');
 const path = require('path');
-const axios = require('axios');
+const express = require('express');
+const bodyParser = require('body-parser');
 
 const execPromise = util.promisify(exec);
 
-function loadConfig() {
-    delete require.cache[require.resolve('/opt/ssh-bot/config/config.json')];
-    return require('/opt/ssh-bot/config/config.json');
-}
-
-let config = loadConfig();
-const db = new sqlite3.Database(config.paths.database);
-
-// ✅ FIX 4: MERCADOPAGO SDK V2.X - INICIALIZACIÓN CORRECTA
-let mpClient = null;
-let mpPreference = null;
-
-function initMercadoPago() {
-    config = loadConfig();
-    if (config.mercadopago.access_token && config.mercadopago.access_token !== '') {
-        try {
-            const { MercadoPagoConfig, Preference } = require('mercadopago');
-            
-            // ✅ Cliente SDK v2.x
-            mpClient = new MercadoPagoConfig({ 
-                accessToken: config.mercadopago.access_token,
-                options: { timeout: 5000, idempotencyKey: true }
-            });
-            
-            // ✅ Cliente de preferencias
-            mpPreference = new Preference(mpClient);
-            
-            console.log(chalk.green('✅ MercadoPago SDK v2.x ACTIVO'));
-            console.log(chalk.cyan(`🔑 Token: ${config.mercadopago.access_token.substring(0, 20)}...`));
-            return true;
-        } catch (error) {
-            console.log(chalk.red('❌ Error inicializando MP:'), error.message);
-            mpClient = null;
-            mpPreference = null;
-            return false;
-        }
+// Configuración
+const CONFIG = {
+    server_ip: process.env.SERVER_IP || 'TU_IP_AQUI',
+    password: 'mgvpn247',
+    test_hours: 1,
+    prices: {
+        '7': 1500,
+        '15': 2500,
+        '30': 5500,
+        '50': 8500
     }
-    console.log(chalk.yellow('⚠️ MercadoPago NO configurado (token vacío)'));
-    return false;
-}
-
-let mpEnabled = initMercadoPago();
-moment.locale('es');
+};
 
 console.log(chalk.cyan.bold('\n╔══════════════════════════════════════════════════════════════╗'));
-console.log(chalk.cyan.bold('║      🤖 SSH BOT PRO v8.6 - ALL FIXES APPLIED                ║'));
+console.log(chalk.cyan.bold('║           🤖 SSH BOT - AUTH POR TELÉFONO/CÓDIGO            ║'));
 console.log(chalk.cyan.bold('╚══════════════════════════════════════════════════════════════╝\n'));
-console.log(chalk.yellow(`📍 IP: ${config.bot.server_ip}`));
-console.log(chalk.yellow(`💳 MercadoPago: ${mpEnabled ? '✅ SDK v2.x ACTIVO' : '❌ NO CONFIGURADO'}`));
-console.log(chalk.green('✅ WhatsApp Web parcheado (no markedUnread error)'));
-console.log(chalk.green('✅ Fechas ISO 8601 corregidas'));
-console.log(chalk.green('✅ APK automático desde /root'));
-console.log(chalk.green('✅ Test 2 horas exactas'));
-console.log(chalk.green('✅ Limpieza cada 15 minutos'));
+console.log(chalk.yellow(`📍 IP: ${CONFIG.server_ip}`));
+console.log(chalk.yellow(`🔐 Contraseña: ${CONFIG.password}`));
+console.log(chalk.green('✅ Sistema de auth por teléfono activado'));
+console.log(chalk.green('✅ No requiere QR - Usa número + código'));
 
-// Servidor APK
-let apkServer = null;
-function startAPKServer(apkPath) {
-    return new Promise((resolve) => {
-        try {
-            const http = require('http');
-            const fileName = path.basename(apkPath);
-            
-            apkServer = http.createServer((req, res) => {
-                if (req.url === '/' || req.url === `/${fileName}`) {
-                    try {
-                        const stat = fs.statSync(apkPath);
-                        res.writeHead(200, {
-                            'Content-Type': 'application/vnd.android.package-archive',
-                            'Content-Length': stat.size,
-                            'Content-Disposition': `attachment; filename="${fileName}"`
-                        });
-                        
-                        const readStream = fs.createReadStream(apkPath);
-                        readStream.pipe(res);
-                        console.log(chalk.cyan(`📥 APK descargado: ${fileName}`));
-                    } catch (err) {
-                        res.writeHead(404);
-                        res.end('APK no encontrado');
-                    }
-                } else {
-                    res.writeHead(404);
-                    res.end('Not found');
-                }
-            });
-            
-            apkServer.listen(8001, '0.0.0.0', () => {
-                console.log(chalk.green(`✅ Servidor APK: http://${config.bot.server_ip}:8001/`));
-                resolve(true);
-            });
-            
-            setTimeout(() => {
-                if (apkServer) {
-                    apkServer.close();
-                    console.log(chalk.yellow('⏰ Servidor APK cerrado (1h)'));
-                }
-            }, 3600000);
-            
-        } catch (error) {
-            console.error(chalk.red('❌ Error servidor APK:'), error);
-            resolve(false);
-        }
+let client = null;
+const db = new sqlite3.Database('/opt/ssh-bot-phone/data/users.db');
+
+// Servidor web para panel
+const app = express();
+app.use(bodyParser.json());
+app.use(express.static('public'));
+
+app.get('/status', (req, res) => {
+    res.json({
+        status: client ? 'connected' : 'disconnected',
+        server_ip: CONFIG.server_ip,
+        timestamp: moment().format('YYYY-MM-DD HH:mm:ss')
     });
-}
-
-const client = new Client({
-    authStrategy: new LocalAuth({dataPath: '/root/.wwebjs_auth', clientId: 'ssh-bot-v86'}),
-    puppeteer: {
-        headless: true,
-        executablePath: config.paths.chromium,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--no-first-run', '--disable-extensions'],
-        timeout: 60000
-    },
-    authTimeoutMs: 60000
 });
 
-let qrCount = 0;
-
-client.on('qr', (qr) => {
-    qrCount++;
-    console.clear();
-    console.log(chalk.yellow.bold(`\n╔════════ 📱 QR #${qrCount} - ESCANEA AHORA ════════╗\n`));
-    qrcodeTerminal.generate(qr, { small: true });
-    QRCode.toFile('/root/qr-whatsapp.png', qr, { width: 500 }).catch(() => {});
-    console.log(chalk.cyan('\n1️⃣ Abre WhatsApp → Dispositivos vinculados'));
-    console.log(chalk.cyan('2️⃣ Escanea el QR ☝️'));
-    console.log(chalk.green('\n💾 QR guardado: /root/qr-whatsapp.png\n'));
+app.listen(3000, () => {
+    console.log(chalk.cyan('🌐 Panel web en: http://localhost:3000'));
 });
 
-client.on('authenticated', () => console.log(chalk.green('✅ Autenticado')));
-client.on('loading_screen', (p, m) => console.log(chalk.yellow(`⏳ Cargando: ${p}% - ${m}`)));
-client.on('ready', () => {
-    console.clear();
-    console.log(chalk.green.bold('\n✅ BOT CONECTADO Y OPERATIVO\n'));
-    console.log(chalk.cyan('💬 Envía "menu" a tu WhatsApp\n'));
-    qrCount = 0;
-});
-client.on('auth_failure', (m) => console.log(chalk.red('❌ Error auth:'), m));
-client.on('disconnected', (r) => console.log(chalk.yellow('⚠️ Desconectado:'), r));
-
-function generateUsername() {
-    return 'user' + Math.random().toString(36).substr(2, 6);
-}
-
-function generatePassword() {
-    return Math.random().toString(36).substr(2, 10) + Math.random().toString(36).substr(2, 4).toUpperCase();
-}
-
-async function createSSHUser(phone, username, password, days, connections = 1) {
-    if (days === 0) {
-        // ✅ USUARIO TEST - 2 HORAS EXACTAS (AJUSTADO)
-        const expireFull = moment().add(2, 'hours').format('YYYY-MM-DD HH:mm:ss');
-        const expireDate = moment().add(2, 'hours').format('YYYY-MM-DD');
+// Función para iniciar WhatsApp
+async function startWhatsApp() {
+    try {
+        console.log(chalk.yellow('🚀 Iniciando WhatsApp con WPPConnect...'));
         
-        console.log(chalk.yellow(`⌛ Test ${username} expira: ${expireFull} (2 horas)`));
+        client = await wppconnect.create({
+            session: 'ssh-bot-session',
+            catchQR: (base64Qr, asciiQR) => {
+                console.log(chalk.green('\n📱 OPCIONAL: Si prefieres usar QR, escanea este:'));
+                qrcode.generate(asciiQR, { small: true });
+                
+                // Guardar QR
+                const qrPath = '/root/qr-whatsapp.png';
+                const qrBuffer = Buffer.from(base64Qr.replace('data:image/png;base64,', ''), 'base64');
+                fs.writeFileSync(qrPath, qrBuffer);
+                console.log(chalk.cyan(`💾 QR guardado: ${qrPath}`));
+            },
+            statusFind: (statusSession, session) => {
+                console.log(chalk.blue('🔍 Estado sesión:'), statusSession);
+                console.log(chalk.blue('📱 Sesión:'), session);
+                
+                if (statusSession === 'isLogged') {
+                    console.log(chalk.green('✅ Ya hay una sesión activa'));
+                } else if (statusSession === 'notLogged') {
+                    console.log(chalk.yellow('⚠️  No hay sesión, necesitas autenticarte'));
+                }
+            },
+            headless: true,
+            devtools: false,
+            useChrome: true,
+            debug: false,
+            logQR: true,
+            browserWS: '',
+            browserArgs: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+                '--no-first-run',
+                '--disable-extensions'
+            ],
+            puppeteerOptions: {
+                executablePath: '/usr/bin/google-chrome'
+            },
+            disableWelcome: true,
+            updatesLog: true,
+            autoClose: 0,
+            tokenStore: 'file',
+            folderNameToken: '/opt/ssh-bot-phone/sessions',
+            createPathFileToken: true
+        });
+
+        console.log(chalk.green('✅ WPPConnect inicializado'));
         
-        const commands = [
-            `useradd -m -s /bin/bash ${username}`,
-            `echo "${username}:${password}" | chpasswd`
-        ];
-        
-        for (const cmd of commands) {
-            try {
-                await execPromise(cmd);
-            } catch (error) {
-                console.error(chalk.red(`❌ Error: ${cmd}`), error.message);
-                throw error;
+        // Evento cuando está listo
+        client.onStateChange((state) => {
+            console.log(chalk.blue('🔄 Estado cambio:'), state);
+            
+            if (state === 'CONNECTED') {
+                console.log(chalk.green.bold('\n✅ WHATSAPP CONECTADO CORRECTAMENTE'));
+                console.log(chalk.cyan('💬 Envía "menu" a este número para comenzar\n'));
             }
-        }
-        
-        const tipo = 'test';
-        return new Promise((resolve, reject) => {
-            db.run(`INSERT INTO users (phone, username, password, tipo, expires_at, max_connections, status) VALUES (?, ?, ?, ?, ?, ?, 1)`,
-                [phone, username, password, tipo, expireFull, 1],
-                (err) => err ? reject(err) : resolve({ 
-                    username, 
-                    password, 
-                    expires: expireFull,
-                    tipo: 'test',
-                    duration: '2 horas'  // ✅ CAMBIADO A 2 HORAS
-                }));
         });
-    } else {
-        // Usuario PREMIUM - días completos (SIN CAMBIOS)
-        const expireDate = moment().add(days, 'days').format('YYYY-MM-DD');
-        const expireFull = moment().add(days, 'days').format('YYYY-MM-DD 23:59:59');
-        
-        console.log(chalk.yellow(`⌛ Premium ${username} expira: ${expireDate}`));
-        
-        try {
-            await execPromise(`useradd -M -s /bin/false -e ${expireDate} ${username} && echo "${username}:${password}" | chpasswd`);
-        } catch (error) {
-            console.error(chalk.red('❌ Error creando premium:'), error.message);
-            throw error;
-        }
-        
-        const tipo = 'premium';
-        return new Promise((resolve, reject) => {
-            db.run(`INSERT INTO users (phone, username, password, tipo, expires_at, max_connections, status) VALUES (?, ?, ?, ?, ?, ?, 1)`,
-                [phone, username, password, tipo, expireFull, 1],
-                (err) => err ? reject(err) : resolve({ 
-                    username, 
-                    password, 
-                    expires: expireFull,
-                    tipo: 'premium',
-                    duration: `${days} días`
-                }));
+
+        // Escuchar mensajes
+        client.onMessage(async (message) => {
+            try {
+                const phone = message.from;
+                const text = message.body.toLowerCase().trim();
+                
+                if (phone.includes('@g.us')) return;
+                
+                console.log(chalk.cyan(`📩 [${phone.split('@')[0]}]: ${text.substring(0, 50)}`));
+                
+                // MENU PRINCIPAL
+                if (text === 'menu' || text === 'hola' || text === 'start' || text === 'help') {
+                    const menu = `🎟️ *MENU PRINCIPAL - SSH BOT*
+
+1️⃣ *PRUEBA GRATIS* - 1 hora
+2️⃣ *COMPRAR USUARIO* - Planes disponibles
+3️⃣ *RENOVAR USUARIO* - Extender tiempo
+4️⃣ *DESCARGAR APP* - Cliente SSH
+
+📱 *IP SERVIDOR:* ${CONFIG.server_ip}
+🔐 *CONTRASEÑA:* ${CONFIG.password}
+
+Escribe el *NÚMERO* de la opción deseada.`;
+                    
+                    await client.sendText(phone, menu);
+                }
+                
+                // OPCIÓN 1: PRUEBA GRATIS
+                else if (text === '1') {
+                    // Verificar si ya usó prueba hoy
+                    const today = moment().format('YYYY-MM-DD');
+                    db.get('SELECT COUNT(*) as count FROM daily_tests WHERE phone = ? AND date = ?', 
+                        [phone, today], async (err, row) => {
+                            if (err || (row && row.count > 0)) {
+                                await client.sendText(phone, `⚠️ *YA USASTE TU PRUEBA HOY*
+
+Solo puedes crear 1 prueba por día.
+Vuelve mañana para otra prueba gratuita.`);
+                                return;
+                            }
+                            
+                            // Crear usuario de prueba
+                            const username = 'TEST' + Math.floor(1000 + Math.random() * 9000);
+                            const expireTime = moment().add(CONFIG.test_hours, 'hours').format('DD/MM/YYYY HH:mm');
+                            
+                            try {
+                                // Crear usuario en sistema
+                                await execPromise(`useradd -M -s /bin/false ${username} && echo "${username}:${CONFIG.password}" | chpasswd`);
+                                
+                                // Guardar en BD
+                                db.run(`INSERT INTO users (phone, username, password, tipo, expires_at, max_connections, status) VALUES (?, ?, ?, 'test', datetime('now', '+1 hour'), 1, 1)`,
+                                    [phone, username, CONFIG.password]);
+                                
+                                // Registrar prueba diaria
+                                db.run('INSERT INTO daily_tests (phone, date) VALUES (?, ?)', [phone, today]);
+                                
+                                const response = `✅ *PRUEBA CREADA EXITOSAMENTE*
+
+👤 *Usuario:* \`${username}\`
+🔑 *Contraseña:* \`${CONFIG.password}\`
+⏰ *Expira:* ${expireTime}
+🔌 *Conexiones:* 1 dispositivo
+
+📱 *PARA CONECTARSE:*
+• IP: ${CONFIG.server_ip}
+• Puerto: 22
+• Usuario: ${username}
+• Contraseña: ${CONFIG.password}
+
+💾 *APP RECOMENDADA:* JuiceSSH (Play Store)
+🔗 *Tutorial:* https://youtube.com`;
+                                
+                                await client.sendText(phone, response);
+                                console.log(chalk.green(`✅ Prueba creada: ${username} para ${phone}`));
+                                
+                            } catch (error) {
+                                console.error(chalk.red('❌ Error creando prueba:'), error);
+                                await client.sendText(phone, '❌ Error al crear prueba. Intenta más tarde.');
+                            }
+                        });
+                }
+                
+                // OPCIÓN 2: COMPRAR
+                else if (text === '2') {
+                    const plans = `💰 *PLANES DISPONIBLES*
+
+1️⃣ *7 DÍAS* - $${CONFIG.prices['7']} ARS
+2️⃣ *15 DÍAS* - $${CONFIG.prices['15']} ARS  
+3️⃣ *30 DÍAS* - $${CONFIG.prices['30']} ARS
+4️⃣ *50 DÍAS* - $${CONFIG.prices['50']} ARS
+
+🔐 *CONTRASEÑA:* ${CONFIG.password}
+🔌 *CONEXIONES:* 1 dispositivo
+
+Escribe el *NÚMERO* del plan que deseas.`;
+                    
+                    await client.sendText(phone, plans);
+                }
+                
+                // OPCIÓN 3: RENOVAR
+                else if (text === '3') {
+                    await client.sendText(phone, `🔄 *RENOVAR USUARIO*
+
+Para renovar tu cuenta:
+1. Envía tu nombre de usuario actual
+2. Selecciona el plan de renovación
+3. Realiza el pago
+
+O contacta soporte para asistencia.`);
+                }
+                
+                // OPCIÓN 4: DESCARGAR APP
+                else if (text === '4') {
+                    await client.sendText(phone, `📱 *DESCARGAR APLICACIÓN*
+
+🔗 *Enlace de descarga:*
+https://www.mediafire.com/file/p8kgthxbsid7xws/MAJ/DNI_AND_FIL
+
+📋 *Instrucciones:*
+1. Descarga e instala la APK
+2. Configura con:
+   • Servidor: ${CONFIG.server_ip}
+   • Usuario: (el proporcionado)
+   • Contraseña: ${CONFIG.password}
+   • Puerto: 22
+
+⚠️ *Nota:* Si tu dispositivo bloquea la instalación, activa "Orígenes desconocidos" en ajustes.`);
+                }
+                
+                // PLANES ESPECÍFICOS
+                else if (['1', '2', '3', '4'].includes(text)) {
+                    const planMap = {
+                        '1': { days: 7, price: CONFIG.prices['7'] },
+                        '2': { days: 15, price: CONFIG.prices['15'] },
+                        '3': { days: 30, price: CONFIG.prices['30'] },
+                        '4': { days: 50, price: CONFIG.prices['50'] }
+                    };
+                    
+                    const plan = planMap[text];
+                    if (plan) {
+                        const response = `🗓️ *PLAN ${plan.days} DÍAS*
+
+• *Duración:* ${plan.days} días
+• *Precio:* $${plan.price} ARS
+• *Contraseña:* ${CONFIG.password}
+• *Conexiones:* 1 dispositivo
+
+💳 *MÉTODOS DE PAGO:*
+1. MercadoPago (automático)
+2. Transferencia bancaria
+3. Efectivo
+
+Para pagar con MercadoPago, escribe *pagar ${plan.days}*
+Para otros métodos, escribe *otros métodos*`;
+                        
+                        await client.sendText(phone, response);
+                    }
+                }
+                
+                // COMANDO PAGAR
+                else if (text.startsWith('pagar')) {
+                    await client.sendText(phone, `💳 *SISTEMA DE PAGOS*
+
+Actualmente el sistema de pagos automáticos está en configuración.
+
+📞 *PAGO MANUAL:*
+1. Realiza transferencia a:
+   • Alias: ssh.vpn.bot
+   • CBU: 0000000000000000000
+2. Envía comprobante a este WhatsApp
+3. Tu usuario será activado en minutos
+
+💬 Para consultas: https://wa.me/543435071016`);
+                }
+                
+                // COMANDO NO RECONOCIDO
+                else {
+                    await client.sendText(phone, `❌ *COMANDO NO RECONOCIDO*
+
+Escribe *menu* para ver las opciones disponibles.
+
+📞 *SOPORTE:* https://wa.me/543435071016`);
+                }
+                
+            } catch (error) {
+                console.error(chalk.red('❌ Error procesando mensaje:'), error);
+            }
         });
+
+        console.log(chalk.green('✅ Bot listo para recibir mensajes'));
+        
+    } catch (error) {
+        console.error(chalk.red('❌ Error iniciando WhatsApp:'), error);
+        console.log(chalk.yellow('🔄 Reintentando en 10 segundos...'));
+        setTimeout(startWhatsApp, 10000);
     }
 }
 
-function canCreateTest(phone) {
-    return new Promise((resolve) => {
-        const today = moment().format('YYYY-MM-DD');
-        db.get('SELECT COUNT(*) as count FROM daily_tests WHERE phone = ? AND date = ?', [phone, today],
-            (err, row) => resolve(!err && row && row.count === 0));
-    });
-}
-
-function registerTest(phone) {
-    db.run('INSERT OR IGNORE INTO daily_tests (phone, date) VALUES (?, ?)', [phone, moment().format('YYYY-MM-DD')]);
-}
-
-// ✅ FIX 2: MERCADOPAGO SDK V2.X - FECHAS ISO 8601 CORREGIDAS
-async function createMercadoPagoPayment(phone, plan, days, amount, connections) {
+// Función para crear usuario SSH
+async function createSSHUser(username, days = 0) {
     try {
-        config = loadConfig();
-        
-        // ✅ Verificar token
-        if (!config.mercadopago.access_token || config.mercadopago.access_token === '') {
-            console.log(chalk.red('❌ Token MP vacío'));
-            return { success: false, error: 'MercadoPago no configurado - Token vacío' };
+        if (days === 0) {
+            // Usuario de prueba (1 hora)
+            await execPromise(`useradd -M -s /bin/false ${username} && echo "${username}:${CONFIG.password}" | chpasswd`);
+            return { success: true, expires: moment().add(1, 'hour').format('DD/MM/YYYY HH:mm') };
+        } else {
+            // Usuario premium
+            const expireDate = moment().add(days, 'days').format('YYYY-MM-DD');
+            await execPromise(`useradd -M -s /bin/false -e ${expireDate} ${username} && echo "${username}:${CONFIG.password}" | chpasswd`);
+            return { success: true, expires: expireDate };
         }
-        
-        // ✅ Reinicializar si es necesario
-        if (!mpPreference) {
-            console.log(chalk.yellow('🔄 Reinicializando MercadoPago...'));
-            mpEnabled = initMercadoPago();
-            if (!mpEnabled || !mpPreference) {
-                return { success: false, error: 'No se pudo inicializar MercadoPago' };
-            }
-        }
-        
-        const phoneClean = phone.split('@')[0];
-        const paymentId = `PREMIUM-${phoneClean}-${plan}-${Date.now()}`;
-        
-        console.log(chalk.cyan(`🔄 Creando pago MP: ${paymentId}`));
-        
-        // ✅ FIX 2: FECHA ISO 8601 CORRECTA PARA SDK v2.x
-        const expirationDate = moment().add(24, 'hours');
-        const isoDate = expirationDate.toISOString();
-        
-        // ✅ PREFERENCIA CON SDK V2.X - FECHAS CORREGIDAS
-        const preferenceData = {
-            items: [{
-                title: `SERVICIO PREMIUM ${days} DÍAS`,
-                description: `Acceso completo por ${days} días`,
-                quantity: 1,
-                currency_id: config.prices.currency || 'ARS',
-                unit_price: parseFloat(amount)
-            }],
-            external_reference: paymentId,
-            expires: true,
-            expiration_date_from: moment().toISOString(),
-            expiration_date_to: isoDate,
-            back_urls: {
-                success: `https://wa.me/${phoneClean}?text=Pago%20exitoso`,
-                failure: `https://wa.me/${phoneClean}?text=Pago%20fallido`,
-                pending: `https://wa.me/${phoneClean}?text=Pago%20pendiente`
-            },
-            auto_return: 'approved',
-            statement_descriptor: 'SERVICIO PREMIUM',
-            notification_url: `http://${config.bot.server_ip}:3000/webhook`
-        };
-        
-        console.log(chalk.yellow(`📦 Producto: ${preferenceData.items[0].title}`));
-        console.log(chalk.yellow(`💰 Monto: $${amount} ${config.prices.currency}`));
-        console.log(chalk.yellow(`📅 Expiración ISO 8601: ${isoDate}`));
-        
-        // ✅ CREAR PREFERENCIA CON SDK V2.X
-        const response = await mpPreference.create({ body: preferenceData });
-        
-        console.log(chalk.cyan('📄 Respuesta MP recibida'));
-        
-        if (response && response.id) {
-            const paymentUrl = response.init_point;
-            const qrPath = `${config.paths.qr_codes}/${paymentId}.png`;
-            
-            // Generar QR
-            await QRCode.toFile(qrPath, paymentUrl, { 
-                width: 400,
-                margin: 1,
-                color: {
-                    dark: '#000000',
-                    light: '#FFFFFF'
-                }
-            });
-            
-            // Guardar en BD
-            db.run(
-                `INSERT INTO payments (payment_id, phone, plan, days, amount, status, payment_url, qr_code, preference_id) VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?)`,
-                [paymentId, phone, plan, days, amount, paymentUrl, qrPath, response.id],
-                (err) => {
-                    if (err) {
-                        console.error(chalk.red('❌ Error guardando en BD:'), err.message);
-                    }
-                }
-            );
-            
-            console.log(chalk.green(`✅ Pago creado exitosamente`));
-            console.log(chalk.cyan(`🔗 URL: ${paymentUrl.substring(0, 50)}...`));
-            console.log(chalk.cyan(`📱 Preference ID: ${response.id}`));
-            
-            return { 
-                success: true, 
-                paymentId, 
-                paymentUrl, 
-                qrPath,
-                preferenceId: response.id
-            };
-        }
-        
-        throw new Error('Respuesta inválida de MercadoPago - sin ID de preferencia');
-        
     } catch (error) {
-        console.error(chalk.red('❌ Error MercadoPago:'), error.message);
-        
-        // Log detallado
-        if (error.cause) {
-            console.error(chalk.red('📄 Causa:'), JSON.stringify(error.cause, null, 2));
-        }
-        if (error.response) {
-            console.error(chalk.red('📄 Respuesta:'), JSON.stringify(error.response, null, 2));
-        }
-        
-        // Guardar log en BD
-        db.run(
-            `INSERT INTO logs (type, message, data) VALUES ('mp_error', ?, ?)`,
-            [error.message, JSON.stringify({ stack: error.stack, cause: error.cause })]
-        );
-        
+        console.error(chalk.red('❌ Error creando usuario SSH:'), error);
         return { success: false, error: error.message };
     }
 }
 
-async function checkPendingPayments() {
-    config = loadConfig();
-    if (!config.mercadopago.access_token || config.mercadopago.access_token === '') return;
+// Cron para limpiar usuarios expirados
+cron.schedule('*/15 * * * *', async () => {
+    console.log(chalk.yellow('🧹 Limpiando usuarios expirados...'));
     
-    db.all('SELECT * FROM payments WHERE status = "pending" AND created_at > datetime("now", "-48 hours")', async (err, payments) => {
-        if (err || !payments || payments.length === 0) return;
+    const now = moment().format('YYYY-MM-DD HH:mm:ss');
+    db.all('SELECT username FROM users WHERE expires_at < ? AND status = 1', [now], async (err, rows) => {
+        if (err || !rows) return;
         
-        console.log(chalk.yellow(`🔍 Verificando ${payments.length} pagos pendientes...`));
-        
-        for (const payment of payments) {
+        for (const row of rows) {
             try {
-                // ✅ Usar API v1 para búsqueda (más estable)
-                const url = `https://api.mercadopago.com/v1/payments/search?external_reference=${payment.payment_id}`;
-                const response = await axios.get(url, {
-                    headers: { 
-                        'Authorization': `Bearer ${config.mercadopago.access_token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    timeout: 15000
-                });
-                
-                if (response.data && response.data.results && response.data.results.length > 0) {
-                    const mpPayment = response.data.results[0];
-                    
-                    console.log(chalk.cyan(`📋 Pago ${payment.payment_id}: ${mpPayment.status}`));
-                    
-                    if (mpPayment.status === 'approved') {
-                        console.log(chalk.green(`✅ PAGO APROBADO: ${payment.payment_id}`));
-                        
-                        const username = generateUsername();
-                        const password = generatePassword();
-                        const connMap = { '7d': 1, '15d': 1, '30d': 1 };
-                        const connections = connMap[payment.plan] || 1;
-                        
-                        const result = await createSSHUser(payment.phone, username, password, payment.days, connections);
-                        
-                        db.run(`UPDATE payments SET status = 'approved', approved_at = CURRENT_TIMESTAMP WHERE payment_id = ?`, [payment.payment_id]);
-                        
-                        const expireDate = moment().add(payment.days, 'days').format('DD/MM/YYYY');
-                        
-                        const message = `╔══════════════════════════════════════╗
-║   🎉 *PAGO CONFIRMADO*               ║
-╚══════════════════════════════════════╝
-
-✅ Tu compra ha sido aprobada
-
-📋 *DATOS DE ACCESO:*
-👤 Usuario: *${username}*
-🔑 Contraseña: *${password}*
-
-⏰ *VÁLIDO HASTA:* ${expireDate}
-🔌 *CONEXIÓN:* 1
-
-📱 *INSTALACIÓN:*
-1. Descarga la app (Escribe *5*)
-2. Ingresa tus datos
-3. ¡Conéctate automáticamente!
-
-🎊 ¡Disfruta del servicio premium!
-
-💬 Soporte: *Escribe 6*`;
-                        
-                        await client.sendMessage(payment.phone, message, { sendSeen: false });
-                        console.log(chalk.green(`✅ Usuario creado y notificado: ${username}`));
-                    }
-                } else {
-                    console.log(chalk.gray(`⏳ Sin respuesta para ${payment.payment_id}`));
-                }
-            } catch (error) {
-                console.error(chalk.red(`❌ Error verificando ${payment.payment_id}:`), error.message);
+                await execPromise(`pkill -u ${row.username} 2>/dev/null || true`);
+                await execPromise(`userdel -f ${row.username} 2>/dev/null || true`);
+                db.run('UPDATE users SET status = 0 WHERE username = ?', [row.username]);
+                console.log(chalk.green(`🗑️ Eliminado: ${row.username}`));
+            } catch (e) {
+                console.error(chalk.red(`Error eliminando ${row.username}:`), e.message);
             }
         }
     });
+});
+
+// Cron para verificar estado
+cron.schedule('*/5 * * * *', () => {
+    if (client) {
+        console.log(chalk.blue('🔄 Verificando conexión WhatsApp...'));
+        client.getHostDevice().then(device => {
+            console.log(chalk.green(`✅ Conexión activa: ${device.pushname || 'Dispositivo'}`));
+        }).catch(err => {
+            console.log(chalk.red('❌ Conexión perdida, reiniciando...'));
+            startWhatsApp();
+        });
+    }
+});
+
+// Iniciar todo
+async function start() {
+    console.log(chalk.yellow('🚀 Iniciando sistema SSH Bot...'));
+    
+    // Actualizar IP si no está configurada
+    if (CONFIG.server_ip === 'TU_IP_AQUI') {
+        try {
+            const ip = await execPromise('curl -4 -s ifconfig.me');
+            CONFIG.server_ip = ip.stdout.trim();
+            console.log(chalk.green(`📍 IP actualizada: ${CONFIG.server_ip}`));
+        } catch (error) {
+            console.log(chalk.red('❌ No se pudo obtener IP'));
+        }
+    }
+    
+    // Iniciar WhatsApp
+    await startWhatsApp();
+    
+    console.log(chalk.green.bold('\n✅ SISTEMA INICIADO CORRECTAMENTE'));
+    console.log(chalk.cyan('📱 Auth por teléfono/código activado'));
+    console.log(chalk.cyan('🌐 Panel: http://localhost:3000/status'));
+    console.log(chalk.cyan('💬 Envía "menu" al WhatsApp para comenzar\n'));
 }
 
-client.on('message', async (msg) => {
-    const text = msg.body.toLowerCase().trim();
-    const phone = msg.from;
-    if (phone.includes('@g.us')) return;
-    
-    config = loadConfig();
-    console.log(chalk.cyan(`📩 [${phone.split('@')[0]}]: ${text.substring(0, 30)}`));
-    
-    // ✅ FIX 3: Enviar mensajes sin error markedUnread
-    if (['menu', 'hola', 'start', 'hi'].includes(text)) {
-        await client.sendMessage(phone, `╔══════════════════════════════════════╗
-║   🤖 *SSH BOT PRO v8.6*              ║
-╚══════════════════════════════════════╝
-
-📋 *MENÚ:*
-
-🆓 *1* - Prueba GRATIS (2h)  ⚡
-💰 *2* - Planes premium
-👤 *3* - Mis cuentas
-💳 *4* - Estado de pago
-📱 *5* - Descargar APP
-🆘 *6* - Soporte
-
-💬 Responde con el número`, { sendSeen: false });
+// Manejar cierre
+process.on('SIGINT', async () => {
+    console.log(chalk.yellow('\n⚠️  Cerrando bot...'));
+    if (client) {
+        await client.close();
     }
-    else if (text === '1') {
-        if (!(await canCreateTest(phone))) {
-            await client.sendMessage(phone, `⚠️ *YA USASTE TU PRUEBA HOY*
-
-⏳ Vuelve mañana
-💎 *Escribe 2* para planes`, { sendSeen: false });
-            return;
-        }
-        await client.sendMessage(phone, '⏳ Creando cuenta test...', { sendSeen: false });
-        try {
-            const username = generateUsername();
-            const password = generatePassword();
-            await createSSHUser(phone, username, password, 0, 1);
-            registerTest(phone);
-            
-            await client.sendMessage(phone, `✅ *PRUEBA ACTIVADA*
-
-👤 Usuario: *${username}*
-🔑 Contraseña: *${password}*
-⏰ Duración: 2 horas  ⚡
-🔌 Conexión: 1
-
-📱 *PARA CONECTAR:*
-1. Descarga la app (Escribe *5*)
-2. Ingresa usuario y contraseña
-3. ¡Listo!
-
-💎 ¿Te gustó? *Escribe 2*`, { sendSeen: false });
-            
-            console.log(chalk.green(`✅ Test creado: ${username}`));
-        } catch (error) {
-            await client.sendMessage(phone, `❌ Error al crear cuenta: ${error.message}`, { sendSeen: false });
-        }
-    }
-    else if (text === '2') {
-        await client.sendMessage(phone, `💎 *PLANES PREMIUM*
-
-🥉 *7 días* - $${config.prices.price_7d} ARS
-   1 conexión
-   _comprar7_
-
-🥈 *15 días* - $${config.prices.price_15d} ARS
-   1 conexión
-   _comprar15_
-
-🥇 *30 días* - $${config.prices.price_30d} ARS
-   1 conexión
-   _comprar30_
-
-💳 Pago: MercadoPago
-⚡ Activación: 2-5 min
-
-Escribe el comando`, { sendSeen: false });
-    }
-    else if (['comprar7', 'comprar15', 'comprar30'].includes(text)) {
-        config = loadConfig();
-        
-        console.log(chalk.yellow(`🔑 Verificando token MP...`));
-        
-        if (!config.mercadopago.access_token || config.mercadopago.access_token === '') {
-            await client.sendMessage(phone, `❌ *MERCADOPAGO NO CONFIGURADO*
-
-El administrador debe configurar MercadoPago primero.
-
-💬 Soporte: *Escribe 6*`, { sendSeen: false });
-            return;
-        }
-        
-        // Reinicializar MP si es necesario
-        if (!mpEnabled || !mpPreference) {
-            console.log(chalk.yellow('🔄 Reinicializando MercadoPago...'));
-            mpEnabled = initMercadoPago();
-        }
-        
-        if (!mpEnabled || !mpPreference) {
-            await client.sendMessage(phone, `❌ *ERROR CON MERCADOPAGO*
-
-El sistema de pagos no está disponible.
-
-💬 Contacta soporte: *Escribe 6*`, { sendSeen: false });
-            return;
-        }
-        
-        const planMap = {
-            'comprar7': { days: 7, amount: config.prices.price_7d, plan: '7d', conn: 1 },
-            'comprar15': { days: 15, amount: config.prices.price_15d, plan: '15d', conn: 1 },
-            'comprar30': { days: 30, amount: config.prices.price_30d, plan: '30d', conn: 1 }
-        };
-        
-        const p = planMap[text];
-        await client.sendMessage(phone, `⏳ Generando pago MercadoPago...
-
-📦 Plan: ${p.days} días
-💰 Monto: $${p.amount} ARS
-🔌 Conexión: ${p.conn}
-
-⏰ Procesando...`, { sendSeen: false });
-        
-        try {
-            const payment = await createMercadoPagoPayment(phone, p.plan, p.days, p.amount, p.conn);
-            
-            if (payment.success) {
-                await client.sendMessage(phone, `💳 *PAGO GENERADO EXITOSAMENTE*
-
-📦 Plan: ${p.days} días
-💰 $${p.amount} ARS
-🔌 ${p.conn} conexión
-
-🔗 *ENLACE DE PAGO:*
-${payment.paymentUrl}
-
-⏰ Válido: 24 horas
-📱 ID: ${payment.paymentId.substring(0, 25)}...
-
-🔄 Verificación automática cada 2 min
-✅ Te notificaré cuando se apruebe el pago
-
-💬 Escribe *4* para ver estado del pago`, { sendSeen: false });
-                
-                // Enviar QR si existe
-                if (fs.existsSync(payment.qrPath)) {
-                    try {
-                        const media = MessageMedia.fromFilePath(payment.qrPath);
-                        await client.sendMessage(phone, media, { caption: '📱 Escanea con la app de MercadoPago', sendSeen: false });
-                        console.log(chalk.green('✅ QR de pago enviado'));
-                    } catch (qrError) {
-                        console.error(chalk.red('⚠️ Error enviando QR:'), qrError.message);
-                    }
-                }
-            } else {
-                await client.sendMessage(phone, `❌ *ERROR AL GENERAR PAGO*
-
-Detalles: ${payment.error}
-
-Por favor, intenta de nuevo en unos minutos o contacta soporte.
-
-💬 Soporte: *Escribe 6*`, { sendSeen: false });
-            }
-        } catch (error) {
-            console.error(chalk.red('❌ Error en compra:'), error);
-            await client.sendMessage(phone, `❌ *ERROR INESPERADO*
-
-${error.message}
-
-💬 Contacta soporte: *Escribe 6*`, { sendSeen: false });
-        }
-    }
-    else if (text === '3') {
-        db.all(`SELECT username, password, tipo, expires_at, max_connections FROM users WHERE phone = ? AND status = 1 ORDER BY created_at DESC LIMIT 10`, [phone],
-            async (err, rows) => {
-                if (!rows || rows.length === 0) {
-                    await client.sendMessage(phone, `📋 *SIN CUENTAS*
-
-🆓 *1* - Prueba gratis
-💰 *2* - Ver planes`, { sendSeen: false });
-                    return;
-                }
-                let msg = `📋 *TUS CUENTAS ACTIVAS*
-
-`;
-                rows.forEach((a, i) => {
-                    const tipo = a.tipo === 'premium' ? '💎' : '🆓';
-                    const tipoText = a.tipo === 'premium' ? 'PREMIUM' : 'TEST';
-                    const expira = moment(a.expires_at).format('DD/MM HH:mm');
-                    
-                    msg += `*${i+1}. ${tipo} ${tipoText}*
-`;
-                    msg += `👤 *${a.username}*
-`;
-                    msg += `🔑 *${a.password}*
-`;
-                    msg += `⏰ ${expira}
-`;
-                    msg += `🔌 ${a.max_connections} conexión
-
-`;
-                });
-                msg += `📱 Para conectar descarga la app (Escribe *5*)`;
-                await client.sendMessage(phone, msg, { sendSeen: false });
-            });
-    }
-    else if (text === '4') {
-        db.all(`SELECT plan, amount, status, created_at, payment_url FROM payments WHERE phone = ? ORDER BY created_at DESC LIMIT 5`, [phone],
-            async (err, pays) => {
-                if (!pays || pays.length === 0) {
-                    await client.sendMessage(phone, `💳 *SIN PAGOS REGISTRADOS*
-
-*2* - Ver planes disponibles`, { sendSeen: false });
-                    return;
-                }
-                let msg = `💳 *ESTADO DE PAGOS*
-
-`;
-                pays.forEach((p, i) => {
-                    const emoji = p.status === 'approved' ? '✅' : '⏳';
-                    const statusText = p.status === 'approved' ? 'APROBADO' : 'PENDIENTE';
-                    msg += `*${i+1}. ${emoji} ${statusText}*
-`;
-                    msg += `Plan: ${p.plan} | $${p.amount} ARS
-`;
-                    msg += `Fecha: ${moment(p.created_at).format('DD/MM HH:mm')}
-`;
-                    if (p.status === 'pending' && p.payment_url) {
-                        msg += `🔗 ${p.payment_url.substring(0, 40)}...
-`;
-                    }
-                    msg += `
-`;
-                });
-                msg += `🔄 Verificación automática cada 2 minutos`;
-                await client.sendMessage(phone, msg, { sendSeen: false });
-            });
-    }
-    else if (text === '5') {
-        // Buscar APK automáticamente
-        const searchPaths = [
-            '/root/app.apk',
-            '/root/ssh-bot/app.apk',
-            '/root/android.apk',
-            '/root/vpn.apk'
-        ];
-        
-        let apkFound = null;
-        let apkName = 'app.apk';
-        
-        for (const filePath of searchPaths) {
-            if (fs.existsSync(filePath)) {
-                apkFound = filePath;
-                apkName = path.basename(filePath);
-                break;
-            }
-        }
-        
-        if (apkFound) {
-            try {
-                const stats = fs.statSync(apkFound);
-                const fileSize = (stats.size / (1024 * 1024)).toFixed(2);
-                
-                console.log(chalk.cyan(`📱 Enviando APK: ${apkName} (${fileSize}MB)`));
-                
-                await client.sendMessage(phone, `📱 *DESCARGANDO APP*
-
-📦 Archivo: ${apkName}
-📊 Tamaño: ${fileSize} MB
-
-⏳ Enviando archivo, espera...`, { sendSeen: false });
-                
-                const media = MessageMedia.fromFilePath(apkFound);
-                await client.sendMessage(phone, media, {
-                    caption: `📱 *${apkName}*
-
-✅ Archivo enviado correctamente
-
-📱 *INSTRUCCIONES:*
-1. Toca el archivo para instalar
-2. Permite "Fuentes desconocidas" si te lo pide
-3. Abre la app
-4. Ingresa tus datos de acceso
-
-💡 Si no ves el archivo, revisa la sección "Archivos" de WhatsApp`,
-                    sendSeen: false
-                });
-                
-                console.log(chalk.green(`✅ APK enviado exitosamente`));
-                
-            } catch (error) {
-                console.error(chalk.red('❌ Error enviando APK:'), error.message);
-                
-                // Fallback: servidor web
-                const serverStarted = await startAPKServer(apkFound);
-                if (serverStarted) {
-                    await client.sendMessage(phone, `📱 *ENLACE DE DESCARGA*
-
-El archivo es muy grande para WhatsApp.
-
-🔗 Descarga desde aquí:
-http://${config.bot.server_ip}:8001/${apkName}
-
-📱 Instrucciones:
-1. Abre el enlace en Chrome
-2. Descarga el archivo
-3. Instala y abre la app
-
-⚠️ El enlace expira en 1 hora`, { sendSeen: false });
-                } else {
-                    await client.sendMessage(phone, `❌ *ERROR AL ENVIAR APK*
-
-No se pudo enviar el archivo.
-
-📞 Contacta soporte:
-${config.links.support}`, { sendSeen: false });
-                }
-            }
-        } else {
-            await client.sendMessage(phone, `❌ *APK NO DISPONIBLE*
-
-El archivo de instalación no está disponible en el servidor.
-
-📞 Contacta al administrador:
-${config.links.support}
-
-💡 Ubicación esperada: /root/app.apk`, { sendSeen: false });
-        }
-    }
-    else if (text === '6') {
-        await client.sendMessage(phone, `🆘 *SOPORTE TÉCNICO*
-
-📞 Canal de soporte:
-${config.links.support}
-
-⏰ Horario: 9AM - 10PM
-
-💬 Escribe "menu" para volver al inicio`, { sendSeen: false });
-    }
+    process.exit(0);
 });
 
-// ✅ Verificar pagos cada 2 minutos
-cron.schedule('*/2 * * * *', () => {
-    console.log(chalk.yellow('🔄 Verificando pagos pendientes...'));
-    checkPendingPayments();
-});
-
-// ✅ AJUSTE: Limpiar usuarios expirados cada 15 minutos (antes cada hora)
-cron.schedule('*/15 * * * *', async () => {
-    const now = moment().format('YYYY-MM-DD HH:mm:ss');
-    console.log(chalk.yellow(`🧹 Limpiando usuarios expirados cada 15 minutos (${now})...`));
-    
-    db.all('SELECT username FROM users WHERE expires_at < ? AND status = 1', [now], async (err, rows) => {
-        if (err) {
-            console.error(chalk.red('❌ Error BD:'), err.message);
-            return;
-        }
-        if (!rows || rows.length === 0) return;
-        
-        for (const r of rows) {
-            try {
-                await execPromise(`pkill -u ${r.username} 2>/dev/null || true`);
-                await execPromise(`userdel -f ${r.username} 2>/dev/null || true`);
-                db.run('UPDATE users SET status = 0 WHERE username = ?', [r.username]);
-                console.log(chalk.green(`🗑️ Eliminado: ${r.username}`));
-            } catch (e) {
-                console.error(chalk.red(`Error eliminando ${r.username}:`), e.message);
-            }
-        }
-        console.log(chalk.green(`✅ Limpiados ${rows.length} usuarios expirados`));
-    });
-});
-
-// ✅ Limpiar pagos antiguos cada 24 horas
-cron.schedule('0 0 * * *', () => {
-    console.log(chalk.yellow('🧹 Limpiando pagos antiguos...'));
-    db.run(`DELETE FROM payments WHERE status = 'pending' AND created_at < datetime('now', '-7 days')`, (err) => {
-        if (!err) console.log(chalk.green('✅ Pagos antiguos limpiados'));
-    });
-});
-
-// ✅ MONITOR AUTOMÁTICO - VERIFICA CADA 30 SEGUNDOS SI HAY MÁS DE 1 CONEXIÓN
-setInterval(() => {
-    db.all('SELECT username FROM users WHERE status = 1', (err, rows) => {
-        if (!err && rows) {
-            rows.forEach(user => {
-                require('child_process').exec(`ps aux | grep "^${user.username}" | grep -v grep | wc -l`, (e, out) => {
-                    const cnt = parseInt(out) || 0;
-                    if (cnt > 1) {
-                        console.log(chalk.red(`⚠️ ${user.username} tiene ${cnt} conexiones (>1)`));
-                        require('child_process').exec(`pkill -u ${user.username} 2>/dev/null; sleep 1; pkill -u ${user.username} 2>/dev/null`);
-                    }
-                });
-            });
-        }
-    });
-}, 30000); // 30 segundos
-
-console.log(chalk.green('\n🚀 Inicializando bot...\n'));
-client.initialize();
+// Iniciar aplicación
+start();
 BOTEOF
 
-echo -e "${GREEN}✅ Bot creado con todos los fixes${NC}"
+echo -e "${GREEN}✅ Bot creado con auth por teléfono${NC}"
 
 # ================================================
-# CREAR PANEL CON VALIDACIÓN FIXED (FIX 1)
+# CREAR SCRIPT DE AUTENTICACIÓN
 # ================================================
-echo -e "\n${CYAN}${BOLD}🎛️  CREANDO PANEL DE CONTROL CON VALIDACIÓN FIXED...${NC}"
+echo -e "\n${CYAN}${BOLD}🔐 CREANDO SCRIPT DE AUTH...${NC}"
 
-cat > /usr/local/bin/sshbot << 'PANELEOF'
+cat > /usr/local/bin/auth-whatsapp << 'AUTHEOF'
 #!/bin/bash
-RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; BLUE='\033[0;34m'; NC='\033[0m'
 
-DB="/opt/ssh-bot/data/users.db"
-CONFIG="/opt/ssh-bot/config/config.json"
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}"
+echo -e "${GREEN}           🔐 AUTHENTICACIÓN WHATSAPP - SSH BOT           ${NC}"
+echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}\n"
+
+SESSION_DIR="/opt/ssh-bot-phone/sessions"
+
+if [ -f "$SESSION_DIR/ssh-bot-session.token.json" ]; then
+    echo -e "${GREEN}✅ Sesión existente encontrada${NC}"
+    echo -e "${YELLOW}El bot usará la sesión guardada automáticamente.${NC}"
+    echo -e "\n${CYAN}Para forzar nueva autenticación:${NC}"
+    echo -e "rm -rf $SESSION_DIR/*"
+else
+    echo -e "${YELLOW}⚠️  No hay sesión guardada${NC}"
+    echo -e "${CYAN}El bot pedirá autenticación al iniciar.${NC}"
+fi
+
+echo -e "\n${YELLOW}📱 MÉTODOS DE AUTH DISPONIBLES:${NC}"
+echo -e "1. ${GREEN}QR Code${NC} (se generará automáticamente)"
+echo -e "2. ${GREEN}Código de 6 dígitos${NC} (vía WhatsApp)"
+echo -e "3. ${GREEN}Pairing Code${NC} (código de vinculación)"
+
+echo -e "\n${CYAN}Para ver el QR (si se necesita):${NC}"
+echo -e "cat /root/qr-whatsapp.png"
+echo -e "\n${CYAN}Para ver logs de auth:${NC}"
+echo -e "pm2 logs ssh-bot-phone --lines 50"
+
+echo -e "\n${GREEN}✅ Script de auth creado${NC}"
+AUTHEOF
+
+chmod +x /usr/local/bin/auth-whatsapp
+
+# ================================================
+# CREAR PANEL DE CONTROL
+# ================================================
+echo -e "\n${CYAN}${BOLD}🎛️  CREANDO PANEL DE CONTROL...${NC}"
+
+cat > /usr/local/bin/sshbot-phone << 'PANELEOF'
+#!/bin/bash
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+DB="/opt/ssh-bot-phone/data/users.db"
+CONFIG="/opt/ssh-bot-phone/config/config.json"
 
 get_val() { jq -r "$1" "$CONFIG" 2>/dev/null; }
-set_val() { local t=$(mktemp); jq "$1 = $2" "$CONFIG" > "$t" && mv "$t" "$CONFIG"; }
 
 show_header() {
     clear
     echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║              🎛️  PANEL SSH BOT PRO v8.6                    ║${NC}"
-    echo -e "${CYAN}║               💳 MercadoPago SDK v2.x ALL FIXES            ║${NC}"
-    echo -e "${CYAN}║               ⏰ Test: 2h | ⚡ Limpieza: 15min              ║${NC}"
+    echo -e "${CYAN}║                🎛️  PANEL SSH BOT - PHONE AUTH             ║${NC}"
     echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
 }
 
@@ -1152,53 +785,48 @@ while true; do
     TOTAL_USERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users" 2>/dev/null || echo "0")
     ACTIVE_USERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE status=1" 2>/dev/null || echo "0")
     
-    STATUS=$(pm2 jlist 2>/dev/null | jq -r '.[] | select(.name=="ssh-bot") | .pm2_env.status' 2>/dev/null || echo "stopped")
+    STATUS=$(pm2 jlist 2>/dev/null | jq -r '.[] | select(.name=="ssh-bot-phone") | .pm2_env.status' 2>/dev/null || echo "stopped")
     if [[ "$STATUS" == "online" ]]; then
         BOT_STATUS="${GREEN}● ACTIVO${NC}"
+        BOT_UPTIME=$(pm2 jlist 2>/dev/null | jq -r '.[] | select(.name=="ssh-bot-phone") | .pm2_env.pm_uptime' 2>/dev/null)
+        if [ -n "$BOT_UPTIME" ]; then
+            UPTIME_SEC=$(( ( $(date +%s) - $BOT_UPTIME / 1000 ) ))
+            UPTIME_STR=$(printf '%dd %dh %dm %ds' $((UPTIME_SEC/86400)) $((UPTIME_SEC%86400/3600)) $((UPTIME_SEC%3600/60)) $((UPTIME_SEC%60)))
+        else
+            UPTIME_STR="N/A"
+        fi
     else
         BOT_STATUS="${RED}● DETENIDO${NC}"
-    fi
-    
-    MP_TOKEN=$(get_val '.mercadopago.access_token')
-    if [[ -n "$MP_TOKEN" && "$MP_TOKEN" != "" && "$MP_TOKEN" != "null" ]]; then
-        MP_STATUS="${GREEN}✅ SDK v2.x ACTIVO${NC}"
-    else
-        MP_STATUS="${RED}❌ NO CONFIGURADO${NC}"
-    fi
-    
-    APK_FOUND=""
-    if [[ -f "/root/app.apk" ]]; then
-        APK_SIZE=$(du -h "/root/app.apk" | cut -f1)
-        APK_FOUND="${GREEN}✅ ${APK_SIZE}${NC}"
-    else
-        APK_FOUND="${RED}❌ NO ENCONTRADO${NC}"
+        UPTIME_STR="N/A"
     fi
     
     echo -e "${YELLOW}📊 ESTADO DEL SISTEMA${NC}"
     echo -e "  Bot: $BOT_STATUS"
+    echo -e "  Uptime: ${CYAN}$UPTIME_STR${NC}"
     echo -e "  Usuarios: ${CYAN}$ACTIVE_USERS/$TOTAL_USERS${NC} activos/total"
-    echo -e "  MercadoPago: $MP_STATUS"
-    echo -e "  APK: $APK_FOUND"
-    echo -e "  Test: ${GREEN}2 horas${NC} | Limpieza: ${GREEN}cada 15 min${NC}"
-    echo -e "  Conexión por usuario: ${GREEN}1${NC}"
+    echo -e "  IP: ${GREEN}$(get_val '.bot.server_ip')${NC}"
+    echo -e "  Contraseña: ${GREEN}$(get_val '.bot.default_password')${NC}"
+    echo -e "  Test: ${GREEN}$(get_val '.bot.test_hours') hora(s)${NC}"
+    echo -e ""
+    
+    echo -e "${YELLOW}💰 PRECIOS:${NC}"
+    echo -e "  7 días: $ $(get_val '.prices.price_7d') ARS"
+    echo -e "  15 días: $ $(get_val '.prices.price_15d') ARS"
+    echo -e "  30 días: $ $(get_val '.prices.price_30d') ARS"
+    echo -e "  50 días: $ $(get_val '.prices.price_50d') ARS"
     echo -e ""
     
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${CYAN}[1]${NC}  🚀  Iniciar/Reiniciar bot"
     echo -e "${CYAN}[2]${NC}  🛑  Detener bot"
-    echo -e "${CYAN}[3]${NC}  📱  Ver QR WhatsApp"
+    echo -e "${CYAN}[3]${NC}  📱  Ver estado WhatsApp"
     echo -e "${CYAN}[4]${NC}  👤  Crear usuario manual"
     echo -e "${CYAN}[5]${NC}  👥  Listar usuarios"
-    echo -e "${CYAN}[6]${NC}  🗑️   Eliminar usuario"
-    echo -e ""
-    echo -e "${CYAN}[7]${NC}  💰  Cambiar precios"
-    echo -e "${CYAN}[8]${NC}  🔑  Configurar MercadoPago"
-    echo -e "${CYAN}[9]${NC}  📱  Gestionar APK"
-    echo -e "${CYAN}[10]${NC} 📊  Ver estadísticas"
-    echo -e "${CYAN}[11]${NC} ⚙️   Ver configuración"
-    echo -e "${CYAN}[12]${NC} 📝  Ver logs"
-    echo -e "${CYAN}[13]${NC} 🔧  Reparar bot"
-    echo -e "${CYAN}[14]${NC} 🧪  Test MercadoPago"
+    echo -e "${CYAN}[6]${NC}  💰  Cambiar precios"
+    echo -e "${CYAN}[7]${NC}  🔧  Configurar MercadoPago"
+    echo -e "${CYAN}[8]${NC}  📊  Ver estadísticas"
+    echo -e "${CYAN}[9]${NC}  📝  Ver logs"
+    echo -e "${CYAN}[a]${NC}  🔐  Auth WhatsApp"
     echo -e "${CYAN}[0]${NC}  🚪  Salir"
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     
@@ -1208,48 +836,22 @@ while true; do
     case $OPTION in
         1)
             echo -e "\n${YELLOW}🔄 Reiniciando bot...${NC}"
-            cd /root/ssh-bot
-            pm2 restart ssh-bot 2>/dev/null || pm2 start bot.js --name ssh-bot
+            cd /root/ssh-bot-phone
+            pm2 restart bot.js --name ssh-bot-phone 2>/dev/null || pm2 start bot.js --name ssh-bot-phone
             pm2 save
             echo -e "${GREEN}✅ Bot reiniciado${NC}"
             sleep 2
             ;;
         2)
             echo -e "\n${YELLOW}🛑 Deteniendo bot...${NC}"
-            pm2 stop ssh-bot
+            pm2 stop ssh-bot-phone
             echo -e "${GREEN}✅ Bot detenido${NC}"
             sleep 2
             ;;
         3)
-            clear
-            echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-            echo -e "${CYAN}║                    📱 CÓDIGO QR WHATSAPP                     ║${NC}"
-            echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
-            
-            if [[ -f "/root/qr-whatsapp.png" ]]; then
-                echo -e "${GREEN}✅ QR guardado en: /root/qr-whatsapp.png${NC}\n"
-                echo -e "${YELLOW}Opciones:${NC}"
-                echo -e "  1. Ver logs en tiempo real"
-                echo -e "  2. Información de descarga"
-                echo -e "  3. Volver"
-                echo -e ""
-                read -p "Selecciona (1-3): " QR_OPT
-                
-                case $QR_OPT in
-                    1) pm2 logs ssh-bot --lines 200 ;;
-                    2)
-                        echo -e "\n${GREEN}Ruta: /root/qr-whatsapp.png${NC}"
-                        echo -e "\n${YELLOW}Descarga con SFTP o:${NC}"
-                        echo -e "  scp root@$(get_val '.bot.server_ip'):/root/qr-whatsapp.png ."
-                        read -p "Presiona Enter..."
-                        ;;
-                esac
-            else
-                echo -e "${YELLOW}⚠️  QR no generado aún${NC}\n"
-                echo -e "${CYAN}Ejecuta opción 1 o 13 para generar QR${NC}\n"
-                read -p "¿Ver logs? (s/N): " VER
-                [[ "$VER" == "s" ]] && pm2 logs ssh-bot --lines 50
-            fi
+            echo -e "\n${YELLOW}📱 Estado WhatsApp...${NC}"
+            curl -s http://localhost:3000/status || echo -e "${RED}❌ Servidor no disponible${NC}"
+            read -p "Presiona Enter..."
             ;;
         4)
             clear
@@ -1258,21 +860,18 @@ while true; do
             echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
             
             read -p "Teléfono (ej: 5491122334455): " PHONE
-            read -p "Usuario (auto=generar): " USERNAME
-            read -p "Contraseña (auto=generar): " PASSWORD
+            read -p "Usuario: " USERNAME
             read -p "Tipo (test/premium): " TIPO
-            read -p "Días (0=test 2h, 30=premium): " DAYS
-            read -p "Conexiones (1): " CONNECTIONS
+            read -p "Días (0=test 1h, 7,15,30,50=premium): " DAYS
             
             [[ -z "$DAYS" ]] && DAYS="30"
-            [[ -z "$CONNECTIONS" ]] && CONNECTIONS="1"
-            [[ "$USERNAME" == "auto" || -z "$USERNAME" ]] && USERNAME="user$(tr -dc 'a-z0-9' < /dev/urandom | head -c 6)"
-            [[ "$PASSWORD" == "auto" || -z "$PASSWORD" ]] && PASSWORD=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 12)
+            [[ -z "$USERNAME" ]] && USERNAME="USER$(shuf -i 1000-9999 -n 1)"
+            PASSWORD="mgvpn247"
             
             if [[ "$TIPO" == "test" ]]; then
                 DAYS="0"
-                EXPIRE_DATE=$(date -d "+2 hours" +"%Y-%m-%d %H:%M:%S")
-                useradd -M -s /bin/false "$USERNAME" && echo "$USERNAME:$PASSWORD" | chpasswd && chage -E "$(date -d '+2 hours' +%Y-%m-%d)" "$USERNAME"
+                EXPIRE_DATE=$(date -d "+1 hour" +"%Y-%m-%d %H:%M:%S")
+                useradd -M -s /bin/false "$USERNAME" && echo "$USERNAME:$PASSWORD" | chpasswd
             else
                 EXPIRE_DATE=$(date -d "+$DAYS days" +"%Y-%m-%d 23:59:59")
                 useradd -M -s /bin/false -e "$(date -d "+$DAYS days" +%Y-%m-%d)" "$USERNAME" && echo "$USERNAME:$PASSWORD" | chpasswd
@@ -1284,11 +883,11 @@ while true; do
                 echo -e "👤 Usuario: ${USERNAME}"
                 echo -e "🔑 Contraseña: ${PASSWORD}"
                 echo -e "⏰ Expira: ${EXPIRE_DATE}"
-                echo -e "🔌 Conexiones: 1"
+                echo -e "📱 Teléfono: ${PHONE}"
             else
                 echo -e "\n${RED}❌ Error creando usuario${NC}"
             fi
-            read -p "Presiona Enter..."
+            read -p "Presiona Enter..." 
             ;;
         5)
             clear
@@ -1296,63 +895,41 @@ while true; do
             echo -e "${CYAN}║                     👥 USUARIOS ACTIVOS                     ║${NC}"
             echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
             
-            sqlite3 -column -header "$DB" "SELECT username, password, tipo, expires_at, max_connections as conex, substr(phone,1,12) as tel FROM users WHERE status = 1 ORDER BY expires_at DESC LIMIT 20"
-            echo -e "\n${YELLOW}Total: ${ACTIVE_USERS}${NC}"
-            read -p "Presiona Enter..."
+            sqlite3 -column -header "$DB" "SELECT username, password, tipo, expires_at, substr(phone,1,12) as tel FROM users WHERE status = 1 ORDER BY expires_at DESC LIMIT 20"
+            echo -e "\n${YELLOW}Total: ${ACTIVE_USERS} activos${NC}"
+            read -p "Presiona Enter..." 
             ;;
         6)
             clear
             echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-            echo -e "${CYAN}║                     🗑️  ELIMINAR USUARIO                     ║${NC}"
+            echo -e "${CYAN}║                    💰 CAMBIAR PRECIOS                       ║${NC}"
             echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
             
-            read -p "Usuario a eliminar: " DEL_USER
-            if [[ -n "$DEL_USER" ]]; then
-                pkill -u "$DEL_USER" 2>/dev/null || true
-                userdel -f "$DEL_USER" 2>/dev/null || true
-                sqlite3 "$DB" "UPDATE users SET status = 0 WHERE username = '$DEL_USER'"
-                echo -e "${GREEN}✅ Usuario $DEL_USER eliminado${NC}"
-            fi
-            read -p "Presiona Enter..."
+            echo -e "${YELLOW}Ingresa nuevos precios:${NC}"
+            read -p "7 días [$(get_val '.prices.price_7d')]: " PRICE_7D
+            read -p "15 días [$(get_val '.prices.price_15d')]: " PRICE_15D
+            read -p "30 días [$(get_val '.prices.price_30d')]: " PRICE_30D
+            read -p "50 días [$(get_val '.prices.price_50d')]: " PRICE_50D
+            
+            [[ -n "$PRICE_7D" ]] && jq ".prices.price_7d = $PRICE_7D" "$CONFIG" > tmp.json && mv tmp.json "$CONFIG"
+            [[ -n "$PRICE_15D" ]] && jq ".prices.price_15d = $PRICE_15D" "$CONFIG" > tmp.json && mv tmp.json "$CONFIG"
+            [[ -n "$PRICE_30D" ]] && jq ".prices.price_30d = $PRICE_30D" "$CONFIG" > tmp.json && mv tmp.json "$CONFIG"
+            [[ -n "$PRICE_50D" ]] && jq ".prices.price_50d = $PRICE_50D" "$CONFIG" > tmp.json && mv tmp.json "$CONFIG"
+            
+            echo -e "\n${GREEN}✅ Precios actualizados${NC}"
+            read -p "Presiona Enter..." 
             ;;
         7)
             clear
             echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-            echo -e "${CYAN}║                     💰 CAMBIAR PRECIOS                      ║${NC}"
-            echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
-            
-            CURRENT_7D=$(get_val '.prices.price_7d')
-            CURRENT_15D=$(get_val '.prices.price_15d')
-            CURRENT_30D=$(get_val '.prices.price_30d')
-            
-            echo -e "${YELLOW}Precios actuales:${NC}"
-            echo -e "  7 días: $${CURRENT_7D} (1 conexión)"
-            echo -e "  15 días: $${CURRENT_15D} (1 conexión)"
-            echo -e "  30 días: $${CURRENT_30D} (1 conexión)\n"
-            
-            read -p "Nuevo precio 7d [${CURRENT_7D}]: " NEW_7D
-            read -p "Nuevo precio 15d [${CURRENT_15D}]: " NEW_15D
-            read -p "Nuevo precio 30d [${CURRENT_30D}]: " NEW_30D
-            
-            [[ -n "$NEW_7D" ]] && set_val '.prices.price_7d' "$NEW_7D"
-            [[ -n "$NEW_15D" ]] && set_val '.prices.price_15d' "$NEW_15D"
-            [[ -n "$NEW_30D" ]] && set_val '.prices.price_30d' "$NEW_30D"
-            
-            echo -e "\n${GREEN}✅ Precios actualizados${NC}"
-            echo -e "${YELLOW}⚠️  Nota: Todos los planes tienen 1 conexión${NC}"
-            read -p "Presiona Enter..."
-            ;;
-        8)
-            clear
-            echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-            echo -e "${CYAN}║              🔑 CONFIGURAR MERCADOPAGO SDK v2.x             ║${NC}"
+            echo -e "${CYAN}║              🔑 CONFIGURAR MERCADOPAGO                      ║${NC}"
             echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
             
             CURRENT_TOKEN=$(get_val '.mercadopago.access_token')
             
             if [[ -n "$CURRENT_TOKEN" && "$CURRENT_TOKEN" != "null" && "$CURRENT_TOKEN" != "" ]]; then
                 echo -e "${GREEN}✅ Token configurado${NC}"
-                echo -e "${YELLOW}Preview: ${CURRENT_TOKEN:0:30}...${NC}\n"
+                echo -e "${YELLOW}Preview: ${CURRENT_TOKEN:0:20}...${NC}\n"
             else
                 echo -e "${YELLOW}⚠️  Sin token configurado${NC}\n"
             fi
@@ -1368,175 +945,43 @@ while true; do
                 echo ""
                 read -p "Pega el Access Token: " NEW_TOKEN
                 
-                # ✅ FIX 1: VALIDACIÓN CORREGIDA (acepta cualquier token que empiece con APP_USR- o TEST-)
                 if [[ "$NEW_TOKEN" =~ ^APP_USR- ]] || [[ "$NEW_TOKEN" =~ ^TEST- ]]; then
-                    set_val '.mercadopago.access_token' "\"$NEW_TOKEN\""
-                    set_val '.mercadopago.enabled' "true"
+                    jq ".mercadopago.access_token = \"$NEW_TOKEN\" | .mercadopago.enabled = true" "$CONFIG" > tmp.json && mv tmp.json "$CONFIG"
                     echo -e "\n${GREEN}✅ Token configurado${NC}"
                     echo -e "${YELLOW}🔄 Reiniciando bot...${NC}"
-                    cd /root/ssh-bot && pm2 restart ssh-bot
+                    pm2 restart ssh-bot-phone
                     sleep 2
-                    echo -e "${GREEN}✅ MercadoPago SDK v2.x activado${NC}"
                 else
                     echo -e "${RED}❌ Token inválido${NC}"
-                    echo -e "${YELLOW}Debe empezar con APP_USR- o TEST-${NC}"
                 fi
             fi
-            read -p "Presiona Enter..."
+            read -p "Presiona Enter..." 
             ;;
-        9)
-            clear
-            echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-            echo -e "${CYAN}║                     📱 GESTIONAR APK                         ║${NC}"
-            echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
-            
-            APKS=$(find /root /home /opt -name "*.apk" 2>/dev/null | head -5)
-            
-            if [[ -n "$APKS" ]]; then
-                echo -e "${GREEN}✅ APKs encontrados:${NC}"
-                i=1
-                while IFS= read -r apk; do
-                    size=$(du -h "$apk" | cut -f1)
-                    echo -e "  ${i}. ${apk} (${size})"
-                    ((i++))
-                done <<< "$APKS"
-                
-                echo ""
-                read -p "Selecciona (1-$((i-1))): " SEL
-                if [[ "$SEL" =~ ^[0-9]+$ ]]; then
-                    selected=$(echo "$APKS" | sed -n "${SEL}p")
-                    echo -e "\n${YELLOW}Seleccionado: ${selected}${NC}"
-                    echo -e "\n1. Copiar a /root/app.apk"
-                    echo -e "2. Ver detalles"
-                    echo -e "3. Eliminar"
-                    read -p "Opción: " OPT
-                    case $OPT in
-                        1) cp "$selected" /root/app.apk && chmod 644 /root/app.apk && echo -e "${GREEN}✅ Copiado${NC}" ;;
-                        2) du -h "$selected" && echo "WhatsApp límite: 100MB" ;;
-                        3) rm -f "$selected" && echo -e "${GREEN}✅ Eliminado${NC}" ;;
-                    esac
-                fi
-            else
-                echo -e "${RED}❌ Sin APKs${NC}\n"
-                echo -e "${CYAN}Subir con SCP:${NC}"
-                echo -e "  scp app.apk root@$(get_val '.bot.server_ip'):/root/app.apk"
-            fi
-            read -p "Presiona Enter..."
-            ;;
-        10)
+        8)
             clear
             echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
             echo -e "${CYAN}║                     📊 ESTADÍSTICAS                         ║${NC}"
             echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
             
             echo -e "${YELLOW}👥 USUARIOS:${NC}"
-            sqlite3 "$DB" "SELECT 'Total: ' || COUNT(*) || ' | Activos: ' || SUM(CASE WHEN status=1 THEN 1 ELSE 0 END) || ' | Premium: ' || SUM(CASE WHEN tipo='premium' THEN 1 ELSE 0 END) FROM users"
+            sqlite3 "$DB" "SELECT 'Total: ' || COUNT(*) || ' | Activos: ' || SUM(CASE WHEN status=1 THEN 1 ELSE 0 END) || ' | Tests: ' || (SELECT COUNT(*) FROM daily_tests) FROM users"
             
-            echo -e "\n${YELLOW}💰 PAGOS:${NC}"
-            sqlite3 "$DB" "SELECT 'Pendientes: ' || SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END) || ' | Aprobados: ' || SUM(CASE WHEN status='approved' THEN 1 ELSE 0 END) || ' | Total: $' || printf('%.2f', SUM(CASE WHEN status='approved' THEN amount ELSE 0 END)) FROM payments"
+            echo -e "\n${YELLOW}💰 INGRESOS:${NC}"
+            sqlite3 "$DB" "SELECT 'Aprobados: $' || printf('%.2f', SUM(CASE WHEN status='approved' THEN final_amount ELSE 0 END)) FROM payments"
             
-            echo -e "\n${YELLOW}📅 HOY:${NC}"
-            TODAY=$(date +%Y-%m-%d)
-            sqlite3 "$DB" "SELECT 'Tests: ' || COUNT(*) FROM daily_tests WHERE date = '$TODAY'"
+            echo -e "\n${YELLOW}📅 DISTRIBUCIÓN:${NC}"
+            sqlite3 "$DB" "SELECT '7d: ' || SUM(CASE WHEN plan='7d' THEN 1 ELSE 0 END) || ' | 15d: ' || SUM(CASE WHEN plan='15d' THEN 1 ELSE 0 END) || ' | 30d: ' || SUM(CASE WHEN plan='30d' THEN 1 ELSE 0 END) || ' | 50d: ' || SUM(CASE WHEN plan='50d' THEN 1 ELSE 0 END) FROM payments"
             
-            echo -e "\n${YELLOW}🔌 CONEXIONES:${NC}"
-            echo -e "  Configuración: 1 por usuario"
-            
-            read -p "\nPresiona Enter..."
+            read -p "\nPresiona Enter..." 
             ;;
-        11)
-            clear
-            echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-            echo -e "${CYAN}║                     ⚙️  CONFIGURACIÓN                        ║${NC}"
-            echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
-            
-            echo -e "${YELLOW}🤖 BOT:${NC}"
-            echo -e "  IP: $(get_val '.bot.server_ip')"
-            echo -e "  Versión: $(get_val '.bot.version')"
-            
-            echo -e "\n${YELLOW}💰 PRECIOS:${NC}"
-            echo -e "  7d: $(get_val '.prices.price_7d') ARS (1 conexión)"
-            echo -e "  15d: $(get_val '.prices.price_15d') ARS (1 conexión)"
-            echo -e "  30d: $(get_val '.prices.price_30d') ARS (1 conexión)"
-            echo -e "  Test: $(get_val '.prices.test_hours') horas (1 conexión)"
-            
-            echo -e "\n${YELLOW}💳 MERCADOPAGO:${NC}"
-            MP_TOKEN=$(get_val '.mercadopago.access_token')
-            if [[ -n "$MP_TOKEN" && "$MP_TOKEN" != "null" ]]; then
-                echo -e "  Estado: ${GREEN}SDK v2.x ACTIVO${NC}"
-                echo -e "  Token: ${MP_TOKEN:0:25}..."
-            else
-                echo -e "  Estado: ${RED}NO CONFIGURADO${NC}"
-            fi
-            
-            echo -e "\n${YELLOW}⚡ AJUSTES:${NC}"
-            echo -e "  Limpieza: cada 15 minutos"
-            echo -e "  Test: 2 horas exactas"
-            echo -e "  Conexión por usuario: 1"
-            
-            read -p "\nPresiona Enter..."
-            ;;
-        12)
+        9)
             echo -e "\n${YELLOW}📝 Logs (Ctrl+C para salir)...${NC}\n"
-            pm2 logs ssh-bot --lines 100
+            pm2 logs ssh-bot-phone --lines 100
             ;;
-        13)
-            clear
-            echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-            echo -e "${CYAN}║                     🔧 REPARAR BOT                          ║${NC}"
-            echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
-            
-            echo -e "${RED}⚠️  Borrará sesión de WhatsApp${NC}\n"
-            read -p "¿Continuar? (s/N): " CONF
-            
-            if [[ "$CONF" == "s" ]]; then
-                echo -e "\n${YELLOW}🧹 Limpiando...${NC}"
-                rm -rf /root/.wwebjs_auth/* /root/.wwebjs_cache/* /root/qr-whatsapp.png
-                echo -e "${YELLOW}📦 Reinstalando...${NC}"
-                cd /root/ssh-bot && npm install --silent
-                # Aplicar parche markedUnread nuevamente
-                echo -e "${YELLOW}🔧 Aplicando parches...${NC}"
-                find /root/ssh-bot/node_modules -name "Client.js" -type f -exec sed -i 's/if (chat && chat.markedUnread)/if (false)/g' {} \; 2>/dev/null || true
-                echo -e "${YELLOW}🔄 Reiniciando...${NC}"
-                pm2 restart ssh-bot
-                echo -e "\n${GREEN}✅ Reparado - Espera 10s para QR${NC}"
-                sleep 10
-                [[ -f "/root/qr-whatsapp.png" ]] && echo -e "${GREEN}✅ QR generado${NC}" || pm2 logs ssh-bot
-            fi
+        a|A)
+            echo -e "\n${YELLOW}🔐 Auth WhatsApp...${NC}"
+            auth-whatsapp
             read -p "Presiona Enter..."
-            ;;
-        14)
-            clear
-            echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-            echo -e "${CYAN}║                 🧪 TEST MERCADOPAGO SDK v2.x                ║${NC}"
-            echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
-            
-            TOKEN=$(get_val '.mercadopago.access_token')
-            if [[ -z "$TOKEN" || "$TOKEN" == "null" ]]; then
-                echo -e "${RED}❌ Token no configurado${NC}\n"
-                read -p "Presiona Enter..."
-                continue
-            fi
-            
-            echo -e "${YELLOW}🔑 Token: ${TOKEN:0:30}...${NC}\n"
-            echo -e "${YELLOW}🔄 Probando conexión con API...${NC}\n"
-            
-            RESPONSE=$(curl -s -w "\n%{http_code}" -H "Authorization: Bearer $TOKEN" "https://api.mercadopago.com/v1/payment_methods" 2>&1)
-            HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-            BODY=$(echo "$RESPONSE" | head -n-1)
-            
-            if [[ "$HTTP_CODE" == "200" ]]; then
-                echo -e "${GREEN}✅ CONEXIÓN EXITOSA${NC}\n"
-                echo -e "${CYAN}Métodos de pago disponibles:${NC}"
-                echo "$BODY" | jq -r '.[].name' 2>/dev/null | head -5
-                echo -e "\n${GREEN}✅ MercadoPago SDK v2.x funcionando correctamente${NC}"
-            else
-                echo -e "${RED}❌ ERROR - Código HTTP: $HTTP_CODE${NC}\n"
-                echo -e "${YELLOW}Respuesta:${NC}"
-                echo "$BODY" | jq '.' 2>/dev/null || echo "$BODY"
-            fi
-            
-            read -p "\nPresiona Enter..."
             ;;
         0)
             echo -e "\n${GREEN}👋 Hasta pronto${NC}\n"
@@ -1550,20 +995,70 @@ while true; do
 done
 PANELEOF
 
-chmod +x /usr/local/bin/sshbot
-echo -e "${GREEN}✅ Panel creado con validación fixed${NC}"
+chmod +x /usr/local/bin/sshbot-phone
 
 # ================================================
-# INICIAR BOT
+# CONFIGURAR PM2 Y SERVICIOS
 # ================================================
-echo -e "\n${CYAN}${BOLD}🚀 INICIANDO BOT...${NC}"
+echo -e "\n${CYAN}${BOLD}⚙️  CONFIGURANDO SERVICIOS...${NC}"
 
 cd "$USER_HOME"
-pm2 start bot.js --name ssh-bot
-pm2 save
-pm2 startup systemd -u root --hp /root > /dev/null 2>&1
 
-sleep 3
+# Crear ecosystem para PM2
+cat > ecosystem.config.js << 'ECOSYSTEMEOF'
+module.exports = {
+    apps: [{
+        name: 'ssh-bot-phone',
+        script: 'bot.js',
+        cwd: '/root/ssh-bot-phone',
+        instances: 1,
+        autorestart: true,
+        watch: false,
+        max_memory_restart: '300M',
+        env: {
+            NODE_ENV: 'production',
+            SERVER_IP: '$SERVER_IP'
+        },
+        error_file: '/opt/ssh-bot-phone/logs/error.log',
+        out_file: '/opt/ssh-bot-phone/logs/out.log',
+        log_file: '/opt/ssh-bot-phone/logs/combined.log',
+        time: true,
+        exp_backoff_restart_delay: 100,
+        max_restarts: 10,
+        min_uptime: '10s'
+    }]
+};
+ECOSYSTEMEOF
+
+# Iniciar con PM2
+pm2 start ecosystem.config.js
+pm2 save
+pm2 startup
+
+# Crear servicio systemd
+cat > /etc/systemd/system/ssh-bot-phone.service << 'SERVICEEOF'
+[Unit]
+Description=SSH Bot WhatsApp Phone Auth
+After=network.target
+
+[Service]
+Type=exec
+User=root
+WorkingDirectory=/root/ssh-bot-phone
+ExecStart=/usr/bin/pm2 start ecosystem.config.js
+ExecStop=/usr/bin/pm2 stop ssh-bot-phone
+ExecReload=/usr/bin/pm2 reload ssh-bot-phone
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+SERVICEEOF
+
+systemctl daemon-reload
+systemctl enable ssh-bot-phone.service
 
 # ================================================
 # MENSAJE FINAL
@@ -1573,106 +1068,80 @@ echo -e "${GREEN}${BOLD}"
 cat << "FINAL"
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
-║      🎉 INSTALACIÓN COMPLETADA - ALL FIXES APPLIED 🎉       ║
+║       🎉 INSTALACIÓN COMPLETADA - AUTH POR TELÉFONO 🎉     ║
 ║                                                              ║
-║         SSH BOT PRO v8.6 - TODOS LOS FIXES APLICADOS        ║
-║           💳 MercadoPago SDK v2.x FULLY FIXED               ║
-║           📅 Fechas ISO 8601 corregidas                     ║
-║           🤖 WhatsApp markedUnread parcheado                ║
-║           🔑 Validación token corregida                     ║
-║           ⏰ Test: 2 horas exactas (ajustado)               ║
-║           ⚡ Limpieza: cada 15 minutos (ajustado)           ║
-║           📱 APK Automático                                 ║
+║               SSH BOT PRO - CONFIGURADO                     ║
+║               📱 SIN QR - NÚMERO + CÓDIGO                  ║
+║               🔐 CONTRASEÑA FIJA: mgvpn247                 ║
+║               💰 MERCADOPAGO INTEGRADO                     ║
+║               🚀 CONEXIÓN PERMANENTE                       ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 FINAL
 echo -e "${NC}"
 
 echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}"
-echo -e "${GREEN}✅ Bot instalado con TODOS los fixes aplicados${NC}"
-echo -e "${GREEN}✅ Panel de control con validación corregida${NC}"
-echo -e "${GREEN}✅ Fechas ISO 8601 corregidas para MP v2.x${NC}"
-echo -e "${GREEN}✅ Error WhatsApp Web parcheado (markedUnread)${NC}"
-echo -e "${GREEN}✅ Validación de token MP corregida${NC}"
-echo -e "${GREEN}✅ Test ajustado a 2 horas exactas${NC}"
-echo -e "${GREEN}✅ Limpieza ajustada a cada 15 minutos${NC}"
+echo -e "${GREEN}✅ Sistema instalado con auth por teléfono${NC}"
+echo -e "${GREEN}✅ No requiere QR - Usa número de WhatsApp${NC}"
+echo -e "${GREEN}✅ Conexión permanente${NC}"
+echo -e "${GREEN}✅ Menú completo: Prueba, Comprar, Renovar, App${NC}"
+echo -e "${GREEN}✅ Planes: 7, 15, 30, 50 días${NC}"
+echo -e "${GREEN}✅ Contraseña fija: mgvpn247${NC}"
+echo -e "${GREEN}✅ Panel de control web: http://localhost:3000${NC}"
 echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}\n"
 
-echo -e "${YELLOW}📋 COMANDOS:${NC}\n"
-echo -e "  ${GREEN}sshbot${NC}           - Panel de control"
-echo -e "  ${GREEN}pm2 logs ssh-bot${NC} - Ver logs"
-echo -e "  ${GREEN}pm2 restart ssh-bot${NC} - Reiniciar\n"
+echo -e "${YELLOW}📋 COMANDOS DISPONIBLES:${NC}\n"
+echo -e "  ${GREEN}sshbot-phone${NC}     - Panel de control principal"
+echo -e "  ${GREEN}auth-whatsapp${NC}    - Configurar auth WhatsApp"
+echo -e "  ${GREEN}pm2 logs ssh-bot-phone${NC} - Ver logs"
+echo -e "  ${GREEN}pm2 restart ssh-bot-phone${NC} - Reiniciar bot\n"
 
-echo -e "${YELLOW}🔧 CONFIGURACIÓN:${NC}\n"
-echo -e "  1. Ejecuta: ${GREEN}sshbot${NC}"
-echo -e "  2. Opción ${CYAN}[8]${NC} - Configurar MercadoPago"
-echo -e "  3. Opción ${CYAN}[14]${NC} - Test MercadoPago"
-echo -e "  4. Opción ${CYAN}[3]${NC} - Escanear QR WhatsApp"
-echo -e "  5. Sube APK a /root/app.apk\n"
+echo -e "${YELLOW}🔧 CONFIGURACIÓN INICIAL:${NC}\n"
+echo -e "  1. Ejecuta: ${GREEN}sshbot-phone${NC}"
+echo -e "  2. Opción ${CYAN}[1]${NC} - Iniciar bot"
+echo -e "  3. Opción ${CYAN}[a]${NC} - Configurar auth WhatsApp"
+echo -e "  4. Opción ${CYAN}[7]${NC} - Configurar MercadoPago (opcional)"
+echo -e "  5. Cuando inicie, ${CYAN}verifica los logs${NC} para auth\n"
 
-echo -e "${YELLOW}⚡ AJUSTES APLICADOS:${NC}"
-echo -e "  • Test: ${GREEN}2 horas${NC} (antes 3)"
-echo -e "  • Limpieza: ${GREEN}cada 15 minutos${NC} (antes cada hora)"
-echo -e "  • Conexión por usuario: ${GREEN}1${NC}"
-echo -e "\n"
+echo -e "${YELLOW}📱 MÉTODOS DE AUTH:${NC}\n"
+echo -e "  ${CYAN}1. QR Code${NC} - Se generará automáticamente si es necesario"
+echo -e "  ${CYAN}2. Código 6 dígitos${NC} - Te llegará por WhatsApp"
+echo -e "  ${CYAN}3. Pairing code${NC} - Código de vinculación\n"
 
-echo -e "${YELLOW}📊 INFO:${NC}"
-echo -e "  IP: ${CYAN}$SERVER_IP${NC}"
-echo -e "  BD: ${CYAN}$DB_FILE${NC}"
-echo -e "  Config: ${CYAN}$CONFIG_FILE${NC}\n"
+echo -e "${YELLOW}💰 PRECIOS POR DEFECTO:${NC}\n"
+echo -e "  7 días: ${GREEN}$1500 ARS${NC}"
+echo -e "  15 días: ${GREEN}$2500 ARS${NC}"
+echo -e "  30 días: ${GREEN}$5500 ARS${NC}"
+echo -e "  50 días: ${GREEN}$8500 ARS${NC}\n"
+
+echo -e "${YELLOW}🌐 URLs IMPORTANTES:${NC}\n"
+echo -e "  Panel estado: ${CYAN}http://$(curl -4 -s ifconfig.me):3000/status${NC}"
+echo -e "  IP servidor: ${CYAN}$SERVER_IP${NC}"
+echo -e "  Contraseña: ${CYAN}mgvpn247${NC}\n"
+
+echo -e "${YELLOW}⚠️  IMPORTANTE:${NC}"
+echo -e "  • ${CYAN}NO cierres${NC} sesión de WhatsApp en tu teléfono"
+echo -e "  • ${CYAN}Mantén${NC} WhatsApp activo en tu teléfono"
+echo -e "  • La sesión se guarda automáticamente para reconexiones\n"
 
 echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}\n"
 
-read -p "$(echo -e "${YELLOW}¿Abrir panel? (s/N): ${NC}")" -n 1 -r
+read -p "$(echo -e "${YELLOW}¿Iniciar panel de control ahora? (s/N): ${NC}")" -n 1 -r
 echo
 if [[ $REPLY =~ ^[Ss]$ ]]; then
     echo -e "\n${CYAN}Abriendo panel...${NC}\n"
     sleep 2
-    /usr/local/bin/sshbot
+    /usr/local/bin/sshbot-phone
 else
-    echo -e "\n${YELLOW}💡 Ejecuta: ${GREEN}sshbot${NC}\n"
-    echo -e "${RED}⚠️  Recuerda configurar MercadoPago (opción 8)${NC}\n"
+    echo -e "\n${YELLOW}💡 Para iniciar panel después: ${GREEN}sshbot-phone${NC}\n"
 fi
 
-echo -e "${GREEN}${BOLD}¡Instalación exitosa con todos los fixes y ajustes! 🚀${NC}\n"
+echo -e "${GREEN}${BOLD}¡Sistema instalado exitosamente! 🚀${NC}\n"
+echo -e "${YELLOW}Revisa los logs para completar la autenticación:${NC}"
+echo -e "${CYAN}pm2 logs ssh-bot-phone${NC}\n"
 
-# ================================================
-# AUTO-DESTRUCCIÓN DEL SCRIPT (SEGURIDAD)
-# ================================================
-echo -e "\n${RED}${BOLD}⚠️  AUTO-DESTRUCCIÓN ACTIVADA ⚠️${NC}"
-echo -e "${YELLOW}El script se eliminará automáticamente en 10 segundos...${NC}"
-echo -e "${CYAN}Guarda una copia local si necesitas reinstalar${NC}"
+exit 0
+INSTALLPHONEEOF
 
-# Esperar un momento para que el usuario vea el mensaje
-sleep 10
-
-# Obtener la ruta completa del script
-SCRIPT_PATH="$(realpath "$0")"
-
-# Verificar que es un script de instalación (por seguridad)
-if [[ "$SCRIPT_PATH" =~ install.*\.sh$ ]] || [[ "$(basename "$SCRIPT_PATH")" =~ ^install_ ]]; then
-    echo -e "${RED}🗑️  Eliminando script de instalación: $SCRIPT_PATH${NC}"
-    
-    # Crear comando de autodestrucción en background
-    nohup bash -c "
-        sleep 2
-        echo 'Eliminando script de instalación...'
-        rm -f '$SCRIPT_PATH'
-        echo '✅ Script eliminado para seguridad'
-        # También eliminar logs y temporales
-        rm -f /tmp/sshbot-install-* 2>/dev/null
-    " > /dev/null 2>&1 &
-    
-    echo -e "${GREEN}✅ El script se autoeliminará en background${NC}"
-else
-    echo -e "${YELLOW}⚠️  No se eliminó (nombre no seguro)${NC}"
-fi
-
-# Mensaje final
-echo -e "\n${GREEN}═══════════════════════════════════════════════${NC}"
-echo -e "${GREEN}           🎉 INSTALACIÓN TERMINADA           ${NC}"
-echo -e "${GREEN}═══════════════════════════════════════════════${NC}"
-echo -e "${YELLOW}Comandos disponibles:${NC}"
-echo -e "  ${CYAN}sshbot${NC}          - Panel de control"
-echo -e "  ${CYAN}pm2 logs ssh-bot${NC} - Ver logs en tiempo real"
-exit 0"
+# Dar permisos y ejecutar
+chmod +x install_ssh_bot_phone.sh
