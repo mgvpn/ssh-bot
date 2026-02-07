@@ -430,7 +430,7 @@ async function startBot() {
 *Elija una opción:*
 
 1️⃣ *PRUEBA GRATIS* (${config.prices.test_hours} hora)
-2️⃣ *COMPRAR PLAN* (Planes disponibles)
+2️⃣ *COMPRAR PLAN* 
 3️⃣ *DESCARGAR APP*
 4️⃣ *SOPORTE*
 
@@ -455,7 +455,11 @@ async function startBot() {
 ⏰ *Expira:* ${config.prices.test_hours} hora
 📱 *App:* ${config.links.app_download}
 
-¡Disfruta tu prueba!`;
+💡 *Instrucciones:*
+1. Abre el link Descarga el APK
+2. Abre el apk Click en "Más detalles"
+3. Click en "Instalar de todas formas"
+4. Disfruta tu prueba`;
                         
                         await client.sendText(from, msg);
                     } else {
@@ -470,7 +474,7 @@ async function startBot() {
                 if (text === '2' && userState.state === 'main_menu') {
                     await setState(from, 'selecting_plan_type');
                     
-                    const plansMenu = `📋 *SELECCIONAR TIPO DE PLAN*
+                    const plansMenu = `🌐 *SELECCIONAR TIPO DE PLAN*
 
 1️⃣ *PLANES DIARIOS* (7-15 días)
 2️⃣ *PLANES MENSUALES* (30-50 días)
@@ -486,7 +490,7 @@ async function startBot() {
                     if (text === '1') {
                         await setState(from, 'selecting_daily_plan');
                         
-                        const dailyPlans = `🗓️ *PLANES DIARIOS*
+                        const dailyPlans = `🌐 *PLANES DIARIOS*
 
 1️⃣ 7 DÍAS - $${config.prices.price_7d}
 2️⃣ 15 DÍAS - $${config.prices.price_15d}
@@ -500,7 +504,7 @@ async function startBot() {
                     if (text === '2') {
                         await setState(from, 'selecting_monthly_plan');
                         
-                        const monthlyPlans = `🗓️ *PLANES MENSUALES*
+                        const monthlyPlans = `🌐 *PLANES MENSUALES*
 
 1️⃣ 30 DÍAS - $${config.prices.price_30d}
 2️⃣ 50 DÍAS - $${config.prices.price_50d}
@@ -531,7 +535,7 @@ async function startBot() {
                         
                         // Verificar MercadoPago
                         if (!config.mercadopago.access_token) {
-                            const msg = `📋 *PLAN ${plan.name}*
+                            const msg = `🌐 *PLAN ${plan.name}*
 
 💰 *Precio:* $${plan.price}
 ⏰ *Duración:* ${plan.days} días
@@ -613,7 +617,7 @@ ${config.links.support}`);
                         
                         // Verificar MercadoPago
                         if (!config.mercadopago.access_token) {
-                            const msg = `📋 *PLAN ${plan.name}*
+                            const msg = `🌐 *PLAN ${plan.name}*
 
 💰 *Precio:* $${plan.price}
 ⏰ *Duración:* ${plan.days} días
@@ -689,8 +693,8 @@ ${config.links.support}`);
 🔗 *Enlace:* ${config.links.app_download}
 
 💡 *Instrucciones:*
-1. Descarga el APK
-2. Click en "Más detalles"
+1. Abre el link Descarga el APK
+2. Abre el apk Click en "Más detalles"
 3. Click en "Instalar de todas formas"
 4. Configura con tus credenciales
 
