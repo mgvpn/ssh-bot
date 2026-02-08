@@ -689,7 +689,7 @@ Elija una opción:
 
 APP: ${config.links.app_download}
 
-Instrucciones:
+💡Instrucciones:
 1. Abre el link Descarga el APK
 2. Abre el apk Click en "Más detalles"
 3. Click en "Instalar de todas formas"
@@ -942,7 +942,7 @@ O envía tu nombre de usuario actual.`);
 Enlace de descarga:
 ${config.links.app_download}
 
-Instrucciones:
+💡Instrucciones:
 1. Abre el enlace en tu navegador
 2. Descarga el archivo APK
 3. Instala la aplicación click en mas detalles - click en instalar todas formas
