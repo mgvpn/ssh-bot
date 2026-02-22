@@ -1,7 +1,7 @@
 #!/bin/bash
 # ================================================
 # SSH BOT PRO - WPPCONNECT + MERCADOPAGO + HTTP CUSTOM
-# VERSIÓN CORREGIDA - CON HWID Y ARCHIVOS HC
+# VERSIÓN COMPLETA CORREGIDA - CON HWID Y ARCHIVOS HC
 # ================================================
 
 set -e
@@ -92,7 +92,7 @@ apt-get install -y google-chrome-stable
 
 # Instalar dependencias del sistema
 apt-get install -y \
-    git curl wget sqlite3 jq nginx \
+    git curl wget sqlite3 jq \
     build-essential libcairo2-dev \
     libpango1.0-dev libjpeg-dev \
     libgif-dev librsvg2-dev \
@@ -114,35 +114,73 @@ pm2 update
 echo -e "${GREEN}✅ Dependencias instaladas${NC}"
 
 # ================================================
-# CONFIGURAR NGINX PARA ARCHIVOS HC
+# CONFIGURAR SERVIDOR WEB PARA ARCHIVOS HC
 # ================================================
 echo -e "\n${CYAN}📁 Configurando servidor de archivos HC...${NC}"
 
+# Crear directorios
 mkdir -p /var/www/html/hc_files
 chmod -R 755 /var/www/html
 
-cat > /etc/nginx/sites-available/hc-files << 'NGINXEOF'
-server {
-    listen 80;
-    server_name _;
-    
-    root /var/www/html;
-    index index.html;
-    
-    location /hc_files/ {
-        alias /var/www/html/hc_files/;
-        autoindex on;
-        autoindex_exact_size off;
-        autoindex_localtime on;
-    }
-}
-NGINXEOF
+# Detener posibles servicios en puerto 80
+systemctl stop nginx 2>/dev/null
+systemctl stop apache2 2>/dev/null
+fuser -k 80/tcp 2>/dev/null
 
-ln -sf /etc/nginx/sites-available/hc-files /etc/nginx/sites-enabled/
-rm -f /etc/nginx/sites-enabled/default
-systemctl restart nginx
+# Usar Python HTTP server (más simple y confiable)
+cat > /etc/systemd/system/hc-server.service << 'PYEOF'
+[Unit]
+Description=HTTP Custom File Server
+After=network.target
 
-echo -e "${GREEN}✅ Servidor de archivos configurado en: http://$SERVER_IP/hc_files/${NC}"
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/html
+ExecStart=/usr/bin/python3 -m http.server 80
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+PYEOF
+
+systemctl daemon-reload
+systemctl enable hc-server.service
+systemctl start hc-server.service
+
+# Verificar que el servidor está corriendo
+sleep 3
+if systemctl is-active --quiet hc-server.service; then
+    echo -e "${GREEN}✅ Servidor web iniciado correctamente${NC}"
+else
+    echo -e "${YELLOW}⚠️ Iniciando servidor manualmente...${NC}"
+    cd /var/www/html
+    nohup python3 -m http.server 80 > /dev/null 2>&1 &
+fi
+
+# Crear archivo de prueba
+cat > /var/www/html/hc_files/ejemplo.hc << 'EOF'
+# HTTP Custom Config - EJEMPLO
+# No uses este archivo, es solo de referencia
+
+[config]
+name=SSH-PRO-EJEMPLO
+server=SERVER_IP
+port=22,80,443
+type=ssh
+payload=GET / HTTP/1.1[crlf]Host: [host][crlf]Connection: Keep-Alive[crlf]User-Agent: [ua][crlf][crlf]
+ssh_method=1
+dns=8.8.8.8
+timeout=30
+hwid=TU_HWID_AQUI
+username=ejemplo
+password=mgvpn247
+EOF
+
+sed -i "s/SERVER_IP/$SERVER_IP/g" /var/www/html/hc_files/ejemplo.hc
+
+echo -e "${GREEN}✅ Servidor de archivos listo en: http://$SERVER_IP/hc_files/${NC}"
 
 # ================================================
 # PREPARAR ESTRUCTURA
@@ -153,8 +191,6 @@ INSTALL_DIR="/opt/sshbot-pro"
 USER_HOME="/root/sshbot-pro"
 DB_FILE="$INSTALL_DIR/data/users.db"
 CONFIG_FILE="$INSTALL_DIR/config/config.json"
-HC_FILES_DIR="$INSTALL_DIR/hc_files"
-HC_UPLOADS_DIR="/var/www/html/hc_files"
 
 # Limpiar anterior
 pm2 delete sshbot-pro 2>/dev/null || true
@@ -162,12 +198,10 @@ rm -rf "$INSTALL_DIR" "$USER_HOME" 2>/dev/null || true
 rm -rf /root/.wppconnect 2>/dev/null || true
 
 # Crear directorios
-mkdir -p "$INSTALL_DIR"/{data,config,sessions,logs,qr_codes,hc_files}
+mkdir -p "$INSTALL_DIR"/{data,config,sessions,logs,qr_codes}
 mkdir -p "$USER_HOME"
-mkdir -p "$HC_UPLOADS_DIR"
 mkdir -p /root/.wppconnect
 chmod -R 755 "$INSTALL_DIR"
-chmod -R 755 "$HC_UPLOADS_DIR"
 chmod -R 700 /root/.wppconnect
 
 # Configuración inicial
@@ -202,7 +236,7 @@ cat > "$CONFIG_FILE" << EOF
     "paths": {
         "database": "$DB_FILE",
         "qr_codes": "$INSTALL_DIR/qr_codes",
-        "hc_files": "$HC_FILES_DIR",
+        "hc_files": "/var/www/html/hc_files",
         "sessions": "/root/.wppconnect"
     }
 }
@@ -334,8 +368,13 @@ console.log(chalk.cyan.bold('╚════════════════
 
 // Cargar configuración
 function loadConfig() {
-    delete require.cache[require.resolve('/opt/sshbot-pro/config/config.json')];
-    return require('/opt/sshbot-pro/config/config.json');
+    try {
+        delete require.cache[require.resolve('/opt/sshbot-pro/config/config.json')];
+        return require('/opt/sshbot-pro/config/config.json');
+    } catch (e) {
+        console.log(chalk.red('Error cargando config:'), e.message);
+        return null;
+    }
 }
 
 let config = loadConfig();
@@ -410,9 +449,15 @@ async function createHTTPCustomUser(phone, username, days, hwid = null) {
         try {
             if (hwid) {
                 const hcFile = generateHCFile(hwid, 0, username);
+                if (!hcFile.success) throw new Error(hcFile.error);
                 
-                db.run(`INSERT INTO users (phone, username, password, tipo, hwid, hc_file, expires_at) VALUES (?, ?, ?, 'test', ?, ?, ?)`,
-                    [phone, username, password, hwid, hcFile.filename, expireFull]);
+                await new Promise((resolve, reject) => {
+                    db.run(`INSERT INTO users (phone, username, password, tipo, hwid, hc_file, expires_at) VALUES (?, ?, ?, 'test', ?, ?, ?)`,
+                        [phone, username, password, hwid, hcFile.filename, expireFull], function(err) {
+                            if (err) reject(err);
+                            else resolve();
+                        });
+                });
                 
                 return { success: true, username, password, hwid, hcFile: hcFile.url, expires: expireFull };
             }
@@ -425,9 +470,15 @@ async function createHTTPCustomUser(phone, username, days, hwid = null) {
         try {
             if (hwid) {
                 const hcFile = generateHCFile(hwid, days, username);
+                if (!hcFile.success) throw new Error(hcFile.error);
                 
-                db.run(`INSERT INTO users (phone, username, password, tipo, hwid, hc_file, expires_at) VALUES (?, ?, ?, 'premium', ?, ?, ?)`,
-                    [phone, username, password, hwid, hcFile.filename, expireFull]);
+                await new Promise((resolve, reject) => {
+                    db.run(`INSERT INTO users (phone, username, password, tipo, hwid, hc_file, expires_at) VALUES (?, ?, ?, 'premium', ?, ?, ?)`,
+                        [phone, username, password, hwid, hcFile.filename, expireFull], function(err) {
+                            if (err) reject(err);
+                            else resolve();
+                        });
+                });
                 
                 return { success: true, username, password, hwid, hcFile: hcFile.url, expires: expireFull };
             }
@@ -449,10 +500,14 @@ function getUserState(phone) {
             if (err || !row) {
                 resolve({ state: 'main_menu', data: null });
             } else {
-                resolve({
-                    state: row.state || 'main_menu',
-                    data: row.data ? JSON.parse(row.data) : null
-                });
+                try {
+                    resolve({
+                        state: row.state || 'main_menu',
+                        data: row.data ? JSON.parse(row.data) : null
+                    });
+                } catch (e) {
+                    resolve({ state: 'main_menu', data: null });
+                }
             }
         });
     });
@@ -591,7 +646,7 @@ Contacta al soporte para ayuda.`);
                     }
                     
                     if (!(await canCreateTest(from, hwid))) {
-                        await client.sendText(from, `❌ *YA USaste tu prueba hoy*
+                        await client.sendText(from, `❌ *YA USASTE TU PRUEBA HOY*
 
 Vuelve mañana o compra un plan.`);
                         await setUserState(from, 'main_menu');
@@ -607,22 +662,24 @@ Vuelve mañana o compra un plan.`);
                         if (result.success) {
                             registerTest(from, hwid);
                             
-                            await client.sendText(from, `✅ *PRUEBA CREADA*
+                            await client.sendText(from, `✅ *PRUEBA CREADA CON ÉXITO*
 
 📱 *Tus datos:*
 👤 Usuario: ${username}
-🔑 Pass: ${config.bot.default_password}
+🔑 Contraseña: ${config.bot.default_password}
 ⏰ Expira: ${moment().add(config.bot.test_hours, 'hours').format('DD/MM/YYYY HH:mm')}
 
-📁 *CONFIGURACIÓN:*
+📁 *ARCHIVO DE CONFIGURACIÓN:*
 ${result.hcFile}
 
 🔍 *HWID:* ${hwid}`);
                             
-                            console.log(chalk.green(`✅ Test: ${username} - HWID: ${hwid}`));
+                            console.log(chalk.green(`✅ Test creado: ${username} - HWID: ${hwid}`));
+                        } else {
+                            await client.sendText(from, `❌ Error: ${result.error}`);
                         }
                     } catch (error) {
-                        await client.sendText(from, `❌ Error: ${error.message}`);
+                        await client.sendText(from, `❌ Error al crear: ${error.message}`);
                     }
                     
                     await setUserState(from, 'main_menu');
@@ -662,7 +719,9 @@ Envía tu HWID para continuar:`);
                 
                 else if (text === '0' && userState.state === 'buying_plan') {
                     await setUserState(from, 'main_menu');
-                    await client.sendText(from, `🚀 Menú principal - Envía MENU`);
+                    await client.sendText(from, `🚀 *MENÚ PRINCIPAL*
+
+Envía MENU para ver las opciones`);
                 }
                 
                 // RECIBIR HWID PARA COMPRA
@@ -725,13 +784,13 @@ Envía tu HWID:`);
                         return;
                     }
                     
-                    db.get('SELECT username, expires_at FROM users WHERE hwid = ? AND status = 1', [hwid], async (err, user) => {
+                    db.get('SELECT username, expires_at FROM users WHERE hwid = ? AND status = 1 AND expires_at > datetime("now")', [hwid], async (err, user) => {
                         if (user) {
                             const daysLeft = moment(user.expires_at).diff(moment(), 'days');
                             await client.sendText(from, `✅ *CUENTA ACTIVA*
 
 👤 Usuario: ${user.username}
-⏰ Expira: ${moment(user.expires_at).format('DD/MM/YYYY')}
+⏰ Expira: ${moment(user.expires_at).format('DD/MM/YYYY HH:mm')}
 📅 Días restantes: ${daysLeft}`);
                         } else {
                             await client.sendText(from, `❌ No se encontró cuenta activa con ese HWID.`);
@@ -742,7 +801,7 @@ Envía tu HWID:`);
                 }
                 
             } catch (error) {
-                console.error(chalk.red('❌ Error:'), error.message);
+                console.error(chalk.red('❌ Error procesando mensaje:'), error.message);
             }
         });
         
@@ -752,7 +811,8 @@ Envía tu HWID:`);
         });
         
     } catch (error) {
-        console.error(chalk.red('❌ Error inicializando:'), error.message);
+        console.error(chalk.red('❌ Error inicializando WPPConnect:'), error.message);
+        console.log(chalk.yellow('🔄 Reintentando en 10 segundos...'));
         setTimeout(initializeBot, 10000);
     }
 }
@@ -761,7 +821,7 @@ Envía tu HWID:`);
 initializeBot();
 
 process.on('SIGINT', async () => {
-    console.log(chalk.yellow('\n🛑 Cerrando...'));
+    console.log(chalk.yellow('\n🛑 Cerrando bot...'));
     if (client) await client.close();
     process.exit();
 });
@@ -785,6 +845,7 @@ BOLD='\033[1m'
 
 DB="/opt/sshbot-pro/data/users.db"
 CONFIG="/opt/sshbot-pro/config/config.json"
+HC_DIR="/var/www/html/hc_files"
 
 get_val() {
     jq -r "$1" "$CONFIG" 2>/dev/null
@@ -798,13 +859,12 @@ set_val() {
 while true; do
     clear
     echo -e "${CYAN}${BOLD}╔══════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}${BOLD}║           🎛️  PANEL HTTP CUSTOM - HWID + MP                   ║${NC}"
+    echo -e "${CYAN}${BOLD}║           🎛️  PANEL HTTP CUSTOM - HWID + HC                   ║${NC}"
     echo -e "${CYAN}${BOLD}╚══════════════════════════════════════════════════════════════╝${NC}\n"
     
     # Estadísticas
     TOTAL_USERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users" 2>/dev/null || echo "0")
     ACTIVE_USERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE status=1 AND expires_at > datetime('now')" 2>/dev/null || echo "0")
-    PENDING_PAY=$(sqlite3 "$DB" "SELECT COUNT(*) FROM payments WHERE status='pending'" 2>/dev/null || echo "0")
     TOTAL_HWID=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE hwid IS NOT NULL" 2>/dev/null || echo "0")
     
     # Estado del bot
@@ -824,16 +884,21 @@ while true; do
     fi
     
     TEST_HOURS=$(get_val '.bot.test_hours')
+    SERVER_IP=$(get_val '.bot.server_ip')
+    
+    # Contar archivos HC
+    HC_COUNT=$(ls -1 "$HC_DIR"/*.hc 2>/dev/null | wc -l)
     
     echo -e "${YELLOW}📊 ESTADO DEL SISTEMA:${NC}"
     echo -e "  Bot: $STATUS"
     echo -e "  Usuarios: ${CYAN}$ACTIVE_USERS/$TOTAL_USERS${NC} activos/total"
     echo -e "  HWIDs: ${PURPLE}$TOTAL_HWID${NC} registrados"
-    echo -e "  Pagos pendientes: ${YELLOW}$PENDING_PAY${NC}"
+    echo -e "  Archivos HC: ${BLUE}$HC_COUNT${NC} disponibles"
     echo -e "  MercadoPago: $MP_STATUS"
     echo -e "  Test: ${CYAN}$TEST_HOURS${NC} horas"
-    echo -e "  IP: ${GREEN}$(get_val '.bot.server_ip')${NC}"
-    echo -e "  Pass: ${YELLOW}mgvpn247${NC}"
+    echo -e "  Contraseña: ${YELLOW}mgvpn247${NC}"
+    echo -e "  IP: ${GREEN}$SERVER_IP${NC}"
+    echo -e "  URL HC: ${CYAN}http://$SERVER_IP/hc_files/${NC}"
     echo ""
     
     echo -e "${YELLOW}💰 PRECIOS:${NC}"
@@ -848,14 +913,15 @@ while true; do
     echo -e "${CYAN}[2]${NC} 🛑  Detener bot"
     echo -e "${CYAN}[3]${NC} 📱  Ver QR WhatsApp"
     echo -e "${CYAN}[4]${NC} 👤  Crear usuario manual"
-    echo -e "${CYAN}[5]${NC} 👥  Listar usuarios"
+    echo -e "${CYAN}[5]${NC} 👥  Listar usuarios activos"
     echo -e "${CYAN}[6]${NC} ⏰  Cambiar horas del test"
     echo -e "${CYAN}[7]${NC} 💰  Cambiar precios"
     echo -e "${CYAN}[8]${NC} 🔑  Configurar MercadoPago"
-    echo -e "${CYAN}[9]${NC} 📁  Subir/Ver archivos HC"
-    echo -e "${CYAN}[10]${NC} 🔍  Buscar por HWID"
-    echo -e "${CYAN}[11]${NC} 📊  Ver estadísticas"
-    echo -e "${CYAN}[12]${NC} 📋  Ver logs"
+    echo -e "${CYAN}[9]${NC} 📁  Subir archivo HC"
+    echo -e "${CYAN}[10]${NC} 📋  Ver archivos HC"
+    echo -e "${CYAN}[11]${NC} 🔍  Buscar por HWID"
+    echo -e "${CYAN}[12]${NC} 📊  Ver estadísticas"
+    echo -e "${CYAN}[13]${NC} 📋  Ver logs"
     echo -e "${CYAN}[0]${NC} 🚪  Salir"
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
@@ -879,15 +945,15 @@ while true; do
             ;;
         3)
             echo -e "\n${YELLOW}📱 Mostrando QR...${NC}"
-            pm2 logs sshbot-pro --lines 100 | grep -A 20 "QR CODE" || echo "Esperando QR..."
-            read -p "Presiona Enter..."
+            pm2 logs sshbot-pro --lines 100 | grep -A 20 "QR CODE" || echo "Esperando QR... (escanea cuando aparezca)"
+            read -p "Presiona Enter para continuar..."
             ;;
         4)
             clear
             echo -e "${CYAN}👤 CREAR USUARIO MANUAL${NC}\n"
             
             read -p "Teléfono (ej: 5491122334455): " PHONE
-            read -p "HWID (32 caracteres): " HWID
+            read -p "HWID (32 caracteres hex): " HWID
             read -p "Días (0=test, 7,15,30,50): " DAYS
             read -p "Usuario (dejar vacío para generar): " USERNAME
             
@@ -907,7 +973,7 @@ while true; do
             
             # Generar archivo HC
             FILENAME="config_${USERNAME}_${HWID:0:8}.hc"
-            cat > "/var/www/html/hc_files/$FILENAME" << EOF
+            cat > "$HC_DIR/$FILENAME" << EOF
 # HTTP Custom Config
 # Generado para: $USERNAME
 # HWID: $HWID
@@ -915,7 +981,7 @@ while true; do
 
 [config]
 name=SSH-PRO-$USERNAME
-server=$(get_val '.bot.server_ip')
+server=$SERVER_IP
 port=22,80,443
 type=ssh
 payload=GET / HTTP/1.1[crlf]Host: [host][crlf]Connection: Keep-Alive[crlf]User-Agent: [ua][crlf][crlf]
@@ -932,7 +998,9 @@ EOF
             echo -e "\n${GREEN}✅ USUARIO CREADO${NC}"
             echo -e "Usuario: $USERNAME"
             echo -e "HWID: $HWID"
-            echo -e "Config: http://$(get_val '.bot.server_ip')/hc_files/$FILENAME"
+            echo -e "Contraseña: $PASSWORD"
+            echo -e "Expira: $EXPIRE"
+            echo -e "Config: http://$SERVER_IP/hc_files/$FILENAME"
             read -p "Presiona Enter..."
             ;;
         5)
@@ -1001,23 +1069,36 @@ EOF
             ;;
         9)
             clear
-            echo -e "${CYAN}📁 ARCHIVOS HC${NC}\n"
+            echo -e "${CYAN}📁 SUBIR ARCHIVO HC${NC}\n"
+            echo -e "Formatos aceptados: .hc"
+            echo ""
+            read -p "Ruta completa del archivo en el servidor: " FILE_PATH
             
-            echo -e "${YELLOW}Archivos disponibles:${NC}"
-            ls -lh /var/www/html/hc_files/ | grep .hc
-            
-            echo -e "\n${YELLOW}URL:${NC} http://$(get_val '.bot.server_ip')/hc_files/"
-            
+            if [[ ! -f "$FILE_PATH" ]]; then
+                echo -e "${RED}❌ Archivo no encontrado${NC}"
+            else
+                FILENAME=$(basename "$FILE_PATH")
+                cp "$FILE_PATH" "$HC_DIR/$FILENAME"
+                echo -e "${GREEN}✅ Archivo subido: $HC_DIR/$FILENAME${NC}"
+                echo -e "${CYAN}URL: http://$SERVER_IP/hc_files/$FILENAME${NC}"
+            fi
             read -p "Presiona Enter..."
             ;;
         10)
+            clear
+            echo -e "${CYAN}📋 ARCHIVOS HC DISPONIBLES${NC}\n"
+            ls -lh "$HC_DIR" | grep .hc
+            echo -e "\n${CYAN}URL: http://$SERVER_IP/hc_files/${NC}"
+            read -p "Presiona Enter..."
+            ;;
+        11)
             clear
             echo -e "${CYAN}🔍 BUSCAR POR HWID${NC}\n"
             read -p "Ingresa HWID: " SEARCH
             sqlite3 -column -header "$DB" "SELECT username, phone, tipo, expires_at FROM users WHERE hwid = '$SEARCH'"
             read -p "Presiona Enter..."
             ;;
-        11)
+        12)
             clear
             echo -e "${CYAN}📊 ESTADÍSTICAS${NC}\n"
             
@@ -1035,7 +1116,7 @@ EOF
             echo -e "  Con HWID: $CON_HWID"
             read -p "Presiona Enter..."
             ;;
-        12)
+        13)
             echo -e "\n${YELLOW}📋 Mostrando logs...${NC}"
             pm2 logs sshbot-pro --lines 50
             ;;
@@ -1054,29 +1135,6 @@ PANELEOF
 chmod +x /usr/local/bin/sshbot
 
 # ================================================
-# CREAR ARCHIVO DE EJEMPLO
-# ================================================
-echo -e "\n${CYAN}📁 Creando archivo de ejemplo...${NC}"
-
-cat > "/var/www/html/hc_files/ejemplo.hc" << EOF
-# HTTP Custom Config - EJEMPLO
-# No uses este archivo, es solo de referencia
-
-[config]
-name=SSH-PRO-EJEMPLO
-server=$SERVER_IP
-port=22,80,443
-type=ssh
-payload=GET / HTTP/1.1[crlf]Host: [host][crlf]Connection: Keep-Alive[crlf]User-Agent: [ua][crlf][crlf]
-ssh_method=1
-dns=8.8.8.8
-timeout=30
-hwid=TU_HWID_AQUI
-username=ejemplo
-password=mgvpn247
-EOF
-
-# ================================================
 # INICIAR BOT
 # ================================================
 echo -e "\n${CYAN}🚀 Iniciando bot...${NC}"
@@ -1085,6 +1143,19 @@ cd "$USER_HOME"
 pm2 start bot.js --name sshbot-pro
 pm2 save
 pm2 startup systemd -u root --hp /root > /dev/null 2>&1
+
+# ================================================
+# VERIFICAR SERVIDOR WEB
+# ================================================
+echo -e "\n${CYAN}🔍 Verificando servidor web...${NC}"
+sleep 3
+if curl -s http://localhost > /dev/null; then
+    echo -e "${GREEN}✅ Servidor web funcionando${NC}"
+else
+    echo -e "${YELLOW}⚠️ Iniciando servidor web manualmente...${NC}"
+    cd /var/www/html
+    nohup python3 -m http.server 80 > /dev/null 2>&1 &
+fi
 
 # ================================================
 # MENSAJE FINAL
@@ -1100,6 +1171,7 @@ cat << "FINAL"
 ║       ✅ Sistema HWID activado                              ║
 ║       ✅ Servidor de archivos HC                            ║
 ║       ✅ Panel de control corregido                         ║
+║       ✅ MercadoPago integrado                              ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 FINAL
@@ -1112,13 +1184,13 @@ echo -e "  ${YELLOW}pm2 logs sshbot-pro${NC} - Ver QR y logs"
 echo -e "  ${YELLOW}http://$SERVER_IP/hc_files/${NC} - Archivos HC"
 echo -e ""
 echo -e "${GREEN}🔑 CONTRASEÑA POR DEFECTO:${NC} mgvpn247"
-echo -e "${GREEN}⏰ TEST:${NC} $(get_val '.bot.test_hours') horas"
+echo -e "${GREEN}⏰ HORAS DE TEST:${NC} $(get_val '.bot.test_hours')"
 echo -e ""
 echo -e "${YELLOW}📱 PRIMEROS PASOS:${NC}"
 echo -e "  1. Ejecuta: ${CYAN}pm2 logs sshbot-pro${NC}"
 echo -e "  2. Escanea el QR con WhatsApp"
 echo -e "  3. Ejecuta: ${CYAN}sshbot${NC} para el panel"
-echo -e "  4. Envía 'menu' al bot en WhatsApp"
+echo -e "  4. Envía 'menu' al número de WhatsApp"
 echo -e ""
 echo -e "${GREEN}✅ TODO LISTO!${NC}\n"
 
@@ -1127,6 +1199,7 @@ read -p "$(echo -e "${YELLOW}¿Ver logs ahora? (s/N): ${NC}")" -n 1 -r
 echo
 if [[ $REPLY =~ ^[Ss]$ ]]; then
     echo -e "\n${CYAN}Mostrando logs...${NC}"
+    echo -e "${YELLOW}Espera el QR para escanear...${NC}\n"
     sleep 2
     pm2 logs sshbot-pro
 fi
