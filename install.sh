@@ -561,10 +561,9 @@ Para activar tu servicio, envía tu HWID con el formato:
 APP-E3E4D5CBB7636907
 
 📱 ¿CÓMO OBTENER TU HWID?
-1. Abre la aplicación
-2. Ve a "Información del dispositivo"
-3. Copia el HWID que aparece
-4. Pégalo aquí
+1. Abre la aplicación MGVPN
+2. Toca el boton de WhatsApp
+3. Envia el hwid 
 
 ⏳ Tienes 30 minutos para enviar tu HWID`;
                         
@@ -645,12 +644,12 @@ async function initializeBot() {
 
 Elija una opción:
 
-🧪 1 - PROBAR SERVICIO (1 hora gratis)
-💰 2 - COMPRAR ACTIVACIÓN HWID
+🧪 1 - PROBAR INTERNET (1 hora gratis)
+💰 2 - COMPRAR INTERNET
 🔍 3 - VERIFICAR MI HWID
 📱 4 - DESCARGAR APLICACIÓN
 
-💡 Con HWID no necesitas recordar usuario/contraseña`);
+💡 Activacion Con HWID`);
                 }
                 
                 // OPCIÓN 1: PRUEBA
@@ -665,9 +664,8 @@ Formato: APP-E3E4D5CBB7636907
 
 📱 ¿CÓMO OBTENER TU HWID?
 1. Abre la aplicación
-2. Ve a "Información"
-3. Copia el código HWID
-4. Pégalo aquí
+2. Toca el boton de WhatsApp
+3. Envia el HWID
 
 ⏳ Una prueba por día`);
                 }
@@ -710,10 +708,9 @@ ${config.links.app_download}
 
 💡 Instrucciones:
 1. Descarga e instala el APK
-2. Abre la aplicación
-3. Ve a "Información del dispositivo"
-4. Copia tu HWID
-5. Envíalo al bot para activar`);
+2. Atencion si te sale un cartel
+3. Click en mas detalles
+4. Click en instalar de todas formas`);
                 }
                 
                 // PROCESAR HWID PARA COMPRA
@@ -752,7 +749,7 @@ ${payment.paymentUrl}
 📌 DESPUÉS DE PAGAR:
 1. Espera la confirmación
 2. Te pediremos tu HWID
-3. Activarás automáticamente`;
+3. Se activara automáticamente`;
                             
                             await client.sendText(from, message);
                             
@@ -784,8 +781,8 @@ Contacta al administrador: ${config.links.support}`);
 
 Elija una opción:
 
-🧪 1 - PROBAR SERVICIO (1 hora gratis)
-💰 2 - COMPRAR ACTIVACIÓN HWID
+🧪 1 - PROBAR INTERNET (1 hora gratis)
+💰 2 - COMPRAR INTERNET
 🔍 3 - VERIFICAR MI HWID
 📱 4 - DESCARGAR APLICACIÓN`);
                 }
@@ -945,7 +942,7 @@ Si es tuyo, contacta soporte.`);
 ⏰ Válido hasta: ${expireDate}
 📱 Tipo: PREMIUM
 
-¡Ya puedes usar la aplicación sin usuario/contraseña!`);
+¡Ya puedes usar la aplicación conectate!`);
                         
                         console.log(chalk.green(`✅ HWID premium: ${hwid}`));
                     } else {
