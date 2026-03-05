@@ -641,25 +641,25 @@ async function initializeBot() {
                 if (['menu', 'hola', 'start', 'hi', 'volver', '0'].includes(lowerText)) {
                     await setUserState(from, 'main_menu');
                     
-                    await client.sendText(from, `🤖 SISTEMA HWID SSH
+                    await client.sendText(from, `🤖 BOT MG VPN
 
-¡Bienvenido al sistema SIN USUARIO/CONTRASEÑA!
+¡Bienvenidos!
 
 Elija una opción:
 
-🧪 1 - PROBAR INTERNET (1 hora gratis)
+⏳️ 1 - PROBAR INTERNET (1 hora gratis)
 💰 2 - COMPRAR INTERNET
 🔍 3 - VERIFICAR MI HWID
 📱 4 - DESCARGAR APLICACIÓN
 
-💡 Activacion Con HWID`);
+`);
                 }
                 
                 // OPCIÓN 1: PRUEBA
                 else if (lowerText === '1' && userState.state === 'main_menu') {
                     await setUserState(from, 'awaiting_test_nombre');
                     
-                    await client.sendText(from, `🧪 PRUEBA GRATUITA - 1 HORA
+                    await client.sendText(from, `⏳️ PRUEBA GRATUITA - 1 HORA
 
 Primero, dime tu nombre:`);
                 }
