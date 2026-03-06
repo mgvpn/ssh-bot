@@ -723,7 +723,7 @@ Formato: APP-E3E4D5CBB7636907
 📱 ¿CÓMO OBTENER TU HWID?
 1. Abre la aplicación
 2. Toca el boton de WhatsApp
-3. Copia el HWID
+3. Envia el HWID
 
 ⏳ Una prueba por día`);
                 }
@@ -775,11 +775,11 @@ Si crees que es un error, contacta soporte.`);
 
 🔐 HWID: ${hwid}
 ⏰ Expira: ${expireTime}
-⚡ Tipo: TEST (1 hora)
+⚡ Tipo: PRUEBA (1 hora)
 
-📱 Abre la aplicación y ya puedes usar el servicio
+📱 Abre la aplicación y ya puedes conectarte
 
-💡 Sin usuario/contraseña, solo tu HWID`);
+`);
                         
                         console.log(chalk.green(`✅ HWID test: ${hwid} - ${nombre}`));
                     } else {
@@ -865,10 +865,10 @@ ${config.links.support}`);
 
 Elija una opción:
 
-🧪 1 - PROBAR INTERNET (1 hora gratis)
-💰 2 - COMPRAR INTERNET
-🔍 3 - VERIFICAR MI HWID
-📱 4 - DESCARGAR APLICACIÓN`);
+⏳️ 1️⃣ - PROBAR INTERNET (1 hora gratis)
+💰 2️⃣ - COMPRAR INTERNET
+🔍 3️⃣ - VERIFICAR MI HWID
+📱 4️⃣ - DESCARGAR APLICACIÓN`);
                 }
                 
                 // PROCESAR HWID PARA VERIFICACIÓN
@@ -946,7 +946,7 @@ Formato: APP-E3E4D5CBB7636907
 📱 ¿CÓMO OBTENER TU HWID?
 1. Abre la aplicación
 2. Toca el botón de WhatsApp
-3. Copia el HWID que aparece`);
+3. Envia el HWID`);
                         
                         return;
                     }
