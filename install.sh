@@ -158,7 +158,7 @@ cat > "$CONFIG_FILE" << EOF
         "public_key": ""
     },
     "links": {
-        "app_download": "https://www.mediafire.com/file/p8kgthxbsid7xws/MAJ/DNI_AND_FIL",
+        "app_download": "https://www.mediafire.com/file/18tnc70qr2771lu/MGVPN.apk/file",
         "support": "https://wa.me/543435071016"
     },
     "paths": {
