@@ -48,6 +48,7 @@ echo -e "  📝 ${PURPLE}Flujo mejorado${NC} - Primero nombre, luego HWID"
 echo -e "  🎛️  ${PURPLE}Panel completo${NC} - Control total del sistema"
 echo -e "  📊 ${BLUE}Estadísticas${NC} - Ventas, HWIDs, ingresos"
 echo -e "  ⚡ ${GREEN}Auto-verificación${NC} - Pagos verificados cada 2 min"
+echo -e "  ⏱️  ${YELLOW}PRUEBA DE 2 HORAS${NC} - Duración actualizada"
 echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}\n"
 
 # Verificar root
@@ -144,7 +145,7 @@ cat > "$CONFIG_FILE" << EOF
         "server_ip": "$SERVER_IP"
     },
     "prices": {
-        "test_hours": 1,
+        "test_hours": 2,
         "price_7d": 3000.00,
         "price_15d": 4000.00,
         "price_30d": 7000.00,
@@ -263,8 +264,8 @@ PKGEOF
 echo -e "${YELLOW}📦 Instalando dependencias...${NC}"
 npm install --silent 2>&1 | grep -v "npm WARN" || true
 
-# Crear bot.js con HWID (flujo nombre -> HWID)
-echo -e "${YELLOW}📝 Creando bot.js con flujo nombre -> HWID...${NC}"
+# Crear bot.js con HWID (flujo nombre -> HWID) - CORREGIDO: prueba 2 HORAS y formato hora
+echo -e "${YELLOW}📝 Creando bot.js con flujo nombre -> HWID (prueba 2 horas)...${NC}"
 
 cat > "bot.js" << 'BOTEOF'
 const wppconnect = require('@wppconnect-team/wppconnect');
@@ -286,6 +287,7 @@ moment.locale('es');
 console.log(chalk.cyan.bold('\n╔══════════════════════════════════════════════════════════════╗'));
 console.log(chalk.cyan.bold('║           🤖 SSH BOT PRO - HWID + MERCADOPAGO                ║'));
 console.log(chalk.cyan.bold('║           📝 FLUJO: PRIMERO NOMBRE, LUEGO HWID                ║'));
+console.log(chalk.cyan.bold('║           ⏱️  PRUEBA: 2 HORAS                                 ║'));
 console.log(chalk.cyan.bold('╚══════════════════════════════════════════════════════════════╝\n'));
 
 // Cargar configuración
@@ -381,8 +383,9 @@ async function registerHWID(phone, nombre, hwid, days, tipo = 'premium') {
 
         let expireFull;
         if (days === 0) {
-            // Test - 1 hora
-            expireFull = moment().add(config.prices.test_hours, 'hours').format('YYYY-MM-DD HH:mm:ss');
+            // Test - 2 horas (CORREGIDO)
+            expireFull = moment().add(2, 'hours').format('YYYY-MM-DD HH:mm:ss');
+            console.log(chalk.cyan(`⏱️  Prueba 2 horas - Expira: ${expireFull}`));
         } else {
             // Premium
             expireFull = moment().add(days, 'days').format('YYYY-MM-DD 23:59:59');
@@ -645,7 +648,7 @@ async function initializeBot() {
 
 Elija una opción:
 
-⏳️ 1️⃣ - PROBAR INTERNET (1 hora gratis)
+⏳️ 1️⃣ - PROBAR INTERNET (2 horas gratis)
 💰 2️⃣ - COMPRAR INTERNET
 🔍 3️⃣ - VERIFICAR MI HWID
 📱 4️⃣ - DESCARGAR APLICACIÓN`);
@@ -655,7 +658,7 @@ Elija una opción:
                 else if (text === '1' && userState.state === 'main_menu') {
                     await setUserState(from, 'awaiting_test_nombre');
                     
-                    await client.sendText(from, `⏳️ PRUEBA GRATUITA - 1 HORA
+                    await client.sendText(from, `⏳️ PRUEBA GRATUITA - 2 HORAS
 
 Primero, dime tu nombre:`);
                 }
@@ -716,7 +719,7 @@ ${config.links.app_download}
                     
                     await client.sendText(from, `✅ Gracias ${nombre}
 
-Ahora envía tu HWID para activar la prueba:
+Ahora envía tu HWID para activar la prueba (2 horas):
 
 Formato: APP-E3E4D5CBB7636907
 
@@ -762,7 +765,7 @@ Si crees que es un error, contacta soporte.`);
                         return;
                     }
                     
-                    await client.sendText(from, '⏳ Activando prueba...');
+                    await client.sendText(from, '⏳ Activando prueba (2 horas)...');
                     
                     const result = await registerHWID(from, nombre, hwid, 0, 'test');
                     
@@ -775,13 +778,13 @@ Si crees que es un error, contacta soporte.`);
 
 🔐 HWID: ${hwid}
 ⏰ Expira: ${expireTime}
-⚡ Tipo: PRUEBA (1 hora)
+⚡ Tipo: PRUEBA (2 horas)
 
 📱 Abre la aplicación y ya puedes conectarte
 
 `);
                         
-                        console.log(chalk.green(`✅ HWID test: ${hwid} - ${nombre}`));
+                        console.log(chalk.green(`✅ HWID test: ${hwid} - ${nombre} - Expira: ${result.expires}`));
                     } else {
                         await client.sendText(from, `❌ Error: ${result.error}`);
                     }
@@ -865,7 +868,7 @@ ${config.links.support}`);
 
 Elija una opción:
 
-⏳️ 1️⃣ - PROBAR INTERNET (1 hora gratis)
+⏳️ 1️⃣ - PROBAR INTERNET (2 horas gratis)
 💰 2️⃣ - COMPRAR INTERNET
 🔍 3️⃣ - VERIFICAR MI HWID
 📱 4️⃣ - DESCARGAR APLICACIÓN`);
@@ -917,7 +920,7 @@ Renueva comprando un nuevo plan`);
 Este HWID no está en el sistema.
 
 ¿Quieres probar el servicio?
-Envía 1 para prueba gratis`);
+Envía 1 para prueba gratis (2 horas)`);
                     }
                     
                     await setUserState(from, 'main_menu');
@@ -1050,7 +1053,7 @@ process.on('SIGINT', async () => {
 });
 BOTEOF
 
-echo -e "${GREEN}✅ Bot HWID creado con flujo nombre -> HWID${NC}"
+echo -e "${GREEN}✅ Bot HWID creado con flujo nombre -> HWID (prueba 2 HORAS)${NC}"
 
 # ================================================
 # CREAR PANEL DE CONTROL PARA HWID
@@ -1093,6 +1096,7 @@ show_header() {
     echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${CYAN}║           🎛️  PANEL SSH BOT PRO - VERSIÓN HWID              ║${NC}"
     echo -e "${CYAN}║              🔐 SIN USUARIO/CONTRASEÑA                      ║${NC}"
+    echo -e "${CYAN}║              ⏱️  PRUEBA: 2 HORAS                            ║${NC}"
     echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
 }
 
@@ -1126,6 +1130,7 @@ while true; do
     echo -e "  Pagos: ${CYAN}$PENDING_PAYMENTS${NC} pend | ${GREEN}$APPROVED_PAYMENTS${NC} aprob"
     echo -e "  MercadoPago: $MP_STATUS"
     echo -e "  IP: $(get_val '.bot.server_ip')"
+    echo -e "  ⏱️  Prueba: ${YELLOW}2 HORAS${NC}"
     echo -e ""
     
     echo -e "${YELLOW}💰 PRECIOS ACTUALES:${NC}"
@@ -1182,7 +1187,7 @@ while true; do
             read -p "Nombre del usuario: " NOMBRE
             read -p "HWID (formato: APP-E3E4D5CBB7636907): " HWID
             read -p "Tipo (test/premium): " TIPO
-            read -p "Días (0=test 1h, 7,15,30,50): " DAYS
+            read -p "Días (0=test 2h, 7,15,30,50): " DAYS
             
             [[ -z "$DAYS" ]] && DAYS="30"
             
@@ -1196,7 +1201,7 @@ while true; do
             
             if [[ "$TIPO" == "test" ]]; then
                 DAYS="0"
-                EXPIRE_DATE=$(date -d "+1 hour" +"%Y-%m-%d %H:%M:%S")
+                EXPIRE_DATE=$(date -d "+2 hours" +"%Y-%m-%d %H:%M:%S")
             else
                 EXPIRE_DATE=$(date -d "+$DAYS days" +"%Y-%m-%d 23:59:59")
             fi
@@ -1395,6 +1400,7 @@ cat << "FINAL"
 ║       📱 PRIMERO NOMBRE, LUEGO HWID                        ║
 ║       💰 MercadoPago SDK v2.x INTEGRADO                    ║
 ║       💳 Pago automático con QR                            ║
+║       ⏱️  PRUEBA DE 2 HORAS (ACTUALIZADO)                  ║
 ║       🎛️  Panel completo con control MP                    ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
@@ -1408,6 +1414,7 @@ echo -e "${GREEN}✅ FLUJO: Primero nombre, luego HWID${NC}"
 echo -e "${GREEN}✅ Formato HWID: APP-E3E4D5CBB7636907${NC}"
 echo -e "${GREEN}✅ MercadoPago SDK v2.x integrado${NC}"
 echo -e "${GREEN}✅ Verificación automática de pagos${NC}"
+echo -e "${GREEN}✅ ⏱️  PRUEBA DE 2 HORAS (CORREGIDO)${NC}"
 echo -e "${GREEN}✅ SIN CUPONES DE DESCUENTO - Proceso simplificado${NC}"
 echo -e "${GREEN}✅ SIN NÚMEROS AZULES - Texto normal${NC}"
 echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}\n"
@@ -1426,6 +1433,8 @@ echo -e "  4. Bot pide: ${CYAN}\"Ahora envía tu HWID\"${NC}"
 echo -e "  5. Usuario envía HWID"
 echo -e "  6. Sistema activa automáticamente"
 echo -e "\n"
+
+echo -e "${YELLOW}⏱️  PRUEBA GRATUITA: ${GREEN}2 HORAS${NC}\n"
 
 echo -e "${YELLOW}💡 FORMATO HWID VÁLIDO:${NC}"
 echo -e "  APP-E3E4D5CBB7636907"
