@@ -1,3 +1,4 @@
+
 #!/bin/bash
 # ================================================
 # SSH BOT PRO - WPPCONNECT + MERCADOPAGO + HWID
@@ -34,6 +35,7 @@ cat << "BANNER"
 ║               💰 MercadoPago SDK v2.x INTEGRADO             ║
 ║               💳 Pago automático con QR                     ║
 ║               🎛️  Panel completo con control MP            ║
+║               ⏰ NOTIFICACIONES DE VENCIMIENTO              ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 BANNER
@@ -49,6 +51,7 @@ echo -e "  🎛️  ${PURPLE}Panel completo${NC} - Control total del sistema"
 echo -e "  📊 ${BLUE}Estadísticas${NC} - Ventas, HWIDs, ingresos"
 echo -e "  ⚡ ${GREEN}Auto-verificación${NC} - Pagos verificados cada 2 min"
 echo -e "  ⏱️  ${YELLOW}PRUEBA DE 2 HORAS${NC} - Duración actualizada"
+echo -e "  ⏰ ${CYAN}NOTIFICACIONES DE VENCIMIENTO${NC} - Avisos automáticos"
 echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}\n"
 
 # Verificar root
@@ -288,6 +291,7 @@ console.log(chalk.cyan.bold('\n╔═══════════════�
 console.log(chalk.cyan.bold('║           🤖 SSH BOT PRO - HWID + MERCADOPAGO                ║'));
 console.log(chalk.cyan.bold('║           📝 FLUJO: PRIMERO NOMBRE, LUEGO HWID                ║'));
 console.log(chalk.cyan.bold('║           ⏱️  PRUEBA: 2 HORAS                                 ║'));
+console.log(chalk.cyan.bold('║           ⏰ NOTIFICACIONES DE VENCIMIENTO                    ║'));
 console.log(chalk.cyan.bold('╚══════════════════════════════════════════════════════════════╝\n'));
 
 // Cargar configuración
@@ -589,6 +593,79 @@ Para continuar con la activación, dime tu nombre
             }
         }
     });
+}
+
+// ✅ NOTIFICACIONES DE VENCIMIENTO (NUEVO)
+async function checkExpiringHWIDs() {
+    try {
+        // Buscar HWIDs que expiran en las próximas 24 horas
+        const expiringSoon = await new Promise((resolve, reject) => {
+            db.all(`
+                SELECT * FROM hwid_users 
+                WHERE status = 1 
+                AND expires_at > datetime('now') 
+                AND expires_at < datetime('now', '+1 day')
+                AND tipo = 'premium'
+            `, (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows || []);
+            });
+        });
+
+        for (const hwid of expiringSoon) {
+            const hoursLeft = moment(hwid.expires_at).diff(moment(), 'hours');
+            const message = `⏰ RECORDATORIO DE VENCIMIENTO
+
+Hola ${hwid.nombre}, tu acceso expirará en aproximadamente ${hoursLeft} horas.
+
+🔐 HWID: ${hwid.hwid}
+⏰ Fecha de vencimiento: ${moment(hwid.expires_at).format('DD/MM/YYYY HH:mm')}
+
+💰 Para renovar, envía 2 y elige tu plan.
+
+¡No te quedes sin servicio!`;
+            
+            if (client) {
+                await client.sendText(hwid.phone, message);
+                console.log(chalk.yellow(`📨 Notificación enviada a ${hwid.nombre} - Expira en ${hoursLeft} horas`));
+            }
+        }
+
+        // Buscar HWIDs que expiraron en las últimas 24 horas (para recordatorio post-vencimiento)
+        const expired = await new Promise((resolve, reject) => {
+            db.all(`
+                SELECT * FROM hwid_users 
+                WHERE status = 0 
+                AND expires_at > datetime('now', '-1 day')
+                AND expires_at < datetime('now')
+                AND tipo = 'premium'
+            `, (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows || []);
+            });
+        });
+
+        for (const hwid of expired) {
+            const message = `⏰ SERVICIO EXPIRADO
+
+Hola ${hwid.nombre}, tu acceso ha expirado.
+
+🔐 HWID: ${hwid.hwid}
+⏰ Expiró: ${moment(hwid.expires_at).format('DD/MM/YYYY HH:mm')}
+
+💰 Para renovar, envía 2 y elige tu plan.
+
+¡Renueva ahora y sigue disfrutando!`;
+            
+            if (client) {
+                await client.sendText(hwid.phone, message);
+                console.log(chalk.yellow(`📨 Notificación post-vencimiento enviada a ${hwid.nombre}`));
+            }
+        }
+
+    } catch (error) {
+        console.error(chalk.red('❌ Error en notificaciones de vencimiento:'), error.message);
+    }
 }
 
 // Inicializar WPPConnect
@@ -1021,6 +1098,12 @@ Si es tuyo, contacta soporte.`);
             checkPendingPayments();
         });
         
+        // ✅ NOTIFICACIONES DE VENCIMIENTO CADA HORA (NUEVO)
+        cron.schedule('0 * * * *', () => {
+            console.log(chalk.yellow('⏰ Verificando HWIDs próximos a vencer...'));
+            checkExpiringHWIDs();
+        });
+        
         // ✅ LIMPIAR HWIDS EXPIRADOS
         cron.schedule('*/15 * * * *', async () => {
             const now = moment().format('YYYY-MM-DD HH:mm:ss');
@@ -1097,6 +1180,7 @@ show_header() {
     echo -e "${CYAN}║           🎛️  PANEL SSH BOT PRO - VERSIÓN HWID              ║${NC}"
     echo -e "${CYAN}║              🔐 SIN USUARIO/CONTRASEÑA                      ║${NC}"
     echo -e "${CYAN}║              ⏱️  PRUEBA: 2 HORAS                            ║${NC}"
+    echo -e "${CYAN}║              ⏰ NOTIFICACIONES DE VENCIMIENTO               ║${NC}"
     echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
 }
 
@@ -1131,6 +1215,7 @@ while true; do
     echo -e "  MercadoPago: $MP_STATUS"
     echo -e "  IP: $(get_val '.bot.server_ip')"
     echo -e "  ⏱️  Prueba: ${YELLOW}2 HORAS${NC}"
+    echo -e "  ⏰  Notificaciones: ${GREEN}ACTIVAS (cada hora)${NC}"
     echo -e ""
     
     echo -e "${YELLOW}💰 PRECIOS ACTUALES:${NC}"
@@ -1401,6 +1486,7 @@ cat << "FINAL"
 ║       💰 MercadoPago SDK v2.x INTEGRADO                    ║
 ║       💳 Pago automático con QR                            ║
 ║       ⏱️  PRUEBA DE 2 HORAS (ACTUALIZADO)                  ║
+║       ⏰ NOTIFICACIONES DE VENCIMIENTO ACTIVAS              ║
 ║       🎛️  Panel completo con control MP                    ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
@@ -1415,6 +1501,7 @@ echo -e "${GREEN}✅ Formato HWID: APP-E3E4D5CBB7636907${NC}"
 echo -e "${GREEN}✅ MercadoPago SDK v2.x integrado${NC}"
 echo -e "${GREEN}✅ Verificación automática de pagos${NC}"
 echo -e "${GREEN}✅ ⏱️  PRUEBA DE 2 HORAS (CORREGIDO)${NC}"
+echo -e "${GREEN}✅ ⏰ NOTIFICACIONES DE VENCIMIENTO (cada hora)${NC}"
 echo -e "${GREEN}✅ SIN CUPONES DE DESCUENTO - Proceso simplificado${NC}"
 echo -e "${GREEN}✅ SIN NÚMEROS AZULES - Texto normal${NC}"
 echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}\n"
@@ -1448,6 +1535,13 @@ echo -e "  3. Ve a 'Tus credenciales'"
 echo -e "  4. Copia 'Access Token PRODUCCIÓN'"
 echo -e "  5. En el panel: Opción 7 → Pegar token"
 echo -e "  6. Testear con opción 8"
+echo -e "\n"
+
+echo -e "${YELLOW}⏰ NOTIFICACIONES DE VENCIMIENTO:${NC}"
+echo -e "  • Se envían automáticamente cada hora"
+echo -e "  • Avisan 24 horas antes de vencer"
+echo -e "  • También avisan cuando ya venció"
+echo -e "  • Solo para usuarios premium"
 echo -e "\n"
 
 echo -e "${GREEN}${BOLD}¡Sistema HWID listo! Escanea el QR y ya no necesitas usuario/contraseña 🚀${NC}\n"
