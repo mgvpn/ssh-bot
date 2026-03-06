@@ -648,10 +648,10 @@ async function initializeBot() {
 
 Elija una opción:
 
-⏳️ 1️⃣ - PROBAR INTERNET (2 horas gratis)
-💰 2️⃣ - COMPRAR INTERNET
-🔍 3️⃣ - VERIFICAR MI HWID
-📱 4️⃣ - DESCARGAR APLICACIÓN`);
+ 1️⃣ - PROBAR INTERNET (2 horas gratis)
+ 2️⃣ - COMPRAR INTERNET
+ 3️⃣ - VERIFICAR MI HWID
+ 4️⃣ - DESCARGAR APLICACIÓN`);
                 }
                 
                 // OPCIÓN 1: PRUEBA
@@ -868,10 +868,10 @@ ${config.links.support}`);
 
 Elija una opción:
 
-⏳️ 1️⃣ - PROBAR INTERNET (2 horas gratis)
-💰 2️⃣ - COMPRAR INTERNET
-🔍 3️⃣ - VERIFICAR MI HWID
-📱 4️⃣ - DESCARGAR APLICACIÓN`);
+ 1️⃣ - PROBAR INTERNET (2 horas gratis)
+ 2️⃣ - COMPRAR INTERNET
+ 3️⃣ - VERIFICAR MI HWID
+ 4️⃣ - DESCARGAR APLICACIÓN`);
                 }
                 
                 // PROCESAR HWID PARA VERIFICACIÓN
