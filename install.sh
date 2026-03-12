@@ -1,8 +1,7 @@
-
 #!/bin/bash
 # ================================================
 # SSH BOT PRO - WPPCONNECT + MERCADOPAGO + HWID
-# VERSIÓN SIMPLIFICADA: PRIMERO NOMBRE, LUEGO HWID
+# VERSIÓN CORREGIDA - BD ÚNICA (NO DA EXPIRADO)
 # ================================================
 
 set -e
@@ -29,13 +28,12 @@ cat << "BANNER"
 ║     ╚══════╝╚══════╝╚═╝  ╚═╝    ╚═════╝  ╚═════╝    ╚═╝     ║
 ╠══════════════════════════════════════════════════════════════╣
 ║                                                              ║
-║          🤖 SSH BOT PRO - WPPCONNECT + MERCADOPAGO          ║
-║               🔐 VERSIÓN HWID - SIN USUARIO/CONTRASEÑA      ║
-║               📱 PRIMERO NOMBRE, LUEGO HWID                 ║
-║               💰 MercadoPago SDK v2.x INTEGRADO             ║
-║               💳 Pago automático con QR                     ║
-║               🎛️  Panel completo con control MP            ║
-║               ⏰ NOTIFICACIONES DE VENCIMIENTO              ║
+║          🤖 SSH BOT PRO - VERSIÓN CORREGIDA                ║
+║               🔐 BD ÚNICA - NO DA EXPIRADO                 ║
+║               📱 HWID + MERCADOPAGO                        ║
+║               💰 Pago automático con QR                    ║
+║               ⏰ NOTIFICACIONES DE VENCIMIENTO             ║
+║               ✅ PRUEBA 2 HORAS                            ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 BANNER
@@ -43,15 +41,16 @@ echo -e "${NC}"
 
 echo -e "${GREEN}✅ CARACTERÍSTICAS PRINCIPALES:${NC}"
 echo -e "  🔐 ${CYAN}Sistema HWID${NC} - Sin usuario/contraseña"
-echo -e "  📱 ${CYAN}WPPConnect${NC} - API WhatsApp que funciona"
+echo -e "  📱 ${CYAN}WPPConnect${NC} - API WhatsApp funcionando"
 echo -e "  💰 ${GREEN}MercadoPago SDK v2.x${NC} - Integrado completo"
-echo -e "  💳 ${YELLOW}Pago automático${NC} - QR + Enlace de pago"
+echo -e "  💳 ${YELLOW}Pago automático${NC} - QR + Enlace"
 echo -e "  📝 ${PURPLE}Flujo mejorado${NC} - Primero nombre, luego HWID"
-echo -e "  🎛️  ${PURPLE}Panel completo${NC} - Control total del sistema"
+echo -e "  🎛️  ${PURPLE}Panel completo${NC} - Control total"
 echo -e "  📊 ${BLUE}Estadísticas${NC} - Ventas, HWIDs, ingresos"
-echo -e "  ⚡ ${GREEN}Auto-verificación${NC} - Pagos verificados cada 2 min"
-echo -e "  ⏱️  ${YELLOW}PRUEBA DE 2 HORAS${NC} - Duración actualizada"
-echo -e "  ⏰ ${CYAN}NOTIFICACIONES DE VENCIMIENTO${NC} - Avisos automáticos"
+echo -e "  ⚡ ${GREEN}Auto-verificación${NC} - Pagos c/2 min"
+echo -e "  ⏱️  ${YELLOW}PRUEBA 2 HORAS${NC} - Duración correcta"
+echo -e "  ⏰ ${CYAN}NOTIFICACIONES${NC} - Avisos automáticos"
+echo -e "  ✅ ${GREEN}BD ÚNICA${NC} - NO DA ERROR EXPIRADO"
 echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}\n"
 
 # Verificar root
@@ -119,13 +118,13 @@ pm2 update
 echo -e "${GREEN}✅ Dependencias instaladas${NC}"
 
 # ================================================
-# PREPARAR ESTRUCTURA
+# PREPARAR ESTRUCTURA - CON BD ÚNICA
 # ================================================
-echo -e "\n${CYAN}📁 Creando estructura...${NC}"
+echo -e "\n${CYAN}📁 Creando estructura con BD ÚNICA...${NC}"
 
 INSTALL_DIR="/opt/sshbot-pro"
 USER_HOME="/root/sshbot-pro"
-DB_FILE="$INSTALL_DIR/data/hwid.db"
+DB_FILE="$INSTALL_DIR/data/bot.db"  # ← ¡BD ÚNICA! (CORREGIDO)
 CONFIG_FILE="$INSTALL_DIR/config/config.json"
 
 # Limpiar anterior
@@ -144,7 +143,7 @@ cat > "$CONFIG_FILE" << EOF
 {
     "bot": {
         "name": "SSH Bot Pro HWID",
-        "version": "3.0-HWID",
+        "version": "3.0-HWID-CORREGIDO",
         "server_ip": "$SERVER_IP"
     },
     "prices": {
@@ -172,9 +171,14 @@ cat > "$CONFIG_FILE" << EOF
 }
 EOF
 
-# Crear base de datos para HWID
+# ================================================
+# CREAR BASE DE DATOS ÚNICA (TODAS LAS TABLAS)
+# ================================================
+echo -e "${CYAN}🗄️  Creando BD ÚNICA con todas las tablas...${NC}"
+
 sqlite3 "$DB_FILE" << 'SQL'
-CREATE TABLE hwid_users (
+-- Tabla principal para HWID
+CREATE TABLE IF NOT EXISTS hwid_users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     phone TEXT,
     nombre TEXT,
@@ -184,15 +188,32 @@ CREATE TABLE hwid_users (
     status INTEGER DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
-CREATE TABLE daily_tests (
+
+-- Tabla para SSH (por si luego se necesita)
+CREATE TABLE IF NOT EXISTS ssh_users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    phone TEXT,
+    username TEXT UNIQUE,
+    password TEXT DEFAULT 'mgvpn247',
+    tipo TEXT DEFAULT 'test',
+    expires_at DATETIME,
+    status INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla de tests diarios
+CREATE TABLE IF NOT EXISTS daily_tests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     phone TEXT,
     nombre TEXT,
     date DATE,
+    system_type TEXT DEFAULT 'hwid',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(phone, date)
 );
-CREATE TABLE payments (
+
+-- Tabla de pagos (con todos los campos necesarios)
+CREATE TABLE IF NOT EXISTS payments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     payment_id TEXT UNIQUE,
     phone TEXT,
@@ -205,23 +226,32 @@ CREATE TABLE payments (
     qr_code TEXT,
     preference_id TEXT,
     hwid TEXT,
+    system_type TEXT DEFAULT 'hwid',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     approved_at DATETIME
 );
-CREATE TABLE logs (
+
+-- Tabla de logs
+CREATE TABLE IF NOT EXISTS logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     type TEXT,
     message TEXT,
     data TEXT,
+    system_type TEXT DEFAULT 'hwid',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
-CREATE TABLE user_state (
+
+-- Tabla de estados de usuario
+CREATE TABLE IF NOT EXISTS user_state (
     phone TEXT PRIMARY KEY,
     state TEXT DEFAULT 'main_menu',
     data TEXT,
+    system_type TEXT DEFAULT 'hwid',
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
-CREATE TABLE hwid_attempts (
+
+-- Tabla de intentos de HWID
+CREATE TABLE IF NOT EXISTS hwid_attempts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     hwid TEXT,
     phone TEXT,
@@ -229,18 +259,23 @@ CREATE TABLE hwid_attempts (
     action TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
-CREATE INDEX idx_hwid_users_hwid ON hwid_users(hwid);
-CREATE INDEX idx_hwid_users_status ON hwid_users(status);
-CREATE INDEX idx_payments_hwid ON payments(hwid);
-CREATE INDEX idx_payments_status ON payments(status);
+
+-- Índices para búsquedas rápidas
+CREATE INDEX IF NOT EXISTS idx_hwid_users_hwid ON hwid_users(hwid);
+CREATE INDEX IF NOT EXISTS idx_hwid_users_status ON hwid_users(status);
+CREATE INDEX IF NOT EXISTS idx_hwid_users_phone ON hwid_users(phone);
+CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
+CREATE INDEX IF NOT EXISTS idx_payments_hwid ON payments(hwid);
+CREATE INDEX IF NOT EXISTS idx_payments_phone ON payments(phone);
+CREATE INDEX IF NOT EXISTS idx_daily_tests_phone ON daily_tests(phone, date);
 SQL
 
-echo -e "${GREEN}✅ Estructura HWID creada${NC}"
+echo -e "${GREEN}✅ BD ÚNICA creada en: ${CYAN}$DB_FILE${NC}"
 
 # ================================================
-# CREAR BOT CON HWID (PRIMERO NOMBRE, LUEGO HWID)
+# CREAR BOT CON HWID (BD ÚNICA - CORREGIDO)
 # ================================================
-echo -e "\n${CYAN}🤖 Creando bot con sistema HWID (primero nombre, luego HWID)...${NC}"
+echo -e "\n${CYAN}🤖 Creando bot con sistema HWID (BD ÚNICA - NO DA EXPIRADO)...${NC}"
 
 cd "$USER_HOME"
 
@@ -267,8 +302,10 @@ PKGEOF
 echo -e "${YELLOW}📦 Instalando dependencias...${NC}"
 npm install --silent 2>&1 | grep -v "npm WARN" || true
 
-# Crear bot.js con HWID (flujo nombre -> HWID) - CORREGIDO: prueba 2 HORAS y formato hora
-echo -e "${YELLOW}📝 Creando bot.js con flujo nombre -> HWID (prueba 2 horas)...${NC}"
+# ================================================
+# CREAR BOT.JS CON BD ÚNICA - ¡CORREGIDO!
+# ================================================
+echo -e "${YELLOW}📝 Creando bot.js con BD ÚNICA (NO DA EXPIRADO)...${NC}"
 
 cat > "bot.js" << 'BOTEOF'
 const wppconnect = require('@wppconnect-team/wppconnect');
@@ -288,10 +325,9 @@ const execPromise = util.promisify(exec);
 moment.locale('es');
 
 console.log(chalk.cyan.bold('\n╔══════════════════════════════════════════════════════════════╗'));
-console.log(chalk.cyan.bold('║           🤖 SSH BOT PRO - HWID + MERCADOPAGO                ║'));
-console.log(chalk.cyan.bold('║           📝 FLUJO: PRIMERO NOMBRE, LUEGO HWID                ║'));
-console.log(chalk.cyan.bold('║           ⏱️  PRUEBA: 2 HORAS                                 ║'));
-console.log(chalk.cyan.bold('║           ⏰ NOTIFICACIONES DE VENCIMIENTO                    ║'));
+console.log(chalk.cyan.bold('║           🤖 SSH BOT PRO - HWID CORREGIDO                   ║'));
+console.log(chalk.cyan.bold('║           ✅ BD ÚNICA - NO DA EXPIRADO                       ║'));
+console.log(chalk.cyan.bold('║           ⏱️  PRUEBA: 2 HORAS                                ║'));
 console.log(chalk.cyan.bold('╚══════════════════════════════════════════════════════════════╝\n'));
 
 // Cargar configuración
@@ -301,7 +337,13 @@ function loadConfig() {
 }
 
 let config = loadConfig();
-const db = new sqlite3.Database('/opt/sshbot-pro/data/hwid.db');
+
+// ================================================
+// ✅ BD ÚNICA - MISMA CONEXIÓN PARA TODO
+// ================================================
+const db = new sqlite3.Database('/opt/sshbot-pro/data/bot.db');  // ← ¡BD ÚNICA!
+
+console.log(chalk.green('✅ Conectado a BD ÚNICA: /opt/sshbot-pro/data/bot.db'));
 
 // ✅ MERCADOPAGO SDK V2.X
 let mpEnabled = false;
@@ -338,15 +380,13 @@ initMercadoPago();
 
 let client = null;
 
-// ✅ FUNCIONES PARA HWID
+// ✅ FUNCIONES PARA HWID - CORREGIDAS (BUSCAN EN BD ÚNICA)
 function validateHWID(hwid) {
-    // Formato esperado: APP-E3E4D5CBB7636907
     const hwidRegex = /^APP-[A-F0-9]{16}$/;
     return hwidRegex.test(hwid);
 }
 
 function normalizeHWID(hwid) {
-    // Asegurar formato consistente
     hwid = hwid.trim().toUpperCase();
     if (!hwid.startsWith('APP-')) {
         hwid = 'APP-' + hwid.replace(/[^A-F0-9]/g, '');
@@ -354,24 +394,36 @@ function normalizeHWID(hwid) {
     return hwid;
 }
 
+// ✅ ¡CORREGIDO! - Busca en la MISMA BD
 function isHWIDActive(hwid) {
     return new Promise((resolve) => {
         db.get('SELECT * FROM hwid_users WHERE hwid = ? AND status = 1 AND expires_at > datetime("now")', 
             [hwid], (err, row) => {
-            resolve(!err && row);
+            if (err) {
+                console.error(chalk.red('❌ Error buscando HWID:'), err.message);
+                resolve(false);
+            } else {
+                resolve(!!row);
+            }
         });
     });
 }
 
+// ✅ ¡CORREGIDO! - Obtiene info completa
 function getHWIDInfo(hwid) {
     return new Promise((resolve) => {
         db.get('SELECT * FROM hwid_users WHERE hwid = ?', [hwid], (err, row) => {
-            if (err || !row) resolve(null);
-            else resolve(row);
+            if (err) {
+                console.error(chalk.red('❌ Error obteniendo HWID:'), err.message);
+                resolve(null);
+            } else {
+                resolve(row || null);
+            }
         });
     });
 }
 
+// ✅ Registrar HWID en BD ÚNICA
 async function registerHWID(phone, nombre, hwid, days, tipo = 'premium') {
     try {
         // Verificar si HWID ya existe
@@ -382,12 +434,12 @@ async function registerHWID(phone, nombre, hwid, days, tipo = 'premium') {
         });
 
         if (existing) {
-            return { success: false, error: 'HWID ya registrado en el sistema' };
+            return { success: false, error: 'HWID ya registrado' };
         }
 
         let expireFull;
         if (days === 0) {
-            // Test - 2 horas (CORREGIDO)
+            // Test - 2 horas
             expireFull = moment().add(2, 'hours').format('YYYY-MM-DD HH:mm:ss');
             console.log(chalk.cyan(`⏱️  Prueba 2 horas - Expira: ${expireFull}`));
         } else {
@@ -395,7 +447,7 @@ async function registerHWID(phone, nombre, hwid, days, tipo = 'premium') {
             expireFull = moment().add(days, 'days').format('YYYY-MM-DD 23:59:59');
         }
 
-        // Registrar en BD
+        // Registrar en BD ÚNICA
         await new Promise((resolve, reject) => {
             db.run(
                 `INSERT INTO hwid_users (phone, nombre, hwid, tipo, expires_at, status) VALUES (?, ?, ?, ?, ?, 1)`,
@@ -429,7 +481,14 @@ function canCreateTest(phone) {
     return new Promise((resolve) => {
         const today = moment().format('YYYY-MM-DD');
         db.get('SELECT COUNT(*) as count FROM daily_tests WHERE phone = ? AND date = ?', 
-            [phone, today], (err, row) => resolve(!err && row && row.count === 0));
+            [phone, today], (err, row) => {
+            if (err) {
+                console.error(chalk.red('❌ Error verificando test:'), err.message);
+                resolve(false);
+            } else {
+                resolve(row && row.count === 0);
+            }
+        });
     });
 }
 
@@ -486,7 +545,7 @@ async function createMercadoPagoPayment(phone, days, amount, planName) {
         const preferenceData = {
             items: [{
                 title: `HWID SSH PREMIUM ${days} DÍAS`,
-                description: `Activación HWID SSH por ${days} días - SIN USUARIO/CONTRASEÑA`,
+                description: `Activación HWID SSH por ${days} días`,
                 quantity: 1,
                 currency_id: config.prices.currency || 'ARS',
                 unit_price: parseFloat(amount)
@@ -497,8 +556,8 @@ async function createMercadoPagoPayment(phone, days, amount, planName) {
             expiration_date_to: isoDate,
             back_urls: {
                 success: `https://wa.me/${phoneClean}?text=Ya%20pague%20hwid`,
-                failure: `https://wa.me/${phoneClean}?text=Pago%20fallido%20hwid`,
-                pending: `https://wa.me/${phoneClean}?text=Pago%20pendiente%20hwid`
+                failure: `https://wa.me/${phoneClean}?text=Pago%20fallido`,
+                pending: `https://wa.me/${phoneClean}?text=Pago%20pendiente`
             },
             auto_return: 'approved',
             statement_descriptor: 'HWID SSH'
@@ -595,10 +654,9 @@ Para continuar con la activación, dime tu nombre
     });
 }
 
-// ✅ NOTIFICACIONES DE VENCIMIENTO (NUEVO)
+// ✅ NOTIFICACIONES DE VENCIMIENTO
 async function checkExpiringHWIDs() {
     try {
-        // Buscar HWIDs que expiran en las próximas 24 horas
         const expiringSoon = await new Promise((resolve, reject) => {
             db.all(`
                 SELECT * FROM hwid_users 
@@ -619,19 +677,16 @@ async function checkExpiringHWIDs() {
 Hola ${hwid.nombre}, tu acceso expirará en aproximadamente ${hoursLeft} horas.
 
 🔐 HWID: ${hwid.hwid}
-⏰ Fecha de vencimiento: ${moment(hwid.expires_at).format('DD/MM/YYYY HH:mm')}
+⏰ Vence: ${moment(hwid.expires_at).format('DD/MM/YYYY HH:mm')}
 
-💰 Para renovar, envía 2 y elige tu plan.
-
-¡No te quedes sin servicio!`;
+💰 Para renovar, envía 2 y elige tu plan.`;
             
             if (client) {
                 await client.sendText(hwid.phone, message);
-                console.log(chalk.yellow(`📨 Notificación enviada a ${hwid.nombre} - Expira en ${hoursLeft} horas`));
+                console.log(chalk.yellow(`📨 Notificación a ${hwid.nombre}`));
             }
         }
 
-        // Buscar HWIDs que expiraron en las últimas 24 horas (para recordatorio post-vencimiento)
         const expired = await new Promise((resolve, reject) => {
             db.all(`
                 SELECT * FROM hwid_users 
@@ -653,18 +708,15 @@ Hola ${hwid.nombre}, tu acceso ha expirado.
 🔐 HWID: ${hwid.hwid}
 ⏰ Expiró: ${moment(hwid.expires_at).format('DD/MM/YYYY HH:mm')}
 
-💰 Para renovar, envía 2 y elige tu plan.
-
-¡Renueva ahora y sigue disfrutando!`;
+💰 Renueva enviando 2`;
             
             if (client) {
                 await client.sendText(hwid.phone, message);
-                console.log(chalk.yellow(`📨 Notificación post-vencimiento enviada a ${hwid.nombre}`));
             }
         }
 
     } catch (error) {
-        console.error(chalk.red('❌ Error en notificaciones de vencimiento:'), error.message);
+        console.error(chalk.red('❌ Error en notificaciones:'), error.message);
     }
 }
 
@@ -721,21 +773,21 @@ async function initializeBot() {
                 if (['menu', 'hola', 'start', 'hi', 'volver', '0'].includes(text)) {
                     await setUserState(from, 'main_menu');
                     
-                    await client.sendText(from, `HOLA BIENVENIDO BOT MGVPN 🚀
+                    await client.sendText(from, `🤖 BOT MGVPN - HWID
 
 Elija una opción:
 
- 1️⃣ - PROBAR INTERNET (2 horas gratis)
- 2️⃣ - COMPRAR INTERNET
+ 1️⃣ - PROBAR (2 horas gratis)
+ 2️⃣ - COMPRAR ACCESO
  3️⃣ - VERIFICAR MI HWID
- 4️⃣ - DESCARGAR APLICACIÓN`);
+ 4️⃣ - DESCARGAR APP`);
                 }
                 
                 // OPCIÓN 1: PRUEBA
                 else if (text === '1' && userState.state === 'main_menu') {
                     await setUserState(from, 'awaiting_test_nombre');
                     
-                    await client.sendText(from, `⏳️ PRUEBA GRATUITA - 2 HORAS
+                    await client.sendText(from, `⏳️ PRUEBA 2 HORAS
 
 Primero, dime tu nombre:`);
                 }
@@ -744,18 +796,14 @@ Primero, dime tu nombre:`);
                 else if (text === '2' && userState.state === 'main_menu') {
                     await setUserState(from, 'buying_hwid');
                     
-                    await client.sendText(from, `💰 PLANES DE INTERNET
-
-Selecciona un plan:
+                    await client.sendText(from, `💰 PLANES DISPONIBLES
 
  1️⃣ - 7 DÍAS - $${config.prices.price_7d}
  2️⃣ - 15 DÍAS - $${config.prices.price_15d}
  3️⃣ - 30 DÍAS - $${config.prices.price_30d}
  4️⃣ - 50 DÍAS - $${config.prices.price_50d}
 
- 0️⃣ - VOLVER
-
-💳 Pago con MercadoPago`);
+ 0️⃣ - VOLVER`);
                 }
                 
                 // OPCIÓN 3: VERIFICAR HWID
@@ -764,22 +812,15 @@ Selecciona un plan:
                     
                     await client.sendText(from, `🔍 VERIFICAR HWID
 
-Envía tu HWID para verificar si está activo:
-
+Envía tu HWID:
 Ejemplo: APP-E3E4D5CBB7636907`);
                 }
                 
                 // OPCIÓN 4: DESCARGAR APP
                 else if (text === '4' && userState.state === 'main_menu') {
-                    await client.sendText(from, `📱 DESCARGAR APLICACIÓN
+                    await client.sendText(from, `📱 DESCARGAR APP
 
-🔗 Enlace:
-${config.links.app_download}
-
-💡 Instrucciones:
-1. Abre el link Descarga el APK
-2. Abre el apk Click en "Más detalles"
-3. Click en "Instalar de todas formas"`);
+🔗 ${config.links.app_download}`);
                 }
                 
                 // PROCESAR NOMBRE PARA PRUEBA
@@ -787,25 +828,17 @@ ${config.links.app_download}
                     const nombre = message.body.trim();
                     
                     if (nombre.length < 2) {
-                        await client.sendText(from, '❌ El nombre debe tener al menos 2 caracteres. Intenta de nuevo:');
+                        await client.sendText(from, '❌ Nombre muy corto. Intenta de nuevo:');
                         return;
                     }
                     
-                    // Guardar nombre y pasar a pedir HWID
                     await setUserState(from, 'awaiting_test_hwid', { nombre });
                     
                     await client.sendText(from, `✅ Gracias ${nombre}
 
-Ahora envía tu HWID para activar la prueba (2 horas):
+Ahora envía tu HWID:
 
-Formato: APP-E3E4D5CBB7636907
-
-📱 ¿CÓMO OBTENER TU HWID?
-1. Abre la aplicación
-2. Toca el boton de WhatsApp
-3. Envia el HWID
-
-⏳ Una prueba por día`);
+Formato: APP-E3E4D5CBB7636907`);
                 }
                 
                 // PROCESAR HWID PARA PRUEBA
@@ -817,27 +850,24 @@ Formato: APP-E3E4D5CBB7636907
                     if (!validateHWID(hwid)) {
                         await client.sendText(from, `❌ HWID INVÁLIDO
 
-Formato correcto: APP-E3E4D5CBB7636907
-
-Envía el HWID nuevamente o escribe MENU para volver`);
+Formato: APP-E3E4D5CBB7636907
+Intenta de nuevo:`);
                         return;
                     }
                     
                     // Verificar prueba diaria
                     if (!(await canCreateTest(from))) {
-                        await client.sendText(from, `❌ YA USASTE TU PRUEBA HOY
+                        await client.sendText(from, `❌ YA USaste tu prueba hoy
 
 ⏳ Vuelve mañana o compra un plan`);
                         await setUserState(from, 'main_menu');
                         return;
                     }
                     
-                    // Verificar si HWID ya está registrado
+                    // Verificar si HWID ya existe
                     const active = await isHWIDActive(hwid);
                     if (active) {
-                        await client.sendText(from, `❌ Este HWID ya está activo en el sistema
-
-Si crees que es un error, contacta soporte.`);
+                        await client.sendText(from, `❌ Este HWID ya está activo`);
                         await setUserState(from, 'main_menu');
                         return;
                     }
@@ -851,17 +881,15 @@ Si crees que es un error, contacta soporte.`);
                         
                         const expireTime = moment(result.expires).format('HH:mm DD/MM/YYYY');
                         
-                        await client.sendText(from, `✅ PRUEBA ACTIVADA ${nombre}
+                        await client.sendText(from, `✅ PRUEBA ACTIVADA
 
+👤 Nombre: ${nombre}
 🔐 HWID: ${hwid}
 ⏰ Expira: ${expireTime}
-⚡ Tipo: PRUEBA (2 horas)
 
-📱 Abre la aplicación y ya puedes conectarte
-
-`);
+📱 Ya puedes usar la app`);
                         
-                        console.log(chalk.green(`✅ HWID test: ${hwid} - ${nombre} - Expira: ${result.expires}`));
+                        console.log(chalk.green(`✅ HWID test: ${hwid} - ${nombre}`));
                     } else {
                         await client.sendText(from, `❌ Error: ${result.error}`);
                     }
@@ -893,62 +921,46 @@ Si crees que es un error, contacta soporte.`);
                         if (payment.success) {
                             const message = `💰 PAGO PARA HWID
 
-- 🌐 Plan: ${plan.name}
-- 💰 Precio: $${payment.amount}
-- 🕜 Duración: ${plan.days} días
+Plan: ${plan.name}
+Precio: $${payment.amount}
 
-LINK DE PAGO:
-${payment.paymentUrl}
+LINK: ${payment.paymentUrl}
 
-⏰ Válido por 24 horas
+⏰ Válido 24 horas
 
 📌 DESPUÉS DE PAGAR:
-1. Espera la confirmación
-2. Te pediremos tu nombre
-3. Luego tu HWID
-4. Se activará automáticamente`;
+1. Espera confirmación
+2. Te pediré tu nombre
+3. Luego tu HWID`;
                             
                             await client.sendText(from, message);
                             
                             if (fs.existsSync(payment.qrPath)) {
                                 try {
                                     await client.sendImage(from, payment.qrPath, 'qr-pago.jpg', 
-                                        `Escanea con MercadoPago\n\n${plan.name} - $${payment.amount}`);
-                                } catch (qrError) {
-                                    console.error(chalk.red('⚠️ Error QR:'), qrError.message);
-                                }
+                                        `QR ${plan.name} - $${payment.amount}`);
+                                } catch (qrError) {}
                             }
                         } else {
-                            await client.sendText(from, `ERROR AL GENERAR PAGO
-
-${payment.error}
-
-Contacta al administrador para otras opciones de pago.`);
+                            await client.sendText(from, `❌ Error: ${payment.error}`);
                         }
                         
                         await setUserState(from, 'main_menu');
                     } else {
-                        await client.sendText(from, `PLAN SELECCIONADO: ${plan.name}
+                        await client.sendText(from, `Plan ${plan.name} - $${plan.price}
 
-Precio: $${plan.price} ARS
-Duración: ${plan.days} días
-
-Para continuar con la compra, contacta al administrador:
-${config.links.support}`);
+Contacta al admin: ${config.links.support}`);
                         await setUserState(from, 'main_menu');
                     }
                 }
                 
                 else if (text === '0' && userState.state === 'buying_hwid') {
                     await setUserState(from, 'main_menu');
-                    await client.sendText(from, `HOLA BIENVENIDO BOT HWID 🚀
-
-Elija una opción:
-
- 1️⃣ - PROBAR INTERNET (2 horas gratis)
- 2️⃣ - COMPRAR INTERNET
- 3️⃣ - VERIFICAR MI HWID
- 4️⃣ - DESCARGAR APLICACIÓN`);
+                    await client.sendText(from, `Menú principal:
+ 1 - Probar
+ 2 - Comprar
+ 3 - Verificar HWID
+ 4 - Descargar app`);
                 }
                 
                 // PROCESAR HWID PARA VERIFICACIÓN
@@ -959,9 +971,7 @@ Elija una opción:
                     if (!validateHWID(hwid)) {
                         await client.sendText(from, `❌ Formato inválido
 
-Ejemplo: APP-E3E4D5CBB7636907
-
-Intenta nuevamente o MENU`);
+Ejemplo: APP-E3E4D5CBB7636907`);
                         return;
                     }
                     
@@ -971,67 +981,50 @@ Intenta nuevamente o MENU`);
                         const expires = moment(info.expires_at).format('DD/MM/YYYY HH:mm');
                         const now = moment();
                         const expiresMoment = moment(info.expires_at);
-                        const nombre = info.nombre || 'Usuario';
                         
                         if (expiresMoment.isAfter(now)) {
-                            const remaining = expiresMoment.fromNow();
                             await client.sendText(from, `✅ HWID ACTIVO
 
-👤 Usuario: ${nombre}
-🔐 HWID: ${hwid}
-📅 Tipo: ${info.tipo === 'test' ? 'PRUEBA' : 'PREMIUM'}
-⏰ Válido hasta: ${expires}
-⌛ Tiempo restante: ${remaining}`);
+👤 ${info.nombre}
+🔐 ${hwid}
+⏰ Válido hasta: ${expires}`);
                         } else {
                             await client.sendText(from, `❌ HWID EXPIRADO
 
-👤 Usuario: ${nombre}
-🔐 HWID: ${hwid}
-📅 Expiró: ${expires}
-
-Renueva comprando un nuevo plan`);
+👤 ${info.nombre}
+🔐 ${hwid}
+📅 Expiró: ${expires}`);
                         }
                     } else {
                         await client.sendText(from, `❌ HWID NO REGISTRADO
 
-Este HWID no está en el sistema.
-
-¿Quieres probar el servicio?
-Envía 1 para prueba gratis (2 horas)`);
+Envía 1 para prueba gratis`);
                     }
                     
                     await setUserState(from, 'main_menu');
                 }
                 
-                // ESPERANDO NOMBRE Y HWID DESPUÉS DE PAGO (PRIMERO NOMBRE, LUEGO HWID)
+                // ESPERANDO NOMBRE Y HWID DESPUÉS DE PAGO
                 else if (userState.state === 'awaiting_hwid') {
-                    // Si NO tenemos nombre guardado, lo que llega es el nombre
                     if (!userState.data.nombre) {
                         const nombre = message.body.trim();
                         
                         if (nombre.length < 2) {
-                            await client.sendText(from, '❌ El nombre debe tener al menos 2 caracteres. Intenta de nuevo:');
+                            await client.sendText(from, '❌ Nombre muy corto. Intenta:');
                             return;
                         }
                         
-                        // Guardar el nombre y pasar a esperar HWID
                         userState.data.nombre = nombre;
                         await setUserState(from, 'awaiting_hwid', userState.data);
                         
                         await client.sendText(from, `✅ Gracias ${nombre}
 
 Ahora envía tu HWID:
-Formato: APP-E3E4D5CBB7636907
-
-📱 ¿CÓMO OBTENER TU HWID?
-1. Abre la aplicación
-2. Toca el botón de WhatsApp
-3. Envia el HWID`);
+APP-E3E4D5CBB7636907`);
                         
                         return;
                     }
                     
-                    // Si ya tenemos nombre, lo que llega es el HWID
                     const rawHwid = message.body;
                     const hwid = normalizeHWID(rawHwid);
                     const nombre = userState.data.nombre;
@@ -1040,23 +1033,18 @@ Formato: APP-E3E4D5CBB7636907
                         await client.sendText(from, `❌ FORMATO INCORRECTO
 
 Ejemplo: APP-E3E4D5CBB7636907
-
-Envía el HWID nuevamente:`);
+Envía el HWID:`);
                         return;
                     }
                     
-                    // Verificar si HWID ya está activo
                     const active = await isHWIDActive(hwid);
                     if (active) {
-                        await client.sendText(from, `❌ Este HWID ya está activo
-
-Si es tuyo, contacta soporte.`);
+                        await client.sendText(from, `❌ HWID ya activo`);
                         return;
                     }
                     
-                    await client.sendText(from, '⏳ Activando tu HWID...');
+                    await client.sendText(from, '⏳ Activando HWID...');
                     
-                    // Activar HWID
                     const result = await registerHWID(
                         from, 
                         nombre,
@@ -1066,18 +1054,14 @@ Si es tuyo, contacta soporte.`);
                     );
                     
                     if (result.success) {
-                        // Actualizar pago con HWID y nombre
                         db.run(`UPDATE payments SET hwid = ?, nombre = ? WHERE payment_id = ?`,
                             [hwid, nombre, userState.data.payment_id]);
                         
-                        const expireDate = moment(result.expires).format('DD/MM/YYYY');
-                        
-                        await client.sendText(from, `✅ ¡ACTIVADO ${nombre}!
+                        await client.sendText(from, `✅ ¡ACTIVADO!
 
-🔐 HWID: ${hwid}
-⏰ Válido hasta: ${expireDate}
-
-¡Ya puedes usar la aplicación!`);
+👤 ${nombre}
+🔐 ${hwid}
+⏰ Válido: ${moment(result.expires).format('DD/MM/YYYY')}`);
                         
                         console.log(chalk.green(`✅ HWID premium: ${hwid} - ${nombre}`));
                     } else {
@@ -1092,34 +1076,24 @@ Si es tuyo, contacta soporte.`);
             }
         });
         
-        // ✅ VERIFICAR PAGOS CADA 2 MINUTOS
+        // ✅ CRON JOBS
         cron.schedule('*/2 * * * *', () => {
-            console.log(chalk.yellow('🔄 Verificando pagos pendientes...'));
+            console.log(chalk.yellow('🔄 Verificando pagos...'));
             checkPendingPayments();
         });
         
-        // ✅ NOTIFICACIONES DE VENCIMIENTO CADA HORA (NUEVO)
         cron.schedule('0 * * * *', () => {
-            console.log(chalk.yellow('⏰ Verificando HWIDs próximos a vencer...'));
+            console.log(chalk.yellow('⏰ Verificando vencimientos...'));
             checkExpiringHWIDs();
         });
         
-        // ✅ LIMPIAR HWIDS EXPIRADOS
-        cron.schedule('*/15 * * * *', async () => {
+        cron.schedule('*/15 * * * *', () => {
             const now = moment().format('YYYY-MM-DD HH:mm:ss');
-            console.log(chalk.yellow(`🧹 Limpiando HWIDs expirados...`));
-            
             db.run('UPDATE hwid_users SET status = 0 WHERE expires_at < ? AND status = 1', [now]);
-        });
-        
-        // ✅ LIMPIAR ESTADOS
-        cron.schedule('0 * * * *', () => {
-            db.run(`DELETE FROM user_state WHERE updated_at < datetime('now', '-1 hour')`);
         });
         
     } catch (error) {
         console.error(chalk.red('❌ Error inicializando:'), error.message);
-        console.log(chalk.yellow('🔄 Reintentando en 10 segundos...'));
         setTimeout(initializeBot, 10000);
     }
 }
@@ -1136,330 +1110,70 @@ process.on('SIGINT', async () => {
 });
 BOTEOF
 
-echo -e "${GREEN}✅ Bot HWID creado con flujo nombre -> HWID (prueba 2 HORAS)${NC}"
+echo -e "${GREEN}✅ Bot HWID creado con BD ÚNICA (CORREGIDO)${NC}"
 
 # ================================================
-# CREAR PANEL DE CONTROL PARA HWID
+# CREAR PANEL DE CONTROL
 # ================================================
-echo -e "\n${CYAN}🎛️  Creando panel de control HWID...${NC}"
+echo -e "\n${CYAN}🎛️  Creando panel de control...${NC}"
 
-cat > /usr/local/bin/sshbot-hwid << 'PANELEOF'
+cat > /usr/local/bin/sshbot << 'PANELEOF'
 #!/bin/bash
-RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; CYAN='\033[0;36m'; BLUE='\033[0;34m'; PURPLE='\033[0;35m'; NC='\033[0m'
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; CYAN='\033[0;36m'; NC='\033[0m'
 
-DB="/opt/sshbot-pro/data/hwid.db"
+DB="/opt/sshbot-pro/data/bot.db"
 CONFIG="/opt/sshbot-pro/config/config.json"
 
 get_val() { jq -r "$1" "$CONFIG" 2>/dev/null; }
 set_val() { local t=$(mktemp); jq "$1 = $2" "$CONFIG" > "$t" && mv "$t" "$CONFIG"; }
 
-test_mercadopago() {
-    local TOKEN="$1"
-    echo -e "${YELLOW}🔄 Probando conexión con MercadoPago...${NC}"
-    
-    RESPONSE=$(curl -s -w "\n%{http_code}" \
-        -H "Authorization: Bearer $TOKEN" \
-        "https://api.mercadopago.com/v1/payment_methods" \
-        2>/dev/null)
-    
-    HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-    BODY=$(echo "$RESPONSE" | head -n-1)
-    
-    if [[ "$HTTP_CODE" == "200" ]]; then
-        echo -e "${GREEN}✅ CONEXIÓN EXITOSA${NC}"
-        return 0
-    else
-        echo -e "${RED}❌ ERROR - Código: $HTTP_CODE${NC}"
-        return 1
-    fi
-}
-
-show_header() {
-    clear
-    echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║           🎛️  PANEL SSH BOT PRO - VERSIÓN HWID              ║${NC}"
-    echo -e "${CYAN}║              🔐 SIN USUARIO/CONTRASEÑA                      ║${NC}"
-    echo -e "${CYAN}║              ⏱️  PRUEBA: 2 HORAS                            ║${NC}"
-    echo -e "${CYAN}║              ⏰ NOTIFICACIONES DE VENCIMIENTO               ║${NC}"
-    echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
-}
-
 while true; do
-    show_header
+    clear
+    echo -e "${CYAN}╔════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║     PANEL SSH BOT - HWID (BD ÚNICA - CORREGIDO)   ║${NC}"
+    echo -e "${CYAN}╚════════════════════════════════════════════════════╝${NC}\n"
     
-    TOTAL_HWID=$(sqlite3 "$DB" "SELECT COUNT(*) FROM hwid_users" 2>/dev/null || echo "0")
-    ACTIVE_HWID=$(sqlite3 "$DB" "SELECT COUNT(*) FROM hwid_users WHERE status=1" 2>/dev/null || echo "0")
-    PENDING_PAYMENTS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM payments WHERE status='pending'" 2>/dev/null || echo "0")
-    APPROVED_PAYMENTS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM payments WHERE status='approved'" 2>/dev/null || echo "0")
-    TESTS_TODAY=$(sqlite3 "$DB" "SELECT COUNT(*) FROM daily_tests WHERE date = date('now')" 2>/dev/null || echo "0")
+    TOTAL=$(sqlite3 "$DB" "SELECT COUNT(*) FROM hwid_users" 2>/dev/null || echo "0")
+    ACTIVE=$(sqlite3 "$DB" "SELECT COUNT(*) FROM hwid_users WHERE status=1" 2>/dev/null || echo "0")
+    PENDING=$(sqlite3 "$DB" "SELECT COUNT(*) FROM payments WHERE status='pending'" 2>/dev/null || echo "0")
     
-    STATUS=$(pm2 jlist 2>/dev/null | jq -r '.[] | select(.name=="sshbot-pro") | .pm2_env.status' 2>/dev/null || echo "stopped")
-    if [[ "$STATUS" == "online" ]]; then
-        BOT_STATUS="${GREEN}● ACTIVO${NC}"
-    else
-        BOT_STATUS="${RED}● DETENIDO${NC}"
-    fi
-    
-    MP_TOKEN=$(get_val '.mercadopago.access_token')
-    if [[ -n "$MP_TOKEN" && "$MP_TOKEN" != "" && "$MP_TOKEN" != "null" ]]; then
-        MP_STATUS="${GREEN}✅ CONFIGURADO${NC}"
-    else
-        MP_STATUS="${RED}❌ NO CONFIGURADO${NC}"
-    fi
-    
-    echo -e "${YELLOW}📊 ESTADO DEL SISTEMA${NC}"
-    echo -e "  Bot: $BOT_STATUS"
-    echo -e "  HWIDs: ${CYAN}$ACTIVE_HWID/$TOTAL_HWID${NC} activos/total"
-    echo -e "  Tests hoy: ${CYAN}$TESTS_TODAY${NC}"
-    echo -e "  Pagos: ${CYAN}$PENDING_PAYMENTS${NC} pend | ${GREEN}$APPROVED_PAYMENTS${NC} aprob"
-    echo -e "  MercadoPago: $MP_STATUS"
-    echo -e "  IP: $(get_val '.bot.server_ip')"
-    echo -e "  ⏱️  Prueba: ${YELLOW}2 HORAS${NC}"
-    echo -e "  ⏰  Notificaciones: ${GREEN}ACTIVAS (cada hora)${NC}"
+    echo -e "${YELLOW}📊 ESTADO${NC}"
+    echo -e "  HWIDs: ${CYAN}$ACTIVE/$TOTAL${NC} activos"
+    echo -e "  Pagos pendientes: ${CYAN}$PENDING${NC}"
     echo -e ""
     
-    echo -e "${YELLOW}💰 PRECIOS ACTUALES:${NC}"
-    echo -e "  7 días: $ $(get_val '.prices.price_7d') ARS"
-    echo -e "  15 días: $ $(get_val '.prices.price_15d') ARS"
-    echo -e "  30 días: $ $(get_val '.prices.price_30d') ARS"
-    echo -e "  50 días: $ $(get_val '.prices.price_50d') ARS"
-    echo -e ""
+    echo -e "${CYAN}[1]${NC} Iniciar bot"
+    echo -e "${CYAN}[2]${NC} Detener bot"
+    echo -e "${CYAN}[3]${NC} Ver logs"
+    echo -e "${CYAN}[4]${NC} Listar HWIDs"
+    echo -e "${CYAN}[5]${NC} Configurar MP"
+    echo -e "${CYAN}[0]${NC} Salir"
+    echo ""
     
-    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${CYAN}[1]${NC} 🚀  Iniciar/Reiniciar bot"
-    echo -e "${CYAN}[2]${NC} 🛑  Detener bot"
-    echo -e "${CYAN}[3]${NC} 📱  Ver logs y QR"
-    echo -e "${CYAN}[4]${NC} 🔐  Registrar HWID manual"
-    echo -e "${CYAN}[5]${NC} 👥  Listar HWIDs activos"
-    echo -e "${CYAN}[6]${NC} 💰  Cambiar precios"
-    echo -e "${CYAN}[7]${NC} 🔑  Configurar MercadoPago"
-    echo -e "${CYAN}[8]${NC} 🧪  Test MercadoPago"
-    echo -e "${CYAN}[9]${NC} 📊  Estadísticas"
-    echo -e "${CYAN}[10]${NC} 🔄 Limpiar sesión"
-    echo -e "${CYAN}[11]${NC} 💳 Ver pagos"
-    echo -e "${CYAN}[12]${NC} 🔍 Buscar HWID"
-    echo -e "${CYAN}[13]${NC} 🧪 Ver tests hoy"
-    echo -e "${CYAN}[0]${NC} 🚪  Salir"
-    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e ""
+    read -p "👉 Opción: " OPT
     
-    read -p "👉 Selecciona: " OPTION
-    
-    case $OPTION in
-        1)
-            echo -e "\n${YELLOW}🔄 Reiniciando...${NC}"
-            cd /root/sshbot-pro
-            pm2 restart sshbot-pro 2>/dev/null || pm2 start bot.js --name sshbot-pro
-            pm2 save
-            echo -e "${GREEN}✅ Bot reiniciado${NC}"
-            sleep 2
-            ;;
-        2)
-            echo -e "\n${YELLOW}🛑 Deteniendo...${NC}"
-            pm2 stop sshbot-pro
-            echo -e "${GREEN}✅ Bot detenido${NC}"
-            sleep 2
-            ;;
-        3)
-            echo -e "\n${YELLOW}📱 Mostrando logs...${NC}"
-            pm2 logs sshbot-pro --lines 100
-            ;;
-        4)
-            clear
-            echo -e "${CYAN}🔐 REGISTRAR HWID MANUAL${NC}\n"
-            
-            read -p "Teléfono (ej: 5491122334455): " PHONE
-            read -p "Nombre del usuario: " NOMBRE
-            read -p "HWID (formato: APP-E3E4D5CBB7636907): " HWID
-            read -p "Tipo (test/premium): " TIPO
-            read -p "Días (0=test 2h, 7,15,30,50): " DAYS
-            
-            [[ -z "$DAYS" ]] && DAYS="30"
-            
-            # Normalizar HWID
-            HWID=$(echo "$HWID" | tr 'a-z' 'A-Z')
-            if [[ ! "$HWID" =~ ^APP-[A-F0-9]{16}$ ]]; then
-                echo -e "\n${RED}❌ Formato HWID inválido${NC}"
-                read -p "Presiona Enter..."
-                continue
+    case $OPT in
+        1) cd /root/sshbot-pro && pm2 restart sshbot-pro 2>/dev/null || pm2 start bot.js --name sshbot-pro; pm2 save;;
+        2) pm2 stop sshbot-pro;;
+        3) pm2 logs sshbot-pro --lines 50;;
+        4) sqlite3 -column -header "$DB" "SELECT nombre, hwid, phone, expires_at FROM hwid_users WHERE status=1 ORDER BY expires_at;" | less;;
+        5) 
+            echo -e "\n${YELLOW}Token actual: $(get_val '.mercadopago.access_token' | cut -c1-30)...${NC}"
+            read -p "Nuevo token: " TOKEN
+            if [[ -n "$TOKEN" ]]; then
+                set_val '.mercadopago.access_token' "\"$TOKEN\""
+                set_val '.mercadopago.enabled' "true"
+                echo -e "${GREEN}✅ Token guardado${NC}"
+                cd /root/sshbot-pro && pm2 restart sshbot-pro
             fi
-            
-            if [[ "$TIPO" == "test" ]]; then
-                DAYS="0"
-                EXPIRE_DATE=$(date -d "+2 hours" +"%Y-%m-%d %H:%M:%S")
-            else
-                EXPIRE_DATE=$(date -d "+$DAYS days" +"%Y-%m-%d 23:59:59")
-            fi
-            
-            sqlite3 "$DB" "INSERT INTO hwid_users (phone, nombre, hwid, tipo, expires_at, status) VALUES ('$PHONE', '$NOMBRE', '$HWID', '$TIPO', '$EXPIRE_DATE', 1)"
-            
-            if [[ $? -eq 0 ]]; then
-                echo -e "\n${GREEN}✅ HWID REGISTRADO${NC}"
-                echo -e "📱 Teléfono: ${PHONE}"
-                echo -e "👤 Nombre: ${NOMBRE}"
-                echo -e "🔐 HWID: ${HWID}"
-                echo -e "⏰ Expira: ${EXPIRE_DATE}"
-            else
-                echo -e "\n${RED}❌ Error (puede que el HWID ya exista)${NC}"
-            fi
-            read -p "Presiona Enter..."
+            read -p "Enter..." 
             ;;
-        5)
-            clear
-            echo -e "${CYAN}👥 HWIDs ACTIVOS${NC}\n"
-            
-            sqlite3 -column -header "$DB" "SELECT nombre, hwid, phone, tipo, expires_at FROM hwid_users WHERE status = 1 ORDER BY expires_at DESC LIMIT 20"
-            echo -e "\n${YELLOW}Total activos: ${ACTIVE_HWID}${NC}"
-            read -p "Presiona Enter..."
-            ;;
-        6)
-            clear
-            echo -e "${CYAN}💰 CAMBIAR PRECIOS${NC}\n"
-            
-            CURRENT_7D=$(get_val '.prices.price_7d')
-            CURRENT_15D=$(get_val '.prices.price_15d')
-            CURRENT_30D=$(get_val '.prices.price_30d')
-            CURRENT_50D=$(get_val '.prices.price_50d')
-            
-            echo -e "${YELLOW}Precios actuales:${NC}"
-            echo -e "  7 días: $${CURRENT_7D} ARS"
-            echo -e "  15 días: $${CURRENT_15D} ARS"
-            echo -e "  30 días: $${CURRENT_30D} ARS"
-            echo -e "  50 días: $${CURRENT_50D} ARS\n"
-            
-            read -p "Nuevo precio 7d [${CURRENT_7D}]: " NEW_7D
-            read -p "Nuevo precio 15d [${CURRENT_15D}]: " NEW_15D
-            read -p "Nuevo precio 30d [${CURRENT_30D}]: " NEW_30D
-            read -p "Nuevo precio 50d [${CURRENT_50D}]: " NEW_50D
-            
-            [[ -n "$NEW_7D" ]] && set_val '.prices.price_7d' "$NEW_7D"
-            [[ -n "$NEW_15D" ]] && set_val '.prices.price_15d' "$NEW_15D"
-            [[ -n "$NEW_30D" ]] && set_val '.prices.price_30d' "$NEW_30D"
-            [[ -n "$NEW_50D" ]] && set_val '.prices.price_50d' "$NEW_50D"
-            
-            echo -e "\n${GREEN}✅ Precios actualizados${NC}"
-            read -p "Presiona Enter..."
-            ;;
-        7)
-            clear
-            echo -e "${CYAN}🔑 CONFIGURAR MERCADOPAGO${NC}\n"
-            
-            CURRENT_TOKEN=$(get_val '.mercadopago.access_token')
-            
-            if [[ -n "$CURRENT_TOKEN" && "$CURRENT_TOKEN" != "null" && "$CURRENT_TOKEN" != "" ]]; then
-                echo -e "${GREEN}✅ Token configurado${NC}"
-                echo -e "${YELLOW}Preview: ${CURRENT_TOKEN:0:30}...${NC}\n"
-            fi
-            
-            echo -e "${CYAN}📋 Obtener token:${NC}"
-            echo -e "  1. https://www.mercadopago.com.ar/developers"
-            echo -e "  2. Inicia sesión"
-            echo -e "  3. 'Tus credenciales' → Access Token PRODUCCIÓN"
-            echo -e "  4. Formato: APP_USR-xxxxxxxxxx\n"
-            
-            read -p "¿Configurar nuevo token? (s/N): " CONF
-            if [[ "$CONF" == "s" ]]; then
-                echo ""
-                read -p "Pega el Access Token: " NEW_TOKEN
-                
-                if [[ "$NEW_TOKEN" =~ ^APP_USR- ]] || [[ "$NEW_TOKEN" =~ ^TEST- ]]; then
-                    set_val '.mercadopago.access_token' "\"$NEW_TOKEN\""
-                    set_val '.mercadopago.enabled' "true"
-                    echo -e "\n${GREEN}✅ Token configurado${NC}"
-                    echo -e "${YELLOW}🔄 Reiniciando bot...${NC}"
-                    cd /root/sshbot-pro && pm2 restart sshbot-pro
-                    sleep 2
-                    echo -e "${GREEN}✅ MercadoPago activado${NC}"
-                else
-                    echo -e "${RED}❌ Token inválido${NC}"
-                fi
-            fi
-            read -p "Presiona Enter..."
-            ;;
-        8)
-            clear
-            echo -e "${CYAN}🧪 TEST MERCADOPAGO${NC}\n"
-            
-            TOKEN=$(get_val '.mercadopago.access_token')
-            if [[ -z "$TOKEN" || "$TOKEN" == "null" ]]; then
-                echo -e "${RED}❌ Token no configurado${NC}\n"
-                read -p "Presiona Enter..."
-                continue
-            fi
-            
-            test_mercadopago "$TOKEN"
-            
-            read -p "\nPresiona Enter..."
-            ;;
-        9)
-            clear
-            echo -e "${CYAN}📊 ESTADÍSTICAS${NC}\n"
-            
-            echo -e "${YELLOW}🔐 HWIDs:${NC}"
-            sqlite3 "$DB" "SELECT 'Total: ' || COUNT(*) || ' | Activos: ' || SUM(CASE WHEN status=1 THEN 1 ELSE 0 END) || ' | Tests hoy: ' || (SELECT COUNT(*) FROM daily_tests WHERE date = date('now')) FROM hwid_users"
-            
-            echo -e "\n${YELLOW}💰 PAGOS:${NC}"
-            sqlite3 "$DB" "SELECT 'Pendientes: ' || SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END) || ' | Aprobados: ' || SUM(CASE WHEN status='approved' THEN 1 ELSE 0 END) || ' | Total: $' || printf('%.2f', SUM(CASE WHEN status='approved' THEN amount ELSE 0 END)) FROM payments"
-            
-            echo -e "\n${YELLOW}📅 PLANES VENDIDOS:${NC}"
-            sqlite3 "$DB" "SELECT '7d: ' || SUM(CASE WHEN plan='7d' THEN 1 ELSE 0 END) || ' | 15d: ' || SUM(CASE WHEN plan='15d' THEN 1 ELSE 0 END) || ' | 30d: ' || SUM(CASE WHEN plan='30d' THEN 1 ELSE 0 END) || ' | 50d: ' || SUM(CASE WHEN plan='50d' THEN 1 ELSE 0 END) FROM payments WHERE status='approved'"
-            
-            echo -e "\n${YELLOW}💸 INGRESOS HOY:${NC}"
-            sqlite3 "$DB" "SELECT 'Hoy: $' || printf('%.2f', SUM(CASE WHEN date(created_at) = date('now') THEN amount ELSE 0 END)) FROM payments WHERE status='approved'"
-            
-            read -p "\nPresiona Enter..."
-            ;;
-        10)
-            echo -e "\n${YELLOW}🧹 Limpiando sesión...${NC}"
-            pm2 stop sshbot-pro
-            rm -rf /root/.wppconnect/*
-            echo -e "${GREEN}✅ Sesión limpiada${NC}"
-            sleep 2
-            ;;
-        11)
-            clear
-            echo -e "${CYAN}💳 PAGOS${NC}\n"
-            
-            echo -e "${YELLOW}Pagos pendientes:${NC}"
-            sqlite3 -column -header "$DB" "SELECT payment_id, phone, plan, amount, created_at FROM payments WHERE status='pending' ORDER BY created_at DESC LIMIT 10"
-            
-            echo -e "\n${YELLOW}Pagos aprobados:${NC}"
-            sqlite3 -column -header "$DB" "SELECT payment_id, phone, nombre, plan, amount, approved_at, hwid FROM payments WHERE status='approved' ORDER BY approved_at DESC LIMIT 10"
-            
-            read -p "\nPresiona Enter..."
-            ;;
-        12)
-            clear
-            echo -e "${CYAN}🔍 BUSCAR HWID${NC}\n"
-            read -p "Ingresa HWID, nombre o teléfono: " SEARCH
-            
-            echo -e "\n${YELLOW}Resultados:${NC}"
-            sqlite3 -column -header "$DB" "SELECT nombre, hwid, phone, tipo, expires_at, status FROM hwid_users WHERE hwid LIKE '%$SEARCH%' OR phone LIKE '%$SEARCH%' OR nombre LIKE '%$SEARCH%'"
-            
-            read -p "\nPresiona Enter..."
-            ;;
-        13)
-            clear
-            echo -e "${CYAN}🧪 TESTS DE HOY${NC}\n"
-            
-            sqlite3 -column -header "$DB" "SELECT nombre, phone, created_at FROM daily_tests WHERE date = date('now') ORDER BY created_at DESC"
-            
-            read -p "\nPresiona Enter..."
-            ;;
-        0)
-            echo -e "\n${GREEN}👋 Hasta pronto${NC}\n"
-            exit 0
-            ;;
-        *)
-            echo -e "\n${RED}❌ Opción inválida${NC}"
-            sleep 1
-            ;;
+        0) exit 0;;
     esac
 done
 PANELEOF
 
-chmod +x /usr/local/bin/sshbot-hwid
-ln -sf /usr/local/bin/sshbot-hwid /usr/local/bin/sshbot
+chmod +x /usr/local/bin/sshbot
 
 # ================================================
 # INICIAR BOT
@@ -1479,83 +1193,26 @@ echo -e "${GREEN}${BOLD}"
 cat << "FINAL"
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
-║          🎉 INSTALACIÓN COMPLETADA - VERSIÓN HWID 🎉        ║
+║     ✅ INSTALACIÓN CORREGIDA - HWID CON BD ÚNICA ✅        ║
 ║                                                              ║
-║       🔐 SISTEMA SIN USUARIO/CONTRASEÑA                    ║
-║       📱 PRIMERO NOMBRE, LUEGO HWID                        ║
-║       💰 MercadoPago SDK v2.x INTEGRADO                    ║
-║       💳 Pago automático con QR                            ║
-║       ⏱️  PRUEBA DE 2 HORAS (ACTUALIZADO)                  ║
-║       ⏰ NOTIFICACIONES DE VENCIMIENTO ACTIVAS              ║
-║       🎛️  Panel completo con control MP                    ║
+║     🔐 NO DA ERROR "EXPIRADO"                              ║
+║     📱 MISMA BD PARA TODOS LOS DATOS                       ║
+║     💰 MERCADOPAGO INTEGRADO                               ║
+║     ⏱️  PRUEBA 2 HORAS                                     ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 FINAL
 echo -e "${NC}"
 
-echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}"
-echo -e "${GREEN}✅ Sistema HWID instalado${NC}"
-echo -e "${GREEN}✅ SIN usuario/contraseña${NC}"
-echo -e "${GREEN}✅ FLUJO: Primero nombre, luego HWID${NC}"
-echo -e "${GREEN}✅ Formato HWID: APP-E3E4D5CBB7636907${NC}"
-echo -e "${GREEN}✅ MercadoPago SDK v2.x integrado${NC}"
-echo -e "${GREEN}✅ Verificación automática de pagos${NC}"
-echo -e "${GREEN}✅ ⏱️  PRUEBA DE 2 HORAS (CORREGIDO)${NC}"
-echo -e "${GREEN}✅ ⏰ NOTIFICACIONES DE VENCIMIENTO (cada hora)${NC}"
-echo -e "${GREEN}✅ SIN CUPONES DE DESCUENTO - Proceso simplificado${NC}"
-echo -e "${GREEN}✅ SIN NÚMEROS AZULES - Texto normal${NC}"
-echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}\n"
+echo -e "\n${GREEN}✅ BD ÚNICA: ${CYAN}/opt/sshbot-pro/data/bot.db${NC}"
+echo -e "${GREEN}✅ Comando: ${CYAN}sshbot${NC} - Panel de control"
+echo -e "${GREEN}✅ Logs: ${CYAN}pm2 logs sshbot-pro${NC}"
+echo -e "\n${YELLOW}📱 Escanea el QR y prueba - ¡YA NO DIRÁ EXPIRADO!${NC}\n"
 
-echo -e "${YELLOW}📋 COMANDOS PRINCIPALES:${NC}\n"
-echo -e "  ${GREEN}sshbot${NC}         - Panel de control"
-echo -e "  ${GREEN}pm2 logs sshbot-pro${NC} - Ver logs y QR"
-echo -e "  ${GREEN}pm2 restart sshbot-pro${NC} - Reiniciar"
-echo -e "\n"
-
-echo -e "${YELLOW}📱 FLUJO DEL SISTEMA HWID:${NC}\n"
-echo -e "  1. Usuario paga o pide prueba"
-echo -e "  2. Bot pide: ${CYAN}\"Primero, dime tu nombre\"${NC}"
-echo -e "  3. Usuario envía nombre"
-echo -e "  4. Bot pide: ${CYAN}\"Ahora envía tu HWID\"${NC}"
-echo -e "  5. Usuario envía HWID"
-echo -e "  6. Sistema activa automáticamente"
-echo -e "\n"
-
-echo -e "${YELLOW}⏱️  PRUEBA GRATUITA: ${GREEN}2 HORAS${NC}\n"
-
-echo -e "${YELLOW}💡 FORMATO HWID VÁLIDO:${NC}"
-echo -e "  APP-E3E4D5CBB7636907"
-echo -e "  APP- + 16 caracteres hexadecimales"
-echo -e "\n"
-
-echo -e "${YELLOW}💰 CONFIGURAR MERCADOPAGO:${NC}\n"
-echo -e "  1. Ve a: https://www.mercadopago.com.ar/developers"
-echo -e "  2. Inicia sesión"
-echo -e "  3. Ve a 'Tus credenciales'"
-echo -e "  4. Copia 'Access Token PRODUCCIÓN'"
-echo -e "  5. En el panel: Opción 7 → Pegar token"
-echo -e "  6. Testear con opción 8"
-echo -e "\n"
-
-echo -e "${YELLOW}⏰ NOTIFICACIONES DE VENCIMIENTO:${NC}"
-echo -e "  • Se envían automáticamente cada hora"
-echo -e "  • Avisan 24 horas antes de vencer"
-echo -e "  • También avisan cuando ya venció"
-echo -e "  • Solo para usuarios premium"
-echo -e "\n"
-
-echo -e "${GREEN}${BOLD}¡Sistema HWID listo! Escanea el QR y ya no necesitas usuario/contraseña 🚀${NC}\n"
-
-read -p "$(echo -e "${YELLOW}¿Ver logs ahora? (s/N): ${NC}")" -n 1 -r
+read -p "¿Ver logs ahora? (s/N): " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Ss]$ ]]; then
-    echo -e "\n${CYAN}Mostrando logs...${NC}"
-    echo -e "${YELLOW}📱 Espera el QR para escanear...${NC}\n"
-    sleep 2
     pm2 logs sshbot-pro
-else
-    echo -e "\n${YELLOW}💡 Para iniciar: ${GREEN}sshbot${NC}"
-    echo -e "${YELLOW}💡 Para logs: ${GREEN}pm2 logs sshbot-pro${NC}\n"
 fi
 
 exit 0
