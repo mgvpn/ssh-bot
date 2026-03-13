@@ -1,7 +1,7 @@
 #!/bin/bash
 # ================================================
-# SSH BOT PRO - WPPCONNECT + MERCADOPAGO + HWID
-# VERSIÓN CORREGIDA - BD ÚNICA (NO DA EXPIRADO)
+# SSH BOT PRO - WPPCONNECT + MERCADOPAGO + REVENDEDORES
+# VERSIÓN COMPLETA CON OPCIÓN 5 - SER REVENDEDOR
 # ================================================
 
 set -e
@@ -14,6 +14,7 @@ CYAN='\033[0;36m'
 BLUE='\033[0;34m'
 PURPLE='\033[0;35m'
 NC='\033[0m'
+BOLD='\033[1m'
 
 clear
 echo -e "${CYAN}${BOLD}"
@@ -28,29 +29,25 @@ cat << "BANNER"
 ║     ╚══════╝╚══════╝╚═╝  ╚═╝    ╚═════╝  ╚═════╝    ╚═╝     ║
 ╠══════════════════════════════════════════════════════════════╣
 ║                                                              ║
-║          🤖 SSH BOT PRO - VERSIÓN CORREGIDA                ║
-║               🔐 BD ÚNICA - NO DA EXPIRADO                 ║
-║               📱 HWID + MERCADOPAGO                        ║
-║               💰 Pago automático con QR                    ║
-║               ⏰ NOTIFICACIONES DE VENCIMIENTO             ║
-║               ✅ PRUEBA 2 HORAS                            ║
+║          🤖 SSH BOT PRO - CON REVENDEDORES                  ║
+║               💰 MERCADOPAGO + REVENDEDORES                 ║
+║               👥 Opción 5 - SER REVENDEDOR                  ║
+║               💸 Precios mayoristas:                         ║
+║               🗓️ 7d = $1700 | 15d = $2500                   ║
+║               🗓️ 20d = $3500 | 30d = $4500                  ║
+║               🔔 Recordatorios automáticos                   ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 BANNER
 echo -e "${NC}"
 
 echo -e "${GREEN}✅ CARACTERÍSTICAS PRINCIPALES:${NC}"
-echo -e "  🔐 ${CYAN}Sistema HWID${NC} - Sin usuario/contraseña"
-echo -e "  📱 ${CYAN}WPPConnect${NC} - API WhatsApp funcionando"
-echo -e "  💰 ${GREEN}MercadoPago SDK v2.x${NC} - Integrado completo"
-echo -e "  💳 ${YELLOW}Pago automático${NC} - QR + Enlace"
-echo -e "  📝 ${PURPLE}Flujo mejorado${NC} - Primero nombre, luego HWID"
-echo -e "  🎛️  ${PURPLE}Panel completo${NC} - Control total"
-echo -e "  📊 ${BLUE}Estadísticas${NC} - Ventas, HWIDs, ingresos"
-echo -e "  ⚡ ${GREEN}Auto-verificación${NC} - Pagos c/2 min"
-echo -e "  ⏱️  ${YELLOW}PRUEBA 2 HORAS${NC} - Duración correcta"
-echo -e "  ⏰ ${CYAN}NOTIFICACIONES${NC} - Avisos automáticos"
-echo -e "  ✅ ${GREEN}BD ÚNICA${NC} - NO DA ERROR EXPIRADO"
+echo -e "  👥 ${CYAN}OPCIÓN 5 - SER REVENDEDOR${NC} - Registro automático"
+echo -e "  💰 ${GREEN}Precios mayoristas fijos${NC} - 7d=$1700, 15d=$2500, 20d=$3500, 30d=$4500"
+echo -e "  💳 ${YELLOW}Pago por MercadoPago${NC} - Recibe usuario automáticamente"
+echo -e "  📦 ${PURPLE}Cuenta de revendedor + 1 cuenta para vender${NC}"
+echo -e "  📱 ${BLUE}Comandos exclusivos${NC} - !mis_cuentas, !vender, !panel"
+echo -e "  🔔 ${CYAN}Recordatorios${NC} - A usuarios finales"
 echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}\n"
 
 # Verificar root
@@ -118,13 +115,13 @@ pm2 update
 echo -e "${GREEN}✅ Dependencias instaladas${NC}"
 
 # ================================================
-# PREPARAR ESTRUCTURA - CON BD ÚNICA
+# PREPARAR ESTRUCTURA
 # ================================================
-echo -e "\n${CYAN}📁 Creando estructura con BD ÚNICA...${NC}"
+echo -e "\n${CYAN}📁 Creando estructura...${NC}"
 
 INSTALL_DIR="/opt/sshbot-pro"
 USER_HOME="/root/sshbot-pro"
-DB_FILE="$INSTALL_DIR/data/bot.db"  # ← ¡BD ÚNICA! (CORREGIDO)
+DB_FILE="$INSTALL_DIR/data/users.db"
 CONFIG_FILE="$INSTALL_DIR/config/config.json"
 
 # Limpiar anterior
@@ -142,25 +139,36 @@ chmod -R 700 /root/.wppconnect
 cat > "$CONFIG_FILE" << EOF
 {
     "bot": {
-        "name": "SSH Bot Pro HWID",
-        "version": "3.0-HWID-CORREGIDO",
-        "server_ip": "$SERVER_IP"
+        "name": "SSH Bot Pro",
+        "version": "3.0-REVENDEDORES",
+        "server_ip": "$SERVER_IP",
+        "default_password": "mgvpn247"
     },
     "prices": {
         "test_hours": 2,
-        "price_7d": 3000.00,
-        "price_15d": 4000.00,
-        "price_30d": 7000.00,
-        "price_50d": 9700.00,
+        "price_7d": 1700.00,
+        "price_15d": 2500.00,
+        "price_20d": 3500.00,
+        "price_30d": 4500.00,
         "currency": "ARS"
+    },
+    "reseller_prices": {
+        "7d": 1700.00,
+        "15d": 2500.00,
+        "20d": 3500.00,
+        "30d": 4500.00
     },
     "mercadopago": {
         "access_token": "",
         "enabled": false,
         "public_key": ""
     },
+    "reminders": {
+        "enabled": true,
+        "times": [24, 12, 6, 1]
+    },
     "links": {
-        "app_download": "https://www.mediafire.com/file/18tnc70qr2771lu/MGVPN.apk/file",
+        "app_download": "https://www.mediafire.com/file/tvt0vpmyfg3xqhj/mgvpn.apk/file",
         "support": "https://wa.me/543435071016"
     },
     "paths": {
@@ -171,26 +179,10 @@ cat > "$CONFIG_FILE" << EOF
 }
 EOF
 
-# ================================================
-# CREAR BASE DE DATOS ÚNICA (TODAS LAS TABLAS)
-# ================================================
-echo -e "${CYAN}🗄️  Creando BD ÚNICA con todas las tablas...${NC}"
-
+# Crear base de datos COMPLETA con tablas de revendedores
 sqlite3 "$DB_FILE" << 'SQL'
--- Tabla principal para HWID
-CREATE TABLE IF NOT EXISTS hwid_users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    phone TEXT,
-    nombre TEXT,
-    hwid TEXT UNIQUE,
-    tipo TEXT DEFAULT 'test',
-    expires_at DATETIME,
-    status INTEGER DEFAULT 1,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- Tabla para SSH (por si luego se necesita)
-CREATE TABLE IF NOT EXISTS ssh_users (
+-- Tabla de usuarios normales
+CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     phone TEXT,
     username TEXT UNIQUE,
@@ -198,26 +190,24 @@ CREATE TABLE IF NOT EXISTS ssh_users (
     tipo TEXT DEFAULT 'test',
     expires_at DATETIME,
     status INTEGER DEFAULT 1,
+    last_reminder_hours INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Tabla de tests diarios
-CREATE TABLE IF NOT EXISTS daily_tests (
+CREATE TABLE daily_tests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     phone TEXT,
-    nombre TEXT,
     date DATE,
-    system_type TEXT DEFAULT 'hwid',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(phone, date)
 );
 
--- Tabla de pagos (con todos los campos necesarios)
-CREATE TABLE IF NOT EXISTS payments (
+-- Tabla de pagos normales
+CREATE TABLE payments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     payment_id TEXT UNIQUE,
     phone TEXT,
-    nombre TEXT,
     plan TEXT,
     days INTEGER,
     amount REAL,
@@ -225,64 +215,89 @@ CREATE TABLE IF NOT EXISTS payments (
     payment_url TEXT,
     qr_code TEXT,
     preference_id TEXT,
-    hwid TEXT,
-    system_type TEXT DEFAULT 'hwid',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     approved_at DATETIME
 );
 
--- Tabla de logs
-CREATE TABLE IF NOT EXISTS logs (
+-- TABLAS DE REVENDEDORES
+CREATE TABLE resellers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    phone TEXT UNIQUE,
+    username TEXT UNIQUE,
+    password TEXT DEFAULT 'mgvpn247',
+    plan TEXT,
+    expires_at DATETIME,
+    accounts_remaining INTEGER DEFAULT 0,
+    total_accounts INTEGER DEFAULT 0,
+    status TEXT DEFAULT 'active',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    last_purchase DATETIME
+);
+
+CREATE TABLE reseller_purchases_pending (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    phone TEXT,
+    plan TEXT,
+    days INTEGER,
+    price REAL,
+    payment_id TEXT UNIQUE,
+    preference_id TEXT,
+    status TEXT DEFAULT 'pending',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    approved_at DATETIME
+);
+
+CREATE TABLE reseller_accounts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    reseller_phone TEXT,
+    username TEXT UNIQUE,
+    password TEXT DEFAULT 'mgvpn247',
+    expires_at DATETIME,
+    status TEXT DEFAULT 'available',
+    sold_to TEXT,
+    sold_price REAL,
+    sold_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     type TEXT,
     message TEXT,
     data TEXT,
-    system_type TEXT DEFAULT 'hwid',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabla de estados de usuario
-CREATE TABLE IF NOT EXISTS user_state (
+CREATE TABLE user_state (
     phone TEXT PRIMARY KEY,
     state TEXT DEFAULT 'main_menu',
     data TEXT,
-    system_type TEXT DEFAULT 'hwid',
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabla de intentos de HWID
-CREATE TABLE IF NOT EXISTS hwid_attempts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    hwid TEXT,
-    phone TEXT,
-    nombre TEXT,
-    action TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- Índices para búsquedas rápidas
-CREATE INDEX IF NOT EXISTS idx_hwid_users_hwid ON hwid_users(hwid);
-CREATE INDEX IF NOT EXISTS idx_hwid_users_status ON hwid_users(status);
-CREATE INDEX IF NOT EXISTS idx_hwid_users_phone ON hwid_users(phone);
-CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
-CREATE INDEX IF NOT EXISTS idx_payments_hwid ON payments(hwid);
-CREATE INDEX IF NOT EXISTS idx_payments_phone ON payments(phone);
-CREATE INDEX IF NOT EXISTS idx_daily_tests_phone ON daily_tests(phone, date);
+-- Índices
+CREATE INDEX idx_users_phone ON users(phone);
+CREATE INDEX idx_users_status ON users(status);
+CREATE INDEX idx_payments_status ON payments(status);
+CREATE INDEX idx_payments_preference ON payments(preference_id);
+CREATE INDEX idx_resellers_phone ON resellers(phone);
+CREATE INDEX idx_reseller_accounts_reseller ON reseller_accounts(reseller_phone);
+CREATE INDEX idx_reseller_accounts_status ON reseller_accounts(status);
 SQL
 
-echo -e "${GREEN}✅ BD ÚNICA creada en: ${CYAN}$DB_FILE${NC}"
+echo -e "${GREEN}✅ Estructura creada con tablas de revendedores${NC}"
 
 # ================================================
-# CREAR BOT CON HWID (BD ÚNICA - CORREGIDO)
+# CREAR BOT COMPLETO CON REVENDEDORES
 # ================================================
-echo -e "\n${CYAN}🤖 Creando bot con sistema HWID (BD ÚNICA - NO DA EXPIRADO)...${NC}"
+echo -e "\n${CYAN}🤖 Creando bot con WPPConnect + MercadoPago + Revendedores...${NC}"
 
 cd "$USER_HOME"
 
 # package.json
 cat > package.json << 'PKGEOF'
 {
-    "name": "sshbot-pro-hwid",
+    "name": "sshbot-pro",
     "version": "3.0.0",
     "main": "bot.js",
     "dependencies": {
@@ -294,7 +309,8 @@ cat > package.json << 'PKGEOF'
         "chalk": "^4.1.2",
         "node-cron": "^3.0.3",
         "mercadopago": "^2.0.15",
-        "axios": "^1.6.5"
+        "axios": "^1.6.5",
+        "sharp": "^0.33.2"
     }
 }
 PKGEOF
@@ -302,11 +318,7 @@ PKGEOF
 echo -e "${YELLOW}📦 Instalando dependencias...${NC}"
 npm install --silent 2>&1 | grep -v "npm WARN" || true
 
-# ================================================
-# CREAR BOT.JS CON BD ÚNICA - ¡CORREGIDO!
-# ================================================
-echo -e "${YELLOW}📝 Creando bot.js con BD ÚNICA (NO DA EXPIRADO)...${NC}"
-
+# Crear bot.js COMPLETO con sistema de revendedores
 cat > "bot.js" << 'BOTEOF'
 const wppconnect = require('@wppconnect-team/wppconnect');
 const qrcode = require('qrcode-terminal');
@@ -325,9 +337,8 @@ const execPromise = util.promisify(exec);
 moment.locale('es');
 
 console.log(chalk.cyan.bold('\n╔══════════════════════════════════════════════════════════════╗'));
-console.log(chalk.cyan.bold('║           🤖 SSH BOT PRO - HWID CORREGIDO                   ║'));
-console.log(chalk.cyan.bold('║           ✅ BD ÚNICA - NO DA EXPIRADO                       ║'));
-console.log(chalk.cyan.bold('║           ⏱️  PRUEBA: 2 HORAS                                ║'));
+console.log(chalk.cyan.bold('║      🤖 SSH BOT PRO - CON REVENDEDORES                      ║'));
+console.log(chalk.cyan.bold('║         💼 OPCIÓN 5 - SER REVENDEDOR                        ║'));
 console.log(chalk.cyan.bold('╚══════════════════════════════════════════════════════════════╝\n'));
 
 // Cargar configuración
@@ -337,15 +348,9 @@ function loadConfig() {
 }
 
 let config = loadConfig();
+const db = new sqlite3.Database('/opt/sshbot-pro/data/users.db');
 
-// ================================================
-// ✅ BD ÚNICA - MISMA CONEXIÓN PARA TODO
-// ================================================
-const db = new sqlite3.Database('/opt/sshbot-pro/data/bot.db');  // ← ¡BD ÚNICA!
-
-console.log(chalk.green('✅ Conectado a BD ÚNICA: /opt/sshbot-pro/data/bot.db'));
-
-// ✅ MERCADOPAGO SDK V2.X
+// MERCADOPAGO
 let mpEnabled = false;
 let mpClient = null;
 let mpPreference = null;
@@ -379,125 +384,11 @@ function initMercadoPago() {
 initMercadoPago();
 
 let client = null;
+const DEFAULT_PASSWORD = 'mgvpn247';
 
-// ✅ FUNCIONES PARA HWID - CORREGIDAS (BUSCAN EN BD ÚNICA)
-function validateHWID(hwid) {
-    const hwidRegex = /^APP-[A-F0-9]{16}$/;
-    return hwidRegex.test(hwid);
-}
-
-function normalizeHWID(hwid) {
-    hwid = hwid.trim().toUpperCase();
-    if (!hwid.startsWith('APP-')) {
-        hwid = 'APP-' + hwid.replace(/[^A-F0-9]/g, '');
-    }
-    return hwid;
-}
-
-// ✅ ¡CORREGIDO! - Busca en la MISMA BD
-function isHWIDActive(hwid) {
-    return new Promise((resolve) => {
-        db.get('SELECT * FROM hwid_users WHERE hwid = ? AND status = 1 AND expires_at > datetime("now")', 
-            [hwid], (err, row) => {
-            if (err) {
-                console.error(chalk.red('❌ Error buscando HWID:'), err.message);
-                resolve(false);
-            } else {
-                resolve(!!row);
-            }
-        });
-    });
-}
-
-// ✅ ¡CORREGIDO! - Obtiene info completa
-function getHWIDInfo(hwid) {
-    return new Promise((resolve) => {
-        db.get('SELECT * FROM hwid_users WHERE hwid = ?', [hwid], (err, row) => {
-            if (err) {
-                console.error(chalk.red('❌ Error obteniendo HWID:'), err.message);
-                resolve(null);
-            } else {
-                resolve(row || null);
-            }
-        });
-    });
-}
-
-// ✅ Registrar HWID en BD ÚNICA
-async function registerHWID(phone, nombre, hwid, days, tipo = 'premium') {
-    try {
-        // Verificar si HWID ya existe
-        const existing = await new Promise((resolve) => {
-            db.get('SELECT hwid FROM hwid_users WHERE hwid = ?', [hwid], (err, row) => {
-                resolve(row);
-            });
-        });
-
-        if (existing) {
-            return { success: false, error: 'HWID ya registrado' };
-        }
-
-        let expireFull;
-        if (days === 0) {
-            // Test - 2 horas
-            expireFull = moment().add(2, 'hours').format('YYYY-MM-DD HH:mm:ss');
-            console.log(chalk.cyan(`⏱️  Prueba 2 horas - Expira: ${expireFull}`));
-        } else {
-            // Premium
-            expireFull = moment().add(days, 'days').format('YYYY-MM-DD 23:59:59');
-        }
-
-        // Registrar en BD ÚNICA
-        await new Promise((resolve, reject) => {
-            db.run(
-                `INSERT INTO hwid_users (phone, nombre, hwid, tipo, expires_at, status) VALUES (?, ?, ?, ?, ?, 1)`,
-                [phone, nombre, hwid, tipo, expireFull],
-                function(err) {
-                    if (err) reject(err);
-                    else resolve(this.lastID);
-                }
-            );
-        });
-
-        // Registrar intento
-        db.run(`INSERT INTO hwid_attempts (hwid, phone, nombre, action) VALUES (?, ?, ?, 'registered')`, 
-            [hwid, phone, nombre]);
-
-        return { 
-            success: true, 
-            hwid,
-            nombre,
-            expires: expireFull,
-            tipo
-        };
-
-    } catch (error) {
-        console.error(chalk.red('❌ Error registrando HWID:'), error.message);
-        return { success: false, error: error.message };
-    }
-}
-
-function canCreateTest(phone) {
-    return new Promise((resolve) => {
-        const today = moment().format('YYYY-MM-DD');
-        db.get('SELECT COUNT(*) as count FROM daily_tests WHERE phone = ? AND date = ?', 
-            [phone, today], (err, row) => {
-            if (err) {
-                console.error(chalk.red('❌ Error verificando test:'), err.message);
-                resolve(false);
-            } else {
-                resolve(row && row.count === 0);
-            }
-        });
-    });
-}
-
-function registerTest(phone, nombre) {
-    db.run('INSERT OR IGNORE INTO daily_tests (phone, nombre, date) VALUES (?, ?, ?)', 
-        [phone, nombre, moment().format('YYYY-MM-DD')]);
-}
-
-// ✅ SISTEMA DE ESTADOS
+// ================================================
+// FUNCIONES DE ESTADO
+// ================================================
 function getUserState(phone) {
     return new Promise((resolve) => {
         db.get('SELECT state, data FROM user_state WHERE phone = ?', [phone], (err, row) => {
@@ -527,40 +418,95 @@ function setUserState(phone, state, data = null) {
     });
 }
 
-// ✅ MERCADOPAGO - CREAR PAGO
-async function createMercadoPagoPayment(phone, days, amount, planName) {
+function clearUserState(phone) {
+    db.run('DELETE FROM user_state WHERE phone = ?', [phone]);
+}
+
+// ================================================
+// FUNCIONES AUXILIARES
+// ================================================
+function generateUsername(prefix = 'user') {
+    const chars = 'abcdefghijklmnopqrstuvwxyz';
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    const randomChar = chars.charAt(Math.floor(Math.random() * chars.length));
+    return `${prefix}${randomChar}${randomNum}`;
+}
+
+function generateResellerUsername() {
+    return generateUsername('vendedor');
+}
+
+function generateClientUsername() {
+    return generateUsername('cliente');
+}
+
+async function createSSHUser(username, days) {
+    const password = DEFAULT_PASSWORD;
+    
+    if (days === 0) {
+        // Test - horas
+        const expireFull = moment().add(config.prices.test_hours, 'hours').format('YYYY-MM-DD HH:mm:ss');
+        
+        try {
+            await execPromise(`useradd -m -s /bin/bash ${username} && echo "${username}:${password}" | chpasswd`);
+            return { success: true, username, password, expires: expireFull };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    } else {
+        // Premium
+        const expireFull = moment().add(days, 'days').format('YYYY-MM-DD 23:59:59');
+        
+        try {
+            await execPromise(`useradd -M -s /bin/false -e ${moment().add(days, 'days').format('YYYY-MM-DD')} ${username} && echo "${username}:${password}" | chpasswd`);
+            return { success: true, username, password, expires: expireFull };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+}
+
+function canCreateTest(phone) {
+    return new Promise((resolve) => {
+        const today = moment().format('YYYY-MM-DD');
+        db.get('SELECT COUNT(*) as count FROM daily_tests WHERE phone = ? AND date = ?', [phone, today],
+            (err, row) => resolve(!err && row && row.count === 0));
+    });
+}
+
+function registerTest(phone) {
+    db.run('INSERT OR IGNORE INTO daily_tests (phone, date) VALUES (?, ?)', [phone, moment().format('YYYY-MM-DD')]);
+}
+
+// ================================================
+// MERCADOPAGO - CREAR PAGO
+// ================================================
+async function createMercadoPagoPayment(phone, days, amount, title, reference) {
     try {
         if (!mpEnabled || !mpPreference) {
             return { success: false, error: 'MercadoPago no configurado' };
         }
         
         const phoneClean = phone.replace('@c.us', '');
-        const paymentId = `HWID-${phoneClean}-${days}d-${Date.now()}`;
-        
-        console.log(chalk.cyan(`🔄 Creando pago MP: ${paymentId}`));
-        
-        const expirationDate = moment().add(24, 'hours');
-        const isoDate = expirationDate.toISOString();
+        const paymentId = reference || `PAY-${phoneClean}-${days}d-${Date.now()}`;
         
         const preferenceData = {
             items: [{
-                title: `HWID SSH PREMIUM ${days} DÍAS`,
-                description: `Activación HWID SSH por ${days} días`,
+                title: title,
+                description: `SSH Premium - ${days} días`,
                 quantity: 1,
                 currency_id: config.prices.currency || 'ARS',
                 unit_price: parseFloat(amount)
             }],
             external_reference: paymentId,
             expires: true,
-            expiration_date_from: moment().toISOString(),
-            expiration_date_to: isoDate,
+            expiration_date_to: moment().add(24, 'hours').toISOString(),
             back_urls: {
-                success: `https://wa.me/${phoneClean}?text=Ya%20pague%20hwid`,
-                failure: `https://wa.me/${phoneClean}?text=Pago%20fallido`,
-                pending: `https://wa.me/${phoneClean}?text=Pago%20pendiente`
+                success: `https://wa.me/${phoneClean}`,
+                failure: `https://wa.me/${phoneClean}`,
+                pending: `https://wa.me/${phoneClean}`
             },
-            auto_return: 'approved',
-            statement_descriptor: 'HWID SSH'
+            auto_return: 'approved'
         };
         
         const response = await mpPreference.create({ body: preferenceData });
@@ -569,21 +515,14 @@ async function createMercadoPagoPayment(phone, days, amount, planName) {
             const paymentUrl = response.init_point;
             const qrPath = `${config.paths.qr_codes}/${paymentId}.png`;
             
-            await QRCode.toFile(qrPath, paymentUrl, { 
-                width: 400,
-                margin: 2
-            });
-            
-            db.run(
-                `INSERT INTO payments (payment_id, phone, plan, days, amount, status, payment_url, qr_code, preference_id) VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?)`,
-                [paymentId, phone, `${days}d`, days, amount, paymentUrl, qrPath, response.id]
-            );
+            await QRCode.toFile(qrPath, paymentUrl, { width: 400 });
             
             return { 
                 success: true, 
                 paymentId, 
                 paymentUrl, 
                 qrPath,
+                preferenceId: response.id,
                 amount: parseFloat(amount)
             };
         }
@@ -596,143 +535,156 @@ async function createMercadoPagoPayment(phone, days, amount, planName) {
     }
 }
 
-// ✅ VERIFICAR PAGOS PENDIENTES
+// ================================================
+// VERIFICAR PAGOS
+// ================================================
 async function checkPendingPayments() {
     if (!mpEnabled) return;
     
-    db.all('SELECT * FROM payments WHERE status = "pending" AND created_at > datetime("now", "-48 hours")', 
-        async (err, payments) => {
-        if (err || !payments || payments.length === 0) return;
-        
-        console.log(chalk.yellow(`🔍 Verificando ${payments.length} pagos...`));
+    // Verificar pagos normales
+    db.all('SELECT * FROM payments WHERE status = "pending" AND created_at > datetime("now", "-48 hours")', async (err, payments) => {
+        if (err || !payments) return;
         
         for (const payment of payments) {
             try {
                 const url = `https://api.mercadopago.com/v1/payments/search?external_reference=${payment.payment_id}`;
                 const response = await axios.get(url, {
-                    headers: { 
-                        'Authorization': `Bearer ${config.mercadopago.access_token}`
-                    },
-                    timeout: 15000
+                    headers: { 'Authorization': `Bearer ${config.mercadopago.access_token}` }
                 });
                 
-                if (response.data && response.data.results && response.data.results.length > 0) {
+                if (response.data.results && response.data.results.length > 0) {
                     const mpPayment = response.data.results[0];
                     
-                    console.log(chalk.cyan(`📋 Pago ${payment.payment_id}: ${mpPayment.status}`));
-                    
                     if (mpPayment.status === 'approved') {
-                        console.log(chalk.green(`✅ PAGO APROBADO: ${payment.payment_id}`));
+                        // Crear usuario SSH
+                        const username = generateUsername();
+                        const result = await createSSHUser(username, payment.days);
                         
-                        db.run(`UPDATE payments SET status = 'approved', approved_at = CURRENT_TIMESTAMP WHERE payment_id = ?`, 
-                            [payment.payment_id]);
-                        
-                        // Enviar mensaje pidiendo NOMBRE primero
-                        const message = `✅ PAGO CONFIRMADO
+                        if (result.success) {
+                            db.run(`UPDATE payments SET status = 'approved', approved_at = CURRENT_TIMESTAMP WHERE payment_id = ?`, [payment.payment_id]);
+                            
+                            const expireDate = moment().add(payment.days, 'days').format('DD/MM/YYYY');
+                            
+                            const message = `✅ PAGO CONFIRMADO
 
-🎉 Tu pago ha sido aprobado
-
-📝 PRIMERO, ESCRIBE TU NOMBRE:
-Para continuar con la activación, dime tu nombre
-
-⏳ Tienes 30 minutos para completar el proceso`;
-                        
-                        if (client) {
-                            await client.sendText(payment.phone, message);
-                            await setUserState(payment.phone, 'awaiting_hwid', { 
-                                payment_id: payment.payment_id,
-                                days: payment.days,
-                                plan: payment.plan
-                            });
+📋 DATOS DE ACCESO:
+👤 Usuario: ${username}
+🔑 Contraseña: ${DEFAULT_PASSWORD}
+⏰ VÁLIDO HASTA: ${expireDate}`;
+                            
+                            if (client) {
+                                await client.sendText(payment.phone, message);
+                            }
                         }
                     }
                 }
             } catch (error) {
-                console.error(chalk.red(`❌ Error verificando ${payment.payment_id}:`), error.message);
+                console.error(chalk.red('Error verificando pago:'), error.message);
+            }
+        }
+    });
+    
+    // Verificar pagos de revendedores
+    db.all('SELECT * FROM reseller_purchases_pending WHERE status = "pending"', async (err, purchases) => {
+        if (err || !purchases) return;
+        
+        for (const purchase of purchases) {
+            try {
+                const url = `https://api.mercadopago.com/v1/payments/search?external_reference=${purchase.payment_id}`;
+                const response = await axios.get(url, {
+                    headers: { 'Authorization': `Bearer ${config.mercadopago.access_token}` }
+                });
+                
+                if (response.data.results && response.data.results.length > 0) {
+                    const mpPayment = response.data.results[0];
+                    
+                    if (mpPayment.status === 'approved') {
+                        console.log(chalk.green(`✅ PAGO REVENDEDOR APROBADO: ${purchase.payment_id}`));
+                        
+                        // Generar usuario revendedor
+                        const resellerUsername = generateResellerUsername();
+                        const resellerExpire = moment().add(purchase.days, 'days').format('YYYY-MM-DD HH:mm:ss');
+                        
+                        // Crear usuario SSH para revendedor
+                        await createSSHUser(resellerUsername, purchase.days);
+                        
+                        // Generar cuenta para vender
+                        const clientUsername = generateClientUsername();
+                        const clientExpire = moment().add(purchase.days, 'days').format('YYYY-MM-DD HH:mm:ss');
+                        
+                        await createSSHUser(clientUsername, purchase.days);
+                        
+                        // Guardar en BD
+                        db.run(`
+                            INSERT INTO resellers 
+                            (phone, username, plan, expires_at, accounts_remaining, total_accounts) 
+                            VALUES (?, ?, ?, ?, 1, 1)
+                        `, [purchase.phone, resellerUsername, purchase.plan, resellerExpire]);
+                        
+                        db.run(`
+                            INSERT INTO reseller_accounts 
+                            (reseller_phone, username, expires_at, status) 
+                            VALUES (?, ?, ?, 'available')
+                        `, [purchase.phone, clientUsername, clientExpire]);
+                        
+                        db.run(`
+                            UPDATE reseller_purchases_pending 
+                            SET status = 'approved', approved_at = CURRENT_TIMESTAMP 
+                            WHERE payment_id = ?
+                        `, [purchase.payment_id]);
+                        
+                        // Notificar al revendedor
+                        const message = `🎉 *¡FELICIDADES! YA ERES REVENDEDOR*
+
+✅ Pago aprobado correctamente
+
+📋 *TUS DATOS DE ACCESO:*
+👤 Usuario: ${resellerUsername}
+🔑 Contraseña: ${DEFAULT_PASSWORD}
+⏰ Válido hasta: ${moment(resellerExpire).format('DD/MM/YYYY HH:mm')}
+
+📦 *CUENTA PARA VENDER:*
+👤 Usuario: ${clientUsername}
+🔑 Contraseña: ${DEFAULT_PASSWORD}
+⏰ Vence: ${moment(clientExpire).format('DD/MM/YYYY HH:mm')}
+
+💼 *COMANDOS:*
+!mis_cuentas - Ver tus cuentas
+!vender [usuario] [tel] [precio] - Registrar venta
+!disponibles - Ver cuentas sin vender
+!ayuda_rev - Ayuda completa
+
+💰 *INSTRUCCIONES:*
+1. Tienes 1 cuenta para vender
+2. Véndela al precio que quieras
+3. Para comprar más, vuelve a opción 5`;
+                        
+                        if (client) {
+                            await client.sendText(purchase.phone, message);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error(chalk.red('Error verificando pago revendedor:'), error.message);
             }
         }
     });
 }
 
-// ✅ NOTIFICACIONES DE VENCIMIENTO
-async function checkExpiringHWIDs() {
-    try {
-        const expiringSoon = await new Promise((resolve, reject) => {
-            db.all(`
-                SELECT * FROM hwid_users 
-                WHERE status = 1 
-                AND expires_at > datetime('now') 
-                AND expires_at < datetime('now', '+1 day')
-                AND tipo = 'premium'
-            `, (err, rows) => {
-                if (err) reject(err);
-                else resolve(rows || []);
-            });
-        });
-
-        for (const hwid of expiringSoon) {
-            const hoursLeft = moment(hwid.expires_at).diff(moment(), 'hours');
-            const message = `⏰ RECORDATORIO DE VENCIMIENTO
-
-Hola ${hwid.nombre}, tu acceso expirará en aproximadamente ${hoursLeft} horas.
-
-🔐 HWID: ${hwid.hwid}
-⏰ Vence: ${moment(hwid.expires_at).format('DD/MM/YYYY HH:mm')}
-
-💰 Para renovar, envía 2 y elige tu plan.`;
-            
-            if (client) {
-                await client.sendText(hwid.phone, message);
-                console.log(chalk.yellow(`📨 Notificación a ${hwid.nombre}`));
-            }
-        }
-
-        const expired = await new Promise((resolve, reject) => {
-            db.all(`
-                SELECT * FROM hwid_users 
-                WHERE status = 0 
-                AND expires_at > datetime('now', '-1 day')
-                AND expires_at < datetime('now')
-                AND tipo = 'premium'
-            `, (err, rows) => {
-                if (err) reject(err);
-                else resolve(rows || []);
-            });
-        });
-
-        for (const hwid of expired) {
-            const message = `⏰ SERVICIO EXPIRADO
-
-Hola ${hwid.nombre}, tu acceso ha expirado.
-
-🔐 HWID: ${hwid.hwid}
-⏰ Expiró: ${moment(hwid.expires_at).format('DD/MM/YYYY HH:mm')}
-
-💰 Renueva enviando 2`;
-            
-            if (client) {
-                await client.sendText(hwid.phone, message);
-            }
-        }
-
-    } catch (error) {
-        console.error(chalk.red('❌ Error en notificaciones:'), error.message);
-    }
-}
-
-// Inicializar WPPConnect
+// ================================================
+// INICIALIZAR BOT
+// ================================================
 async function initializeBot() {
     try {
         console.log(chalk.yellow('🚀 Inicializando WPPConnect...'));
         
         client = await wppconnect.create({
-            session: 'sshbot-pro-hwid',
+            session: 'sshbot-pro-session',
             headless: true,
             devtools: false,
             useChrome: true,
             debug: false,
             logQR: true,
-            browserWS: '',
             browserArgs: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
@@ -740,8 +692,7 @@ async function initializeBot() {
                 '--disable-accelerated-2d-canvas',
                 '--no-first-run',
                 '--no-zygote',
-                '--disable-gpu',
-                '--window-size=1920,1080'
+                '--disable-gpu'
             ],
             puppeteerOptions: {
                 executablePath: '/usr/bin/google-chrome',
@@ -755,10 +706,6 @@ async function initializeBot() {
         
         console.log(chalk.green('✅ WPPConnect conectado!'));
         
-        client.onStateChange((state) => {
-            console.log(chalk.cyan(`📱 Estado: ${state}`));
-        });
-        
         // Manejar mensajes
         client.onMessage(async (message) => {
             try {
@@ -769,306 +716,457 @@ async function initializeBot() {
                 
                 const userState = await getUserState(from);
                 
+                // ================================================
                 // MENÚ PRINCIPAL
+                // ================================================
                 if (['menu', 'hola', 'start', 'hi', 'volver', '0'].includes(text)) {
                     await setUserState(from, 'main_menu');
                     
-                    await client.sendText(from, `🤖 BOT MGVPN - HWID
+                    await client.sendText(from, `🤖 *BOT MGVPN*
 
 Elija una opción:
 
- 1️⃣ - PROBAR (2 horas gratis)
- 2️⃣ - COMPRAR ACCESO
- 3️⃣ - VERIFICAR MI HWID
- 4️⃣ - DESCARGAR APP`);
+1️⃣ - PRUEBA GRATIS (2 HORAS)
+2️⃣ - COMPRAR USUARIO SSH
+3️⃣ - RENOVAR USUARIO
+4️⃣ - DESCARGAR APP
+5️⃣ - SER REVENDEDOR 💼
+6️⃣ - PANEL REVENDEDOR
+
+0️⃣ - VOLVER`);
                 }
                 
-                // OPCIÓN 1: PRUEBA
+                // ================================================
+                // OPCIÓN 1: PRUEBA GRATIS
+                // ================================================
                 else if (text === '1' && userState.state === 'main_menu') {
-                    await setUserState(from, 'awaiting_test_nombre');
-                    
-                    await client.sendText(from, `⏳️ PRUEBA 2 HORAS
-
-Primero, dime tu nombre:`);
-                }
-                
-                // OPCIÓN 2: COMPRAR
-                else if (text === '2' && userState.state === 'main_menu') {
-                    await setUserState(from, 'buying_hwid');
-                    
-                    await client.sendText(from, `💰 PLANES DISPONIBLES
-
- 1️⃣ - 7 DÍAS - $${config.prices.price_7d}
- 2️⃣ - 15 DÍAS - $${config.prices.price_15d}
- 3️⃣ - 30 DÍAS - $${config.prices.price_30d}
- 4️⃣ - 50 DÍAS - $${config.prices.price_50d}
-
- 0️⃣ - VOLVER`);
-                }
-                
-                // OPCIÓN 3: VERIFICAR HWID
-                else if (text === '3' && userState.state === 'main_menu') {
-                    await setUserState(from, 'awaiting_check_hwid');
-                    
-                    await client.sendText(from, `🔍 VERIFICAR HWID
-
-Envía tu HWID:
-Ejemplo: APP-E3E4D5CBB7636907`);
-                }
-                
-                // OPCIÓN 4: DESCARGAR APP
-                else if (text === '4' && userState.state === 'main_menu') {
-                    await client.sendText(from, `📱 DESCARGAR APP
-
-🔗 ${config.links.app_download}`);
-                }
-                
-                // PROCESAR NOMBRE PARA PRUEBA
-                else if (userState.state === 'awaiting_test_nombre') {
-                    const nombre = message.body.trim();
-                    
-                    if (nombre.length < 2) {
-                        await client.sendText(from, '❌ Nombre muy corto. Intenta de nuevo:');
-                        return;
-                    }
-                    
-                    await setUserState(from, 'awaiting_test_hwid', { nombre });
-                    
-                    await client.sendText(from, `✅ Gracias ${nombre}
-
-Ahora envía tu HWID:
-
-Formato: APP-E3E4D5CBB7636907`);
-                }
-                
-                // PROCESAR HWID PARA PRUEBA
-                else if (userState.state === 'awaiting_test_hwid') {
-                    const rawHwid = message.body;
-                    const hwid = normalizeHWID(rawHwid);
-                    const nombre = userState.data.nombre;
-                    
-                    if (!validateHWID(hwid)) {
-                        await client.sendText(from, `❌ HWID INVÁLIDO
-
-Formato: APP-E3E4D5CBB7636907
-Intenta de nuevo:`);
-                        return;
-                    }
-                    
-                    // Verificar prueba diaria
                     if (!(await canCreateTest(from))) {
-                        await client.sendText(from, `❌ YA USaste tu prueba hoy
+                        await client.sendText(from, `❌ YA USASTE TU PRUEBA HOY
 
-⏳ Vuelve mañana o compra un plan`);
-                        await setUserState(from, 'main_menu');
+⏳ Vuelve mañana para otra prueba gratuita de 2 horas`);
                         return;
                     }
                     
-                    // Verificar si HWID ya existe
-                    const active = await isHWIDActive(hwid);
-                    if (active) {
-                        await client.sendText(from, `❌ Este HWID ya está activo`);
-                        await setUserState(from, 'main_menu');
-                        return;
-                    }
+                    await client.sendText(from, '⏳ Creando cuenta de prueba de 2 horas...');
                     
-                    await client.sendText(from, '⏳ Activando prueba (2 horas)...');
-                    
-                    const result = await registerHWID(from, nombre, hwid, 0, 'test');
+                    const username = generateUsername('test');
+                    const result = await createSSHUser(username, 0);
                     
                     if (result.success) {
-                        registerTest(from, nombre);
+                        registerTest(from);
                         
-                        const expireTime = moment(result.expires).format('HH:mm DD/MM/YYYY');
-                        
-                        await client.sendText(from, `✅ PRUEBA ACTIVADA
+                        await client.sendText(from, `✅ *PRUEBA DE 2 HORAS CREADA*
 
-👤 Nombre: ${nombre}
-🔐 HWID: ${hwid}
-⏰ Expira: ${expireTime}
+👤 Usuario: ${username}
+🔑 Contraseña: ${DEFAULT_PASSWORD}
+⏰ Expira en: ${config.prices.test_hours} horas
 
-📱 Ya puedes usar la app`);
-                        
-                        console.log(chalk.green(`✅ HWID test: ${hwid} - ${nombre}`));
+📱 APP: ${config.links.app_download}`);
                     } else {
                         await client.sendText(from, `❌ Error: ${result.error}`);
                     }
-                    
-                    await setUserState(from, 'main_menu');
                 }
                 
-                // PROCESAR PLAN DE COMPRA
-                else if (userState.state === 'buying_hwid' && ['1','2','3','4'].includes(text)) {
+                // ================================================
+                // OPCIÓN 2: COMPRAR SSH
+                // ================================================
+                else if (text === '2' && userState.state === 'main_menu') {
+                    await setUserState(from, 'buying_ssh');
+                    
+                    await client.sendText(from, `🌐 *PLANES SSH*
+
+Elija un plan:
+1️⃣ - 7 DÍAS - $${config.prices.price_7d}
+2️⃣ - 15 DÍAS - $${config.prices.price_15d}
+3️⃣ - 20 DÍAS - $${config.prices.price_20d}
+4️⃣ - 30 DÍAS - $${config.prices.price_30d}
+0️⃣ - VOLVER`);
+                }
+                
+                // ================================================
+                // SELECCIÓN DE PLANES NORMALES
+                // ================================================
+                else if (userState.state === 'buying_ssh' && ['1', '2', '3', '4'].includes(text)) {
                     const planMap = {
                         '1': { days: 7, price: config.prices.price_7d, name: '7 DÍAS' },
                         '2': { days: 15, price: config.prices.price_15d, name: '15 DÍAS' },
-                        '3': { days: 30, price: config.prices.price_30d, name: '30 DÍAS' },
-                        '4': { days: 50, price: config.prices.price_50d, name: '50 DÍAS' }
+                        '3': { days: 20, price: config.prices.price_20d, name: '20 DÍAS' },
+                        '4': { days: 30, price: config.prices.price_30d, name: '30 DÍAS' }
                     };
                     
                     const plan = planMap[text];
                     
                     if (mpEnabled) {
-                        await client.sendText(from, '⏳ Generando pago...');
+                        await client.sendText(from, '⏳ Procesando tu compra...');
                         
                         const payment = await createMercadoPagoPayment(
                             from, 
                             plan.days, 
                             plan.price, 
-                            plan.name
+                            `SSH ${plan.name}`,
+                            `USER-${from.replace('@c.us', '')}-${plan.days}d-${Date.now()}`
                         );
                         
                         if (payment.success) {
-                            const message = `💰 PAGO PARA HWID
-
-Plan: ${plan.name}
-Precio: $${payment.amount}
-
-LINK: ${payment.paymentUrl}
-
-⏰ Válido 24 horas
-
-📌 DESPUÉS DE PAGAR:
-1. Espera confirmación
-2. Te pediré tu nombre
-3. Luego tu HWID`;
+                            db.run(
+                                `INSERT INTO payments (payment_id, phone, plan, days, amount, status, payment_url, qr_code, preference_id) VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?)`,
+                                [payment.paymentId, from, `${plan.days}d`, plan.days, plan.price, payment.paymentUrl, payment.qrPath, payment.preferenceId]
+                            );
                             
-                            await client.sendText(from, message);
+                            await client.sendText(from, `🔗 *LINK DE PAGO:*
+${payment.paymentUrl}
+
+💰 Monto: $${plan.price}
+⏰ Expira en 24 horas`);
                             
                             if (fs.existsSync(payment.qrPath)) {
-                                try {
-                                    await client.sendImage(from, payment.qrPath, 'qr-pago.jpg', 
-                                        `QR ${plan.name} - $${payment.amount}`);
-                                } catch (qrError) {}
+                                await client.sendImage(from, payment.qrPath, 'qr-pago.jpg', 'Escanea para pagar');
                             }
                         } else {
                             await client.sendText(from, `❌ Error: ${payment.error}`);
                         }
-                        
-                        await setUserState(from, 'main_menu');
                     } else {
-                        await client.sendText(from, `Plan ${plan.name} - $${plan.price}
-
-Contacta al admin: ${config.links.support}`);
-                        await setUserState(from, 'main_menu');
+                        await client.sendText(from, `❌ MercadoPago no configurado. Contacta al administrador.`);
                     }
-                }
-                
-                else if (text === '0' && userState.state === 'buying_hwid') {
+                    
                     await setUserState(from, 'main_menu');
-                    await client.sendText(from, `Menú principal:
- 1 - Probar
- 2 - Comprar
- 3 - Verificar HWID
- 4 - Descargar app`);
                 }
                 
-                // PROCESAR HWID PARA VERIFICACIÓN
-                else if (userState.state === 'awaiting_check_hwid') {
-                    const rawHwid = message.body;
-                    const hwid = normalizeHWID(rawHwid);
-                    
-                    if (!validateHWID(hwid)) {
-                        await client.sendText(from, `❌ Formato inválido
+                // ================================================
+                // OPCIÓN 3: RENOVAR
+                // ================================================
+                else if (text === '3' && userState.state === 'main_menu') {
+                    await client.sendText(from, `📞 Para renovar, contacta al administrador:
+${config.links.support}`);
+                }
+                
+                // ================================================
+                // OPCIÓN 4: DESCARGAR APP
+                // ================================================
+                else if (text === '4' && userState.state === 'main_menu') {
+                    await client.sendText(from, `📱 *DESCARGAR APP*
 
-Ejemplo: APP-E3E4D5CBB7636907`);
-                        return;
-                    }
+🔗 Enlace:
+${config.links.app_download}
+
+💡 Instrucciones:
+1. Abre el enlace
+2. Descarga el APK
+3. Instala la aplicación
+4. Configura con tus credenciales`);
+                }
+                
+                // ================================================
+                // OPCIÓN 5: SER REVENDEDOR 💼
+                // ================================================
+                else if (text === '5' && userState.state === 'main_menu') {
+                    await setUserState(from, 'selecting_reseller_plan');
                     
-                    const info = await getHWIDInfo(hwid);
+                    await client.sendText(from, `💼 *SER REVENDEDOR - PRECIOS MAYORISTAS*
+
+Elija un plan (pago único por las cuentas):
+
+1️⃣ - 7 DÍAS = $${config.reseller_prices['7d']}
+     (Recibes 1 cuenta para vender)
+
+2️⃣ - 15 DÍAS = $${config.reseller_prices['15d']}
+     (Recibes 1 cuenta para vender)
+
+3️⃣ - 20 DÍAS = $${config.reseller_prices['20d']}
+     (Recibes 1 cuenta para vender)
+
+4️⃣ - 30 DÍAS = $${config.reseller_prices['30d']}
+     (Recibes 1 cuenta para vender)
+
+📌 *AL COMPRAR RECIBES:*
+• Tu usuario de revendedor
+• 1 cuenta SSH para vender
+• Contraseña: ${DEFAULT_PASSWORD}
+• Puedes venderla al precio que quieras
+
+0️⃣ - VOLVER
+
+Elige una opción:`);
+                }
+                
+                // ================================================
+                // SELECCIÓN DE PLAN REVENDEDOR
+                // ================================================
+                else if (userState.state === 'selecting_reseller_plan' && ['1', '2', '3', '4'].includes(text)) {
+                    const planMap = {
+                        '1': { days: 7, price: config.reseller_prices['7d'], name: '7 DÍAS' },
+                        '2': { days: 15, price: config.reseller_prices['15d'], name: '15 DÍAS' },
+                        '3': { days: 20, price: config.reseller_prices['20d'], name: '20 DÍAS' },
+                        '4': { days: 30, price: config.reseller_prices['30d'], name: '30 DÍAS' }
+                    };
                     
-                    if (info && info.status === 1) {
-                        const expires = moment(info.expires_at).format('DD/MM/YYYY HH:mm');
-                        const now = moment();
-                        const expiresMoment = moment(info.expires_at);
+                    const plan = planMap[text];
+                    await setUserState(from, 'confirming_reseller_payment', plan);
+                    
+                    await client.sendText(from, `💼 *CONFIRMAR COMPRA REVENDEDOR*
+
+Plan: ${plan.name}
+Precio: $${plan.price}
+Incluye:
+• Tu usuario de revendedor (válido ${plan.days} días)
+• 1 cuenta SSH para vender a tu cliente
+
+💰 *TOTAL A PAGAR: $${plan.price}*
+
+¿Deseas continuar?
+
+✅ *SI* - Ir a pagar
+❌ *NO* - Cancelar`);
+                }
+                
+                // ================================================
+                // CONFIRMAR PAGO REVENDEDOR
+                // ================================================
+                else if (userState.state === 'confirming_reseller_payment' && text.toLowerCase() === 'si') {
+                    const plan = userState.data;
+                    
+                    if (mpEnabled) {
+                        await client.sendText(from, '⏳ Procesando tu compra como revendedor...');
                         
-                        if (expiresMoment.isAfter(now)) {
-                            await client.sendText(from, `✅ HWID ACTIVO
+                        const paymentId = `RESELLER-${from.replace('@c.us', '')}-${plan.days}d-${Date.now()}`;
+                        
+                        const payment = await createMercadoPagoPayment(
+                            from, 
+                            plan.days, 
+                            plan.price, 
+                            `PAQUETE REVENDEDOR ${plan.name}`,
+                            paymentId
+                        );
+                        
+                        if (payment.success) {
+                            db.run(
+                                `INSERT INTO reseller_purchases_pending (phone, plan, days, price, payment_id, preference_id, status) VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
+                                [from, plan.name, plan.days, plan.price, payment.paymentId, payment.preferenceId]
+                            );
+                            
+                            const message = `💼 *COMPRA REVENDEDOR INICIADA*
 
-👤 ${info.nombre}
-🔐 ${hwid}
-⏰ Válido hasta: ${expires}`);
+Plan: ${plan.name}
+Monto: $${plan.price}
+
+🔗 *LINK DE PAGO:*
+${payment.paymentUrl}
+
+⏰ Este enlace expira en 24 horas
+
+⚠️ *IMPORTANTE:*
+Al pagar, recibirás AUTOMÁTICAMENTE:
+✅ Tu usuario de revendedor
+✅ Contraseña: ${DEFAULT_PASSWORD}
+✅ 1 cuenta SSH para vender
+✅ Instrucciones de uso`;
+                            
+                            await client.sendText(from, message);
+                            
+                            if (fs.existsSync(payment.qrPath)) {
+                                await client.sendImage(from, payment.qrPath, 'qr-pago.jpg', 
+                                    `Escanea para pagar\n\n${plan.name} - $${plan.price}`);
+                            }
                         } else {
-                            await client.sendText(from, `❌ HWID EXPIRADO
-
-👤 ${info.nombre}
-🔐 ${hwid}
-📅 Expiró: ${expires}`);
+                            await client.sendText(from, `❌ Error al generar pago: ${payment.error}`);
                         }
                     } else {
-                        await client.sendText(from, `❌ HWID NO REGISTRADO
-
-Envía 1 para prueba gratis`);
+                        await client.sendText(from, `❌ MercadoPago no configurado. Contacta al administrador.`);
                     }
                     
                     await setUserState(from, 'main_menu');
                 }
                 
-                // ESPERANDO NOMBRE Y HWID DESPUÉS DE PAGO
-                else if (userState.state === 'awaiting_hwid') {
-                    if (!userState.data.nombre) {
-                        const nombre = message.body.trim();
-                        
-                        if (nombre.length < 2) {
-                            await client.sendText(from, '❌ Nombre muy corto. Intenta:');
+                else if (userState.state === 'confirming_reseller_payment' && text.toLowerCase() === 'no') {
+                    await setUserState(from, 'main_menu');
+                    await client.sendText(from, '❌ Compra cancelada. Vuelve al menú con MENU');
+                }
+                
+                // ================================================
+                // OPCIÓN 6: PANEL REVENDEDOR
+                // ================================================
+                else if (text === '6' && userState.state === 'main_menu') {
+                    db.get('SELECT * FROM resellers WHERE phone = ? AND status = "active"', [from], async (err, reseller) => {
+                        if (reseller) {
+                            // Obtener estadísticas
+                            const accounts = await new Promise((resolve) => {
+                                db.get('SELECT COUNT(*) as total FROM reseller_accounts WHERE reseller_phone = ?', [from], (err, row) => {
+                                    resolve(row ? row.total : 0);
+                                });
+                            });
+                            
+                            const available = await new Promise((resolve) => {
+                                db.get('SELECT COUNT(*) as total FROM reseller_accounts WHERE reseller_phone = ? AND status = "available"', [from], (err, row) => {
+                                    resolve(row ? row.total : 0);
+                                });
+                            });
+                            
+                            const sold = await new Promise((resolve) => {
+                                db.get('SELECT COUNT(*) as total FROM reseller_accounts WHERE reseller_phone = ? AND status = "sold"', [from], (err, row) => {
+                                    resolve(row ? row.total : 0);
+                                });
+                            });
+                            
+                            await client.sendText(from, `💼 *PANEL REVENDEDOR*
+
+📊 *TUS ESTADÍSTICAS:*
+📦 Cuentas totales: ${accounts}
+✅ Disponibles: ${available}
+💰 Vendidas: ${sold}
+⏰ Tu cuenta vence: ${moment(reseller.expires_at).format('DD/MM/YYYY')}
+
+*COMANDOS:*
+!mis_cuentas - Ver lista de cuentas
+!disponibles - Ver cuentas sin vender
+!vender [usuario] [tel] [precio] - Registrar venta
+!comprar_mas - Comprar más (opción 5)
+!ayuda_rev - Ver todos los comandos`);
+                        } else {
+                            await client.sendText(from, `❌ No eres revendedor aún.
+
+Para ser revendedor, selecciona la opción 5 del menú principal.
+
+💼 Opción 5 - SER REVENDEDOR`);
+                        }
+                    });
+                }
+                
+                // ================================================
+                // COMANDOS DE REVENDEDOR
+                // ================================================
+                else if (text === '!mis_cuentas') {
+                    db.all('SELECT * FROM reseller_accounts WHERE reseller_phone = ? ORDER BY created_at DESC', [from], async (err, accounts) => {
+                        if (!accounts || accounts.length === 0) {
+                            await client.sendText(from, '📦 No tienes cuentas aún. Compra en opción 5.');
                             return;
                         }
                         
-                        userState.data.nombre = nombre;
-                        await setUserState(from, 'awaiting_hwid', userState.data);
+                        let msg = '📦 *TUS CUENTAS:*\n\n';
+                        accounts.forEach((acc, i) => {
+                            const status = acc.status === 'available' ? '✅ DISPONIBLE' : '💰 VENDIDA';
+                            msg += `👤 ${acc.username}\n`;
+                            msg += `🔑 ${DEFAULT_PASSWORD}\n`;
+                            msg += `⏰ Vence: ${moment(acc.expires_at).format('DD/MM/YYYY')}\n`;
+                            msg += `📊 ${status}\n`;
+                            if (acc.sold_to) {
+                                msg += `📱 Cliente: ${acc.sold_to}\n`;
+                                msg += `💵 Precio: $${acc.sold_price}\n`;
+                            }
+                            msg += `➖➖➖➖➖➖➖\n`;
+                        });
                         
-                        await client.sendText(from, `✅ Gracias ${nombre}
+                        await client.sendText(from, msg);
+                    });
+                }
+                
+                else if (text === '!disponibles') {
+                    db.all('SELECT * FROM reseller_accounts WHERE reseller_phone = ? AND status = "available"', [from], async (err, accounts) => {
+                        if (!accounts || accounts.length === 0) {
+                            await client.sendText(from, '✅ No tienes cuentas disponibles. Compra más en opción 5.');
+                            return;
+                        }
+                        
+                        let msg = '✅ *CUENTAS DISPONIBLES:*\n\n';
+                        accounts.forEach(acc => {
+                            msg += `👤 ${acc.username}\n`;
+                            msg += `🔑 ${DEFAULT_PASSWORD}\n`;
+                            msg += `⏰ Vence: ${moment(acc.expires_at).format('DD/MM/YYYY')}\n`;
+                            msg += `➖➖➖➖➖\n`;
+                        });
+                        
+                        await client.sendText(from, msg);
+                    });
+                }
+                
+                else if (text.startsWith('!vender ')) {
+                    const parts = text.split(' ');
+                    if (parts.length >= 4) {
+                        const username = parts[1];
+                        const clientPhone = parts[2];
+                        const price = parts[3];
+                        
+                        // Verificar que la cuenta existe y está disponible
+                        db.get('SELECT * FROM reseller_accounts WHERE reseller_phone = ? AND username = ? AND status = "available"', 
+                            [from, username], async (err, account) => {
+                                if (account) {
+                                    db.run(`
+                                        UPDATE reseller_accounts 
+                                        SET status = 'sold', sold_to = ?, sold_price = ?, sold_at = CURRENT_TIMESTAMP
+                                        WHERE reseller_phone = ? AND username = ?
+                                    `, [clientPhone, price, from, username], async (err) => {
+                                        if (err) {
+                                            await client.sendText(from, '❌ Error al registrar venta');
+                                        } else {
+                                            await client.sendText(from, `✅ *VENTA REGISTRADA*
 
-Ahora envía tu HWID:
-APP-E3E4D5CBB7636907`);
-                        
-                        return;
-                    }
-                    
-                    const rawHwid = message.body;
-                    const hwid = normalizeHWID(rawHwid);
-                    const nombre = userState.data.nombre;
-                    
-                    if (!validateHWID(hwid)) {
-                        await client.sendText(from, `❌ FORMATO INCORRECTO
+👤 Usuario: ${username}
+📱 Cliente: ${clientPhone}
+💰 Precio: $${price}
+💼 Ganancia: $${price - account.price_paid || 0}
 
-Ejemplo: APP-E3E4D5CBB7636907
-Envía el HWID:`);
-                        return;
-                    }
-                    
-                    const active = await isHWIDActive(hwid);
-                    if (active) {
-                        await client.sendText(from, `❌ HWID ya activo`);
-                        return;
-                    }
-                    
-                    await client.sendText(from, '⏳ Activando HWID...');
-                    
-                    const result = await registerHWID(
-                        from, 
-                        nombre,
-                        hwid, 
-                        userState.data.days, 
-                        'premium'
-                    );
-                    
-                    if (result.success) {
-                        db.run(`UPDATE payments SET hwid = ?, nombre = ? WHERE payment_id = ?`,
-                            [hwid, nombre, userState.data.payment_id]);
-                        
-                        await client.sendText(from, `✅ ¡ACTIVADO!
-
-👤 ${nombre}
-🔐 ${hwid}
-⏰ Válido: ${moment(result.expires).format('DD/MM/YYYY')}`);
-                        
-                        console.log(chalk.green(`✅ HWID premium: ${hwid} - ${nombre}`));
+💡 Puedes comprar más cuentas en opción 5`);
+                                        }
+                                    });
+                                } else {
+                                    await client.sendText(from, '❌ Cuenta no disponible o no te pertenece');
+                                }
+                            });
                     } else {
-                        await client.sendText(from, `❌ Error: ${result.error}`);
+                        await client.sendText(from, '❌ Uso: !vender [usuario] [teléfono_cliente] [precio]');
                     }
+                }
+                
+                else if (text === '!comprar_mas') {
+                    await setUserState(from, 'selecting_reseller_plan');
                     
+                    await client.sendText(from, `💼 *COMPRAR MÁS CUENTAS*
+
+Elige un plan:
+
+1️⃣ - 7 DÍAS = $${config.reseller_prices['7d']}
+2️⃣ - 15 DÍAS = $${config.reseller_prices['15d']}
+3️⃣ - 20 DÍAS = $${config.reseller_prices['20d']}
+4️⃣ - 30 DÍAS = $${config.reseller_prices['30d']}
+
+0️⃣ - VOLVER`);
+                }
+                
+                else if (text === '!ayuda_rev') {
+                    await client.sendText(from, `📚 *AYUDA PARA REVENDEDORES*
+
+*COMANDOS DISPONIBLES:*
+
+!mis_cuentas
+  Ver todas tus cuentas
+
+!disponibles
+  Ver cuentas sin vender
+
+!vender [user] [tel] [precio]
+  Registrar venta de una cuenta
+  Ej: !vender cliente123 54911223344 2500
+
+!comprar_mas
+  Comprar más cuentas (opción 5)
+
+!panel
+  Ver panel de estadísticas
+
+💡 *CONSEJOS:*
+• Las cuentas vencen según el plan
+• Puedes vender al precio que quieras
+• La ganancia es toda tuya
+• Para comprar más, usa !comprar_mas`);
+                }
+                
+                else if (text === '!panel') {
+                    // Redirige a opción 6
+                    await client.sendText(from, 'Usa la opción 6 del menú o escribe !panel_rev');
+                }
+                
+                else if (text === '0' && userState.state !== 'main_menu') {
                     await setUserState(from, 'main_menu');
+                    await client.sendText(from, 'Volviendo al menú principal... Escribe MENU');
                 }
                 
             } catch (error) {
@@ -1076,31 +1174,92 @@ Envía el HWID:`);
             }
         });
         
-        // ✅ CRON JOBS
+        // ================================================
+        // CRON JOBS
+        // ================================================
+        
+        // Verificar pagos cada 2 minutos
         cron.schedule('*/2 * * * *', () => {
-            console.log(chalk.yellow('🔄 Verificando pagos...'));
             checkPendingPayments();
         });
         
-        cron.schedule('0 * * * *', () => {
-            console.log(chalk.yellow('⏰ Verificando vencimientos...'));
-            checkExpiringHWIDs();
+        // Limpiar usuarios expirados cada 15 minutos
+        cron.schedule('*/15 * * * *', async () => {
+            const now = moment().format('YYYY-MM-DD HH:mm:ss');
+            
+            db.all('SELECT username FROM users WHERE expires_at < ? AND status = 1', [now], async (err, rows) => {
+                if (err || !rows) return;
+                
+                for (const r of rows) {
+                    try {
+                        await execPromise(`pkill -u ${r.username} 2>/dev/null || true`);
+                        await execPromise(`userdel -f ${r.username} 2>/dev/null || true`);
+                        db.run('UPDATE users SET status = 0 WHERE username = ?', [r.username]);
+                    } catch (e) {}
+                }
+            });
+            
+            // Limpiar cuentas de revendedores expiradas
+            db.all('SELECT username FROM reseller_accounts WHERE expires_at < ? AND status = "available"', [now], async (err, rows) => {
+                if (err || !rows) return;
+                
+                for (const r of rows) {
+                    try {
+                        await execPromise(`userdel -f ${r.username} 2>/dev/null || true`);
+                        db.run('UPDATE reseller_accounts SET status = "expired" WHERE username = ?', [r.username]);
+                    } catch (e) {}
+                }
+            });
         });
         
-        cron.schedule('*/15 * * * *', () => {
-            const now = moment().format('YYYY-MM-DD HH:mm:ss');
-            db.run('UPDATE hwid_users SET status = 0 WHERE expires_at < ? AND status = 1', [now]);
+        // Recordatorios cada hora
+        cron.schedule('0 * * * *', async () => {
+            if (!config.reminders || !config.reminders.enabled) return;
+            
+            const reminderTimes = config.reminders.times || [24, 12, 6, 1];
+            
+            for (const hours of reminderTimes) {
+                const targetTime = moment().add(hours, 'hours').format('YYYY-MM-DD HH:mm:ss');
+                
+                db.all(
+                    `SELECT phone, username, expires_at FROM users 
+                     WHERE status = 1 AND tipo = 'premium'
+                     AND expires_at BETWEEN datetime('now') AND datetime(?)`,
+                    [targetTime],
+                    async (err, users) => {
+                        if (err || !users) return;
+                        
+                        for (const user of users) {
+                            const expireFormatted = moment(user.expires_at).format('DD/MM/YYYY HH:mm');
+                            const message = `🔔 *RECORDATORIO*
+
+Tu cuenta *${user.username}* vencerá en ${hours} horas.
+
+📅 Fecha: ${expireFormatted}
+
+Para renovar, usa el menú principal.`;
+                            
+                            try {
+                                if (client) {
+                                    await client.sendText(user.phone, message);
+                                }
+                            } catch (error) {}
+                        }
+                    }
+                );
+            }
         });
         
     } catch (error) {
-        console.error(chalk.red('❌ Error inicializando:'), error.message);
+        console.error(chalk.red('❌ Error inicializando WPPConnect:'), error.message);
         setTimeout(initializeBot, 10000);
     }
 }
 
-// Iniciar
+// Iniciar bot
 initializeBot();
 
+// Manejar cierre
 process.on('SIGINT', async () => {
     console.log(chalk.yellow('\n🛑 Cerrando bot...'));
     if (client) {
@@ -1110,7 +1269,7 @@ process.on('SIGINT', async () => {
 });
 BOTEOF
 
-echo -e "${GREEN}✅ Bot HWID creado con BD ÚNICA (CORREGIDO)${NC}"
+echo -e "${GREEN}✅ Bot creado con sistema de revendedores${NC}"
 
 # ================================================
 # CREAR PANEL DE CONTROL
@@ -1119,56 +1278,227 @@ echo -e "\n${CYAN}🎛️  Creando panel de control...${NC}"
 
 cat > /usr/local/bin/sshbot << 'PANELEOF'
 #!/bin/bash
-RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; CYAN='\033[0;36m'; NC='\033[0m'
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; CYAN='\033[0;36m'; BLUE='\033[0;34m'; PURPLE='\033[0;35m'; NC='\033[0m'
 
-DB="/opt/sshbot-pro/data/bot.db"
+DB="/opt/sshbot-pro/data/users.db"
 CONFIG="/opt/sshbot-pro/config/config.json"
 
 get_val() { jq -r "$1" "$CONFIG" 2>/dev/null; }
 set_val() { local t=$(mktemp); jq "$1 = $2" "$CONFIG" > "$t" && mv "$t" "$CONFIG"; }
 
-while true; do
+show_header() {
     clear
-    echo -e "${CYAN}╔════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║     PANEL SSH BOT - HWID (BD ÚNICA - CORREGIDO)   ║${NC}"
-    echo -e "${CYAN}╚════════════════════════════════════════════════════╝${NC}\n"
+    echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║         🎛️  PANEL SSH BOT PRO - CON REVENDEDORES           ║${NC}"
+    echo -e "${CYAN}║              💼 OPCIÓN 5 - SER REVENDEDOR                   ║${NC}"
+    echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
+}
+
+while true; do
+    show_header
     
-    TOTAL=$(sqlite3 "$DB" "SELECT COUNT(*) FROM hwid_users" 2>/dev/null || echo "0")
-    ACTIVE=$(sqlite3 "$DB" "SELECT COUNT(*) FROM hwid_users WHERE status=1" 2>/dev/null || echo "0")
-    PENDING=$(sqlite3 "$DB" "SELECT COUNT(*) FROM payments WHERE status='pending'" 2>/dev/null || echo "0")
+    TOTAL_USERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users" 2>/dev/null || echo "0")
+    ACTIVE_USERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE status=1" 2>/dev/null || echo "0")
+    TOTAL_RESELLERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM resellers" 2>/dev/null || echo "0")
+    ACTIVE_RESELLERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM resellers WHERE status='active'" 2>/dev/null || echo "0")
+    PENDING_PAYMENTS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM payments WHERE status='pending'" 2>/dev/null || echo "0")
+    PENDING_RESELLER=$(sqlite3 "$DB" "SELECT COUNT(*) FROM reseller_purchases_pending WHERE status='pending'" 2>/dev/null || echo "0")
     
-    echo -e "${YELLOW}📊 ESTADO${NC}"
-    echo -e "  HWIDs: ${CYAN}$ACTIVE/$TOTAL${NC} activos"
-    echo -e "  Pagos pendientes: ${CYAN}$PENDING${NC}"
+    STATUS=$(pm2 jlist 2>/dev/null | jq -r '.[] | select(.name=="sshbot-pro") | .pm2_env.status' 2>/dev/null || echo "stopped")
+    if [[ "$STATUS" == "online" ]]; then
+        BOT_STATUS="${GREEN}● ACTIVO${NC}"
+    else
+        BOT_STATUS="${RED}● DETENIDO${NC}"
+    fi
+    
+    MP_TOKEN=$(get_val '.mercadopago.access_token')
+    if [[ -n "$MP_TOKEN" && "$MP_TOKEN" != "" && "$MP_TOKEN" != "null" ]]; then
+        MP_STATUS="${GREEN}✅ CONFIGURADO${NC}"
+    else
+        MP_STATUS="${RED}❌ NO CONFIGURADO${NC}"
+    fi
+    
+    echo -e "${YELLOW}📊 ESTADO DEL SISTEMA${NC}"
+    echo -e "  Bot: $BOT_STATUS"
+    echo -e "  Usuarios normales: ${CYAN}$ACTIVE_USERS/$TOTAL_USERS${NC} activos"
+    echo -e "  Revendedores: ${CYAN}$ACTIVE_RESELLERS/$TOTAL_RESELLERS${NC} activos"
+    echo -e "  Pagos pendientes: ${CYAN}$PENDING_PAYMENTS${NC} normales | ${PURPLE}$PENDING_RESELLER${NC} revendedores"
+    echo -e "  MercadoPago: $MP_STATUS"
     echo -e ""
     
-    echo -e "${CYAN}[1]${NC} Iniciar bot"
-    echo -e "${CYAN}[2]${NC} Detener bot"
-    echo -e "${CYAN}[3]${NC} Ver logs"
-    echo -e "${CYAN}[4]${NC} Listar HWIDs"
-    echo -e "${CYAN}[5]${NC} Configurar MP"
-    echo -e "${CYAN}[0]${NC} Salir"
-    echo ""
+    echo -e "${YELLOW}💰 PRECIOS REVENDEDORES:${NC}"
+    echo -e "  7 días: $ $(get_val '.reseller_prices."7d"') ARS"
+    echo -e "  15 días: $ $(get_val '.reseller_prices."15d"') ARS"
+    echo -e "  20 días: $ $(get_val '.reseller_prices."20d"') ARS"
+    echo -e "  30 días: $ $(get_val '.reseller_prices."30d"') ARS"
+    echo -e ""
     
-    read -p "👉 Opción: " OPT
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${CYAN}[1]${NC} 🚀  Iniciar/Reiniciar bot"
+    echo -e "${CYAN}[2]${NC} 🛑  Detener bot"
+    echo -e "${CYAN}[3]${NC} 📱  Ver logs y QR"
+    echo -e "${CYAN}[4]${NC} 👤  Gestionar usuarios"
+    echo -e "${CYAN}[5]${NC} 💼  Gestionar revendedores"
+    echo -e "${CYAN}[6]${NC} 🔑  Configurar MercadoPago"
+    echo -e "${CYAN}[7]${NC} 💰  Cambiar precios revendedores"
+    echo -e "${CYAN}[8]${NC} 📊  Ver estadísticas"
+    echo -e "${CYAN}[9]${NC} 🔄  Limpiar sesión"
+    echo -e "${CYAN}[10]${NC} 💳 Ver pagos pendientes"
+    echo -e "${CYAN}[0]${NC} 🚪  Salir"
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e ""
     
-    case $OPT in
-        1) cd /root/sshbot-pro && pm2 restart sshbot-pro 2>/dev/null || pm2 start bot.js --name sshbot-pro; pm2 save;;
-        2) pm2 stop sshbot-pro;;
-        3) pm2 logs sshbot-pro --lines 50;;
-        4) sqlite3 -column -header "$DB" "SELECT nombre, hwid, phone, expires_at FROM hwid_users WHERE status=1 ORDER BY expires_at;" | less;;
-        5) 
-            echo -e "\n${YELLOW}Token actual: $(get_val '.mercadopago.access_token' | cut -c1-30)...${NC}"
-            read -p "Nuevo token: " TOKEN
-            if [[ -n "$TOKEN" ]]; then
-                set_val '.mercadopago.access_token' "\"$TOKEN\""
-                set_val '.mercadopago.enabled' "true"
-                echo -e "${GREEN}✅ Token guardado${NC}"
-                cd /root/sshbot-pro && pm2 restart sshbot-pro
-            fi
-            read -p "Enter..." 
+    read -p "👉 Selecciona: " OPTION
+    
+    case $OPTION in
+        1)
+            echo -e "\n${YELLOW}🔄 Reiniciando...${NC}"
+            cd /root/sshbot-pro
+            pm2 restart sshbot-pro 2>/dev/null || pm2 start bot.js --name sshbot-pro
+            pm2 save
+            echo -e "${GREEN}✅ Bot reiniciado${NC}"
+            sleep 2
             ;;
-        0) exit 0;;
+        2)
+            echo -e "\n${YELLOW}🛑 Deteniendo...${NC}"
+            pm2 stop sshbot-pro
+            echo -e "${GREEN}✅ Bot detenido${NC}"
+            sleep 2
+            ;;
+        3)
+            echo -e "\n${YELLOW}📱 Mostrando logs...${NC}"
+            pm2 logs sshbot-pro --lines 100
+            ;;
+        4)
+            clear
+            echo -e "${CYAN}👤 GESTIÓN DE USUARIOS${NC}\n"
+            echo "1. Listar usuarios"
+            echo "2. Crear usuario manual"
+            echo "3. Eliminar usuario expirado"
+            read -p "Opción: " SUB
+            case $SUB in
+                1)
+                    sqlite3 -column -header "$DB" "SELECT username, phone, tipo, expires_at FROM users WHERE status=1 ORDER BY expires_at"
+                    ;;
+                2)
+                    read -p "Teléfono: " PHONE
+                    read -p "Días (7/15/20/30): " DAYS
+                    USER="user$(shuf -i 1000-9999 -n 1)"
+                    EXPIRE=$(date -d "+$DAYS days" +"%Y-%m-%d 23:59:59")
+                    useradd -M -s /bin/false -e "$(date -d "+$DAYS days" +%Y-%m-%d)" "$USER" && echo "$USER:mgvpn247" | chpasswd
+                    sqlite3 "$DB" "INSERT INTO users (phone, username, password, tipo, expires_at, status) VALUES ('$PHONE', '$USER', 'mgvpn247', 'premium', '$EXPIRE', 1)"
+                    echo -e "${GREEN}✅ Usuario $USER creado${NC}"
+                    ;;
+            esac
+            read -p "Presiona Enter..."
+            ;;
+        5)
+            clear
+            echo -e "${CYAN}💼 GESTIÓN DE REVENDEDORES${NC}\n"
+            echo "1. Listar revendedores"
+            echo "2. Ver cuentas de revendedor"
+            echo "3. Agregar revendedor manual"
+            read -p "Opción: " SUB
+            case $SUB in
+                1)
+                    sqlite3 -column -header "$DB" "SELECT phone, username, plan, expires_at, accounts_remaining FROM resellers WHERE status='active'"
+                    ;;
+                2)
+                    read -p "Teléfono revendedor: " RPHONE
+                    sqlite3 -column -header "$DB" "SELECT username, status, sold_to, sold_price FROM reseller_accounts WHERE reseller_phone='$RPHONE'"
+                    ;;
+                3)
+                    read -p "Teléfono: " PHONE
+                    read -p "Plan (7/15/20/30): " PLAN
+                    RUSER="vendedor$(shuf -i 1000-9999 -n 1)"
+                    CUSER="cliente$(shuf -i 1000-9999 -n 1)"
+                    EXPIRE=$(date -d "+$PLAN days" +"%Y-%m-%d 23:59:59")
+                    
+                    useradd -M -s /bin/false -e "$(date -d "+$PLAN days" +%Y-%m-%d)" "$RUSER" && echo "$RUSER:mgvpn247" | chpasswd
+                    useradd -M -s /bin/false -e "$(date -d "+$PLAN days" +%Y-%m-%d)" "$CUSER" && echo "$CUSER:mgvpn247" | chpasswd
+                    
+                    sqlite3 "$DB" "INSERT INTO resellers (phone, username, plan, expires_at, accounts_remaining, total_accounts) VALUES ('$PHONE', '$RUSER', '${PLAN}d', '$EXPIRE', 1, 1)"
+                    sqlite3 "$DB" "INSERT INTO reseller_accounts (reseller_phone, username, expires_at, status) VALUES ('$PHONE', '$CUSER', '$EXPIRE', 'available')"
+                    
+                    echo -e "${GREEN}✅ Revendedor $RUSER creado con cuenta $CUSER${NC}"
+                    ;;
+            esac
+            read -p "Presiona Enter..."
+            ;;
+        6)
+            clear
+            echo -e "${CYAN}🔑 CONFIGURAR MERCADOPAGO${NC}\n"
+            read -p "Pega el Access Token: " NEW_TOKEN
+            if [[ "$NEW_TOKEN" =~ ^APP_USR- ]] || [[ "$NEW_TOKEN" =~ ^TEST- ]]; then
+                set_val '.mercadopago.access_token' "\"$NEW_TOKEN\""
+                set_val '.mercadopago.enabled' "true"
+                echo -e "${GREEN}✅ Token configurado${NC}"
+                pm2 restart sshbot-pro
+            else
+                echo -e "${RED}❌ Token inválido${NC}"
+            fi
+            read -p "Presiona Enter..."
+            ;;
+        7)
+            clear
+            echo -e "${CYAN}💰 CAMBIAR PRECIOS REVENDEDORES${NC}\n"
+            echo "Precios actuales:"
+            echo "7d: $(get_val '.reseller_prices."7d"')"
+            echo "15d: $(get_val '.reseller_prices."15d"')"
+            echo "20d: $(get_val '.reseller_prices."20d"')"
+            echo "30d: $(get_val '.reseller_prices."30d"')"
+            echo ""
+            read -p "Nuevo precio 7d: " P7
+            read -p "Nuevo precio 15d: " P15
+            read -p "Nuevo precio 20d: " P20
+            read -p "Nuevo precio 30d: " P30
+            [[ -n "$P7" ]] && set_val '.reseller_prices."7d"' "$P7"
+            [[ -n "$P15" ]] && set_val '.reseller_prices."15d"' "$P15"
+            [[ -n "$P20" ]] && set_val '.reseller_prices."20d"' "$P20"
+            [[ -n "$P30" ]] && set_val '.reseller_prices."30d"' "$P30"
+            echo -e "${GREEN}✅ Precios actualizados${NC}"
+            read -p "Presiona Enter..."
+            ;;
+        8)
+            clear
+            echo -e "${CYAN}📊 ESTADÍSTICAS${NC}\n"
+            
+            echo "👥 USUARIOS NORMALES:"
+            sqlite3 "$DB" "SELECT 'Activos: ' || COUNT(*) FROM users WHERE status=1"
+            sqlite3 "$DB" "SELECT 'Expirados: ' || COUNT(*) FROM users WHERE status=0"
+            
+            echo -e "\n💼 REVENDEDORES:"
+            sqlite3 "$DB" "SELECT 'Activos: ' || COUNT(*) FROM resellers WHERE status='active'"
+            sqlite3 "$DB" "SELECT 'Cuentas disponibles: ' || COUNT(*) FROM reseller_accounts WHERE status='available'"
+            sqlite3 "$DB" "SELECT 'Cuentas vendidas: ' || COUNT(*) FROM reseller_accounts WHERE status='sold'"
+            
+            echo -e "\n💰 PAGOS:"
+            sqlite3 "$DB" "SELECT 'Pendientes: ' || COUNT(*) FROM payments WHERE status='pending'"
+            sqlite3 "$DB" "SELECT 'Aprobados: ' || COUNT(*) FROM payments WHERE status='approved'"
+            sqlite3 "$DB" "SELECT 'Pagos revendedor pendientes: ' || COUNT(*) FROM reseller_purchases_pending WHERE status='pending'"
+            
+            read -p "\nPresiona Enter..."
+            ;;
+        9)
+            echo -e "\n${YELLOW}🧹 Limpiando sesión...${NC}"
+            pm2 stop sshbot-pro
+            rm -rf /root/.wppconnect/*
+            echo -e "${GREEN}✅ Sesión limpiada${NC}"
+            sleep 2
+            ;;
+        10)
+            clear
+            echo -e "${CYAN}💳 PAGOS PENDIENTES${NC}\n"
+            echo "Pagos normales:"
+            sqlite3 -column -header "$DB" "SELECT payment_id, phone, plan, amount, created_at FROM payments WHERE status='pending'"
+            echo -e "\nPagos revendedores:"
+            sqlite3 -column -header "$DB" "SELECT payment_id, phone, plan, price, created_at FROM reseller_purchases_pending WHERE status='pending'"
+            read -p "\nPresiona Enter..."
+            ;;
+        0)
+            echo -e "\n${GREEN}👋 Hasta pronto${NC}\n"
+            exit 0
+            ;;
     esac
 done
 PANELEOF
@@ -1193,25 +1523,57 @@ echo -e "${GREEN}${BOLD}"
 cat << "FINAL"
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
-║     ✅ INSTALACIÓN CORREGIDA - HWID CON BD ÚNICA ✅        ║
+║          🎉 INSTALACIÓN COMPLETADA 🎉                       ║
 ║                                                              ║
-║     🔐 NO DA ERROR "EXPIRADO"                              ║
-║     📱 MISMA BD PARA TODOS LOS DATOS                       ║
-║     💰 MERCADOPAGO INTEGRADO                               ║
-║     ⏱️  PRUEBA 2 HORAS                                     ║
+║       🤖 SSH BOT PRO - CON REVENDEDORES                     ║
+║       💼 OPCIÓN 5 - SER REVENDEDOR                          ║
+║                                                              ║
+║       PRECIOS MAYORISTAS:                                   ║
+║       🗓️ 7 días  = $1.700                                   ║
+║       🗓️ 15 días = $2.500                                   ║
+║       🗓️ 20 días = $3.500                                   ║
+║       🗓️ 30 días = $4.500                                   ║
+║                                                              ║
+║       Al pagar, reciben:                                    ║
+║       ✅ Usuario de revendedor                              ║
+║       ✅ 1 cuenta para vender                               ║
+║       ✅ Contraseña: mgvpn247                               ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 FINAL
 echo -e "${NC}"
 
-echo -e "\n${GREEN}✅ BD ÚNICA: ${CYAN}/opt/sshbot-pro/data/bot.db${NC}"
-echo -e "${GREEN}✅ Comando: ${CYAN}sshbot${NC} - Panel de control"
-echo -e "${GREEN}✅ Logs: ${CYAN}pm2 logs sshbot-pro${NC}"
-echo -e "\n${YELLOW}📱 Escanea el QR y prueba - ¡YA NO DIRÁ EXPIRADO!${NC}\n"
+echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}"
+echo -e "${GREEN}✅ Sistema instalado con revendedores${NC}"
+echo -e "${GREEN}✅ Opción 5 - SER REVENDEDOR funcionando${NC}"
+echo -e "${GREEN}✅ Pago automático por MercadoPago${NC}"
+echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}\n"
 
-read -p "¿Ver logs ahora? (s/N): " -n 1 -r
+echo -e "${YELLOW}📋 COMANDOS:${NC}\n"
+echo -e "  ${GREEN}sshbot${NC}         - Panel de control"
+echo -e "  ${GREEN}pm2 logs sshbot-pro${NC} - Ver logs y QR"
+echo -e ""
+
+echo -e "${YELLOW}🚀 PRIMEROS PASOS:${NC}"
+echo -e "  1. ${GREEN}pm2 logs sshbot-pro${NC} - Ver QR y escanear"
+echo -e "  2. ${GREEN}sshbot${NC} - Configurar MercadoPago (opción 6)"
+echo -e "  3. Enviar 'menu' al bot en WhatsApp"
+echo -e "  4. Probar opción 5 - SER REVENDEDOR"
+echo -e ""
+
+echo -e "${YELLOW}💰 PROBAR REVENDEDOR:${NC}"
+echo -e "  • Opción 5 en el menú"
+echo -e "  • Elegir plan (7d=$1700, 15d=$2500, 20d=$3500, 30d=$4500)"
+echo -e "  • Pagar con MercadoPago"
+echo -e "  • Recibir usuario revendedor + cuenta para vender"
+echo -e ""
+
+read -p "$(echo -e "${YELLOW}¿Ver logs ahora? (s/N): ${NC}")" -n 1 -r
 echo
 if [[ $REPLY =~ ^[Ss]$ ]]; then
+    echo -e "\n${CYAN}Mostrando logs...${NC}"
+    echo -e "${YELLOW}📱 Espera que aparezca el QR para escanear...${NC}\n"
+    sleep 2
     pm2 logs sshbot-pro
 fi
 
