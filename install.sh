@@ -452,13 +452,7 @@ async function sendApkFile(phone) {
 2. Abre el archivo descargado
 3. Click en "Más detalles"
 4. Click en "Instalar de todas formas"
-5. Espera a que se complete la instalación
 
-🔐 *Configuración:*
-Usuario: (el que te proporcionamos)
-Contraseña: ${DEFAULT_PASSWORD}
-
-⚠️ *Importante:* Solo descarga desde este chat oficial`
         );
         
         console.log(chalk.green(`✅ APK enviado a ${phone}`));
@@ -630,7 +624,7 @@ Elija una opción:
 💡 *Instrucciones:*
 1. Descarga el APK (Opción 4)
 2. Instala la aplicación
-3. Configura con tus credenciales
+3. Click en mas detalles - instala de todas formas
 
 ⏰ *TIENES ${config.prices.test_hours} HORAS DE PRUEBA*`);
                         
