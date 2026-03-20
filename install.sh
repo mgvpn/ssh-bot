@@ -728,7 +728,9 @@ Elija una opción:
 
 💡 *Instrucciones:*
 1. Envía "4" para descargar la APP
-2. Configura con tus credenciales
+2. Descarga el archivo APK
+3. Instala la aplicación click en mas detalles - click en instalar todas formas
+4. Configura con tus credenciales SSH
 
 ⏰ *TIENES ${config.prices.test_hours} HORAS DE PRUEBA*`);
 
@@ -973,11 +975,12 @@ ${config.links.support}`);
 🔗 Enlace de descarga temporal:
 ${config.links.app_download}
 
-💡 Instrucciones:
-1. Abre el enlace en tu navegador
+💡 *Instrucciones:*
+1. Envía "4" para descargar la APP
 2. Descarga el archivo APK
 3. Instala la aplicación click en mas detalles - click en instalar todas formas
 4. Configura con tus credenciales SSH
+
 
 Credenciales por defecto:
 Usuario: (el que te proporcionamos)
