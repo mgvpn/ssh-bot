@@ -7,7 +7,7 @@
   "LogoLink": "https://e7.pngegg.mbnail.png",
   "Servers": [
   {
-   "Name": "Personal 🇦🇷 Cloudfront AR",
+   "Name": "Personal 🇦🇷 Prueba AR",
    "FLAG": "br",
    "ServerIP": "recargas.personal.com.ar",
    "ServerPort": "80",
@@ -26,7 +26,7 @@ OPTION / HTTP/1.1[crlf]Host: recargas.personal.com.ar[crlf][crlf]GET / HTTP/1.1[
    "TunnelType": "Proxy"
   },
  {
-   "Name": "Personal Chile🇨🇱  Cloudflare",
+   "Name": "Xupertv Chile🇨🇱  Cloudflare",
    "FLAG": "br",
    "ServerIP": "emailmarketing.personal.com.ar",
    "ServerPort": "80",
