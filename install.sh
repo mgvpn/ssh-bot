@@ -1,8 +1,8 @@
 #!/bin/bash
 # ================================================
-# SSH BOT PRO REVENDEDORES - WPPCONNECT + MERCADOPAGO
-# VERSIÓN REVENDEDORES: Cada revendedor tiene contraseña única
-# CON PANEL ADMINISTRADOR DE REVENDEDORES
+# SSH BOT PRO REVENDEDORES - TESTS ILIMITADOS
+# VERSIÓN: Tests sin límite diario
+# CONTRASEÑA USUARIOS: cloudvpn (FIJA)
 # ================================================
 
 set -e
@@ -32,21 +32,22 @@ cat << "BANNER"
 ║                                                              ║
 ║          🤖 SSH BOT PRO - SISTEMA DE REVENDEDORES          ║
 ║               🔐 CADA REVENDEDOR CON SU CLAVE              ║
+║               🔑 CONTRASEÑA USUARIOS: cloudvpn             ║
+║               🎁 TESTS ILIMITADOS (SIN RESTRICCIÓN)       ║
 ║               💰 PANEL ADMINISTRADOR COMPLETO              ║
 ║               📊 CONTROL DE COMISIONES Y VENTAS            ║
-║               🎛️  REVENDEDORES CREAN USUARIOS SSH         ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 BANNER
 echo -e "${NC}"
 
-echo -e "${GREEN}✅ CARACTERÍSTICAS DEL SISTEMA DE REVENDEDORES:${NC}"
+echo -e "${GREEN}✅ CARACTERÍSTICAS DEL SISTEMA:${NC}"
 echo -e "  🔐 ${CYAN}Cada revendedor${NC} - Contraseña única personalizada"
-echo -e "  💰 ${GREEN}Comisiones${NC} - Control de ventas por revendedor"
-echo -e "  📊 ${YELLOW}Estadísticas${NC} - Ventas y usuarios por revendedor"
-echo -e "  🎛️  ${PURPLE}Panel Admin${NC} - Crear y gestionar revendedores"
-echo -e "  👥 ${BLUE}Panel Revendedor${NC} - Crear usuarios y ver sus ventas"
-echo -e "  🔑 ${CYAN}Contraseña fija${NC} - mgvpn247 para todos los usuarios"
+echo -e "  🔑 ${GREEN}Contraseña usuarios${NC} - cloudvpn (FIJA)"
+echo -e "  🎁 ${YELLOW}TESTS ILIMITADOS${NC} - Sin límite diario"
+echo -e "  💰 ${PURPLE}Comisiones${NC} - Control de ventas por revendedor"
+echo -e "  📊 ${BLUE}Estadísticas${NC} - Ventas y usuarios por revendedor"
+echo -e "  🎛️  ${CYAN}Panel Admin${NC} - Crear y gestionar revendedores"
 echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}\n"
 
 # Verificar root
@@ -140,9 +141,9 @@ cat > "$CONFIG_FILE" << EOF
 {
     "bot": {
         "name": "SSH Bot Pro Revendedores",
-        "version": "3.0-REVENDEDORES",
+        "version": "3.0-REVENDEDORES-TESTS-ILIMITADOS",
         "server_ip": "$SERVER_IP",
-        "default_password": "mgvpn247"
+        "default_password": "cloudvpn"
     },
     "prices": {
         "test_hours": 2,
@@ -155,6 +156,10 @@ cat > "$CONFIG_FILE" << EOF
     "commission": {
         "type": "percentage",
         "value": 20
+    },
+    "tests": {
+        "unlimited": true,
+        "test_hours": 2
     },
     "mercadopago": {
         "access_token": "",
@@ -170,13 +175,13 @@ cat > "$CONFIG_FILE" << EOF
 }
 EOF
 
-# Crear base de datos COMPLETA con sistema de revendedores
+# Crear base de datos - SIN restricción de tests diarios
 sqlite3 "$DB_FILE" << 'SQL'
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     phone TEXT,
     username TEXT UNIQUE,
-    password TEXT DEFAULT 'mgvpn247',
+    password TEXT DEFAULT 'cloudvpn',
     tipo TEXT DEFAULT 'test',
     expires_at DATETIME,
     status INTEGER DEFAULT 1,
@@ -195,14 +200,6 @@ CREATE TABLE resellers (
     commission_value REAL DEFAULT 20,
     status INTEGER DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE daily_tests (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    phone TEXT,
-    date DATE,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(phone, date)
 );
 
 CREATE TABLE payments (
@@ -244,7 +241,7 @@ CREATE INDEX idx_payments_status ON payments(status);
 CREATE INDEX idx_payments_reseller ON payments(reseller_id);
 SQL
 
-echo -e "${GREEN}✅ Estructura creada con sistema de revendedores${NC}"
+echo -e "${GREEN}✅ Estructura creada (tests ilimitados)${NC}"
 
 # Crear usuario admin por defecto
 ADMIN_PASS="admin123"
@@ -256,9 +253,9 @@ SQL
 echo -e "${GREEN}✅ Admin creado: usuario 'admin', contraseña '$ADMIN_PASS'${NC}"
 
 # ================================================
-# CREAR BOT COMPLETO CON REVENDEDORES
+# CREAR BOT CON TESTS ILIMITADOS
 # ================================================
-echo -e "\n${CYAN}🤖 Creando bot con sistema de revendedores...${NC}"
+echo -e "\n${CYAN}🤖 Creando bot con tests ilimitados...${NC}"
 
 cd "$USER_HOME"
 
@@ -286,7 +283,7 @@ PKGEOF
 echo -e "${YELLOW}📦 Instalando dependencias...${NC}"
 npm install --silent 2>&1 | grep -v "npm WARN" || true
 
-# Crear bot.js con sistema de revendedores
+# Crear bot.js con TESTS ILIMITADOS
 cat > "bot.js" << 'BOTEOF'
 const wppconnect = require('@wppconnect-team/wppconnect');
 const qrcode = require('qrcode-terminal');
@@ -305,9 +302,9 @@ const execPromise = util.promisify(exec);
 moment.locale('es');
 
 console.log(chalk.cyan.bold('\n╔══════════════════════════════════════════════════════════════╗'));
-console.log(chalk.cyan.bold('║      🤖 SSH BOT PRO - SISTEMA DE REVENDEDORES               ║'));
-console.log(chalk.cyan.bold('║              🔐 CADA REVENDEDOR CON SU CLAVE                ║'));
-console.log(chalk.cyan.bold('║                    📊 CONTROL DE VENTAS                     ║'));
+console.log(chalk.cyan.bold('║      🤖 SSH BOT PRO - TESTS ILIMITADOS                       ║'));
+console.log(chalk.cyan.bold('║              🔐 CONTRASEÑA: cloudvpn                        ║'));
+console.log(chalk.cyan.bold('║                    🎁 TESTS SIN LÍMITE                      ║'));
 console.log(chalk.cyan.bold('╚══════════════════════════════════════════════════════════════╝\n'));
 
 function loadConfig() {
@@ -336,12 +333,13 @@ function generatePremiumUsername() {
     return `user${randomChar}${randomNum}`;
 }
 
-const DEFAULT_PASSWORD = 'mgvpn247';
+const DEFAULT_PASSWORD = 'cloudvpn';
 
 async function createSSHUser(phone, username, days, resellerId = null) {
     const password = DEFAULT_PASSWORD;
     
     if (days === 0) {
+        // Test - duración configurable
         const expireFull = moment().add(config.prices.test_hours, 'hours').format('YYYY-MM-DD HH:mm:ss');
         
         try {
@@ -356,6 +354,7 @@ async function createSSHUser(phone, username, days, resellerId = null) {
             return { success: false, error: error.message };
         }
     } else {
+        // Premium
         const expireFull = moment().add(days, 'days').format('YYYY-MM-DD 23:59:59');
         
         try {
@@ -372,15 +371,13 @@ async function createSSHUser(phone, username, days, resellerId = null) {
     }
 }
 
+// TEST ILIMITADO - Siempre retorna true (sin restricción)
 function canCreateTest(phone) {
-    return new Promise((resolve) => {
-        const today = moment().format('YYYY-MM-DD');
-        db.get('SELECT COUNT(*) as count FROM daily_tests WHERE phone = ? AND date = ?', [phone, today],
-            (err, row) => resolve(!err && row && row.count === 0));
-    });
+    return true; // TESTS ILIMITADOS - Siempre puede crear test
 }
 
 function registerTest(phone) {
+    // Solo registramos para estadísticas, pero no bloqueamos
     db.run('INSERT OR IGNORE INTO daily_tests (phone, date) VALUES (?, ?)', [phone, moment().format('YYYY-MM-DD')]);
 }
 
@@ -397,7 +394,7 @@ async function sendAppFile(to) {
             to,
             apkPath,
             'mgvpn.apk',
-            '📲 *APP MGVPN*\n\nDescarga nuestra aplicación oficial.\n\n*Credenciales por defecto:*\nUsuario: (el que te proporcionamos)\nContraseña: mgvpn247'
+            '📲 *APP MGVPN*\n\nDescarga nuestra aplicación oficial.\n\n*Credenciales por defecto:*\nUsuario: (el que te proporcionamos)\nContraseña: cloudvpn'
         );
         return true;
     } catch (error) {
@@ -478,57 +475,6 @@ async function getResellerUsers(resellerId, limit = 20) {
             LIMIT ?
         `, [resellerId, limit], (err, rows) => {
             resolve(rows || []);
-        });
-    });
-}
-
-async function createResellerUser(username, password, name, phone, commissionType = 'percentage', commissionValue = 20) {
-    return new Promise((resolve) => {
-        db.run(`
-            INSERT INTO resellers (username, password, name, phone, commission_type, commission_value, status)
-            VALUES (?, ?, ?, ?, ?, ?, 1)
-        `, [username, password, name, phone, commissionType, commissionValue], function(err) {
-            if (err) {
-                resolve({ success: false, error: err.message });
-            } else {
-                resolve({ success: true, id: this.lastID });
-            }
-        });
-    });
-}
-
-async function getAllResellers() {
-    return new Promise((resolve) => {
-        db.all(`
-            SELECT r.id, r.username, r.name, r.phone, r.commission_type, r.commission_value, r.status, r.created_at,
-                   COUNT(u.id) as total_users,
-                   COUNT(CASE WHEN u.status = 1 THEN 1 END) as active_users
-            FROM resellers r
-            LEFT JOIN users u ON r.id = u.reseller_id
-            WHERE r.username != 'admin'
-            GROUP BY r.id
-            ORDER BY r.created_at DESC
-        `, [], (err, rows) => {
-            resolve(rows || []);
-        });
-    });
-}
-
-async function getAdminStats() {
-    return new Promise((resolve) => {
-        db.get(`
-            SELECT 
-                COUNT(DISTINCT u.id) as total_users,
-                COUNT(CASE WHEN u.status = 1 THEN 1 END) as active_users,
-                COUNT(DISTINCT r.id) as total_resellers,
-                COUNT(CASE WHEN r.status = 1 THEN 1 END) as active_resellers,
-                COUNT(p.id) as total_sales,
-                COALESCE(SUM(p.amount), 0) as total_income
-            FROM users u
-            LEFT JOIN resellers r ON 1=1
-            LEFT JOIN payments p ON p.status = 'approved'
-        `, [], (err, row) => {
-            resolve(row || { total_users: 0, active_users: 0, total_resellers: 0, active_resellers: 0, total_sales: 0, total_income: 0 });
         });
     });
 }
@@ -640,7 +586,7 @@ Usa la opción 1 para crear.`);
                             let userList = `👥 *MIS USUARIOS (${users.length})*\n\n`;
                             for (const u of users) {
                                 const status = u.status === 1 ? '✅ Activo' : '❌ Inactivo';
-                                const expireDate = moment(u.expires_at).format('DD/MM/YYYY');
+                                const expireDate = moment(u.expires_at).format('DD/MM/YYYY HH:mm');
                                 userList += `👤 *${u.username}*\n📱 ${u.phone}\n📅 Expira: ${expireDate}\n${status}\n\n`;
                             }
                             await client.sendText(from, userList);
@@ -752,7 +698,7 @@ Usuario: ${text}
                             
                             if (plan.type === 'test') {
                                 message += `\n⏰ Expira en: ${config.prices.test_hours} horas`;
-                                message += `\n🎁 PRUEBA GRATUITA`;
+                                message += `\n🎁 PRUEBA GRATUITA (SIN LÍMITE DE TESTS)`;
                             } else {
                                 const expireDate = moment(result.expires).format('DD/MM/YYYY HH:mm');
                                 message += `\n📅 Expira: ${expireDate}`;
@@ -773,7 +719,7 @@ Usuario: ${text}
                             
                             // Enviar mensaje al usuario
                             if (client) {
-                                const userMessage = `🎉 *CUENTA SSH ACTIVADA*
+                                let userMessage = `🎉 *CUENTA SSH ACTIVADA*
 
 👤 Usuario: ${username}
 🔑 Contraseña: ${DEFAULT_PASSWORD}
@@ -783,9 +729,10 @@ Usuario: ${text}
 🔌 *1 dispositivo máximo*`;
                                 
                                 if (plan.type === 'test') {
-                                    userMessage + `\n⏰ *PRUEBA DE ${config.prices.test_hours} HORAS*`;
+                                    userMessage += `\n⏰ *PRUEBA DE ${config.prices.test_hours} HORAS*`;
+                                    userMessage += `\n🎁 *TESTS ILIMITADOS*`;
                                 } else {
-                                    userMessage + `\n📅 *VÁLIDO HASTA: ${moment(result.expires).format('DD/MM/YYYY')}*`;
+                                    userMessage += `\n📅 *VÁLIDO HASTA: ${moment(result.expires).format('DD/MM/YYYY')}*`;
                                 }
                                 
                                 await client.sendText(userPhone, userMessage);
@@ -808,24 +755,61 @@ Usuario: ${text}
 Para iniciar sesión nuevamente, envía:
 
 *LOGIN usuario contraseña*
-Ejemplo: LOGIN revendedor123 pass123`);
+Ejemplo: LOGIN revendedor123 pass123
+
+Para clientes:
+Envía *MENU* para crear prueba gratuita`);
                         return;
                     }
                     
                     return;
                 }
                 
-                // MENÚ PRINCIPAL - Autenticación de revendedores
-                if (text.toLowerCase() === 'menu' || text.toLowerCase() === 'hola' || text.toLowerCase() === 'start') {
+                // MENÚ PRINCIPAL - Para clientes (crear test)
+                if (text.toLowerCase() === 'menu' || text.toLowerCase() === 'hola' || text.toLowerCase() === 'start' || text === '1') {
                     await setUserState(from, 'main_menu');
-                    await client.sendText(from, `🤖 *SSH BOT PRO - SISTEMA DE REVENDEDORES*
+                    
+                    // Crear test automáticamente sin preguntar
+                    await client.sendText(from, '⏳ Creando cuenta de prueba...');
+                    
+                    try {
+                        const username = generateUsername();
+                        const result = await createSSHUser(from, username, 0, null);
+                        
+                        if (result.success) {
+                            registerTest(from);
+                            
+                            await client.sendText(from, `✅ *PRUEBA GRATUITA CREADA*
 
-Para revendedores:
+🎁 *TESTS ILIMITADOS* - Puedes crear todas las pruebas que quieras
 
-*LOGIN usuario contraseña*
+👤 Usuario: ${username}
+🔑 Contraseña: ${DEFAULT_PASSWORD}
+🔌 Límite: 1 dispositivo
+⏰ Expira en: ${config.prices.test_hours} horas
 
-Para clientes:
-Envía *HELP* para información`);
+📲 *Instrucciones:*
+1. Envía "APK" para descargar la app
+2. Instala la aplicación
+3. Configura con tus credenciales
+
+⏰ *TIENES ${config.prices.test_hours} HORAS DE PRUEBA*
+
+*Para crear otra prueba, solo envía MENU nuevamente*`);
+                            
+                            console.log(chalk.green(`✅ Test creado: ${username} (${config.prices.test_hours} horas) - Tests ilimitados`));
+                        } else {
+                            await client.sendText(from, `❌ Error: ${result.error}`);
+                        }
+                    } catch (error) {
+                        await client.sendText(from, `❌ Error al crear cuenta: ${error.message}`);
+                    }
+                    return;
+                }
+                
+                // Descargar APK
+                if (text.toLowerCase() === 'apk') {
+                    await sendAppFile(from);
                     return;
                 }
                 
@@ -844,44 +828,42 @@ Envía *HELP* para información`);
 
 👤 Bienvenido ${reseller.name}
 
-Envía *MENU* para ver las opciones`);
+Envía *MENU* para ver las opciones
+
+*NOTA:* Los clientes solo deben enviar MENU para crear prueba`);
                         } else {
                             await client.sendText(from, `❌ *AUTENTICACIÓN FALLIDA*
 
 Usuario o contraseña incorrectos.
 
-Para clientes:
-Envía *HELP* para información
+Para clientes: Envía *MENU* para crear prueba gratuita
 
-Para revendedores:
-*LOGIN usuario contraseña*`);
+Para revendedores: *LOGIN usuario contraseña*`);
                         }
                     } else {
                         await client.sendText(from, `❌ *FORMATO INCORRECTO*
 
 Usa: *LOGIN usuario contraseña*
-Ejemplo: LOGIN revendedor123 pass123`);
+Ejemplo: LOGIN revendedor123 pass123
+
+Para clientes: Envía *MENU* para prueba gratuita`);
                     }
                     return;
                 }
                 
-                // Menú para clientes
-                if (text.toLowerCase() === 'help') {
+                // Mensaje por defecto
+                if (text && !text.startsWith('LOGIN')) {
                     await client.sendText(from, `🤖 *SSH BOT PRO*
 
-Para obtener una cuenta SSH, contacta a un revendedor autorizado.
+🎁 *TESTS ILIMITADOS*
+
+Envía *MENU* para crear tu prueba gratuita de ${config.prices.test_hours} horas
 
 Si eres revendedor:
 *LOGIN usuario contraseña*
 
 Para descargar la app:
 Envía *APK*`);
-                    return;
-                }
-                
-                if (text.toLowerCase() === 'apk') {
-                    await sendAppFile(from);
-                    return;
                 }
                 
             } catch (error) {
@@ -933,12 +915,12 @@ process.on('SIGINT', async () => {
 });
 BOTEOF
 
-echo -e "${GREEN}✅ Bot creado con sistema de revendedores${NC}"
+echo -e "${GREEN}✅ Bot creado con TESTS ILIMITADOS${NC}"
 
 # ================================================
-# CREAR PANEL ADMINISTRADOR DE REVENDEDORES
+# CREAR PANEL ADMINISTRADOR
 # ================================================
-echo -e "\n${CYAN}🎛️  Creando panel administrador de revendedores...${NC}"
+echo -e "\n${CYAN}🎛️  Creando panel administrador...${NC}"
 
 cat > /usr/local/bin/reseller-admin << 'ADMINEOF'
 #!/bin/bash
@@ -952,8 +934,8 @@ get_val() { jq -r "$1" "$CONFIG" 2>/dev/null; }
 show_header() {
     clear
     echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║         🎛️  PANEL ADMIN - SISTEMA DE REVENDEDORES          ║${NC}"
-    echo -e "${CYAN}║              🔐 GESTIÓN COMPLETA DE REVENDEDORES            ║${NC}"
+    echo -e "${CYAN}║         🎛️  PANEL ADMIN - TESTS ILIMITADOS                  ║${NC}"
+    echo -e "${CYAN}║              🎁 SIN RESTRICCIÓN DE PRUEBAS                  ║${NC}"
     echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
 }
 
@@ -1029,163 +1011,20 @@ list_resellers() {
     read -p "Presiona Enter..."
 }
 
-view_reseller_stats() {
-    clear
-    echo -e "${CYAN}📊 ESTADÍSTICAS DE REVENDEDOR${NC}\n"
-    
-    read -p "ID del revendedor (o nombre de usuario): " INPUT
-    
-    # Buscar revendedor
-    RESELLER=$(sqlite3 "$DB" "SELECT id, name, username, commission_type, commission_value FROM resellers WHERE id = '$INPUT' OR username = '$INPUT' AND username != 'admin'")
-    
-    if [[ -z "$RESELLER" ]]; then
-        echo -e "${RED}❌ Revendedor no encontrado${NC}"
-        read -p "Presiona Enter..."
-        return
-    fi
-    
-    IFS='|' read RESELLER_ID RESELLER_NAME RESELLER_USER COM_TYPE COM_VAL <<< "$RESELLER"
-    
-    # Obtener estadísticas
-    STATS=$(sqlite3 "$DB" "SELECT 
-        COUNT(DISTINCT u.id) as total_users,
-        COUNT(CASE WHEN u.status = 1 THEN 1 END) as active_users,
-        COUNT(CASE WHEN u.tipo = 'test' THEN 1 END) as test_users,
-        COUNT(CASE WHEN u.tipo = 'premium' THEN 1 END) as premium_users,
-        COUNT(p.id) as total_sales,
-        COALESCE(SUM(p.amount), 0) as total_income,
-        COALESCE(SUM(p.commission), 0) as total_commission
-        FROM users u
-        LEFT JOIN payments p ON u.reseller_id = p.reseller_id AND p.status = 'approved'
-        WHERE u.reseller_id = $RESELLER_ID")
-    
-    IFS='|' read TOTAL_USERS ACTIVE_USERS TEST_USERS PREMIUM_USERS TOTAL_SALES TOTAL_INCOME TOTAL_COMMISSION <<< "$STATS"
-    
-    echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${GREEN}📊 ESTADÍSTICAS DE ${RESELLER_NAME}${NC}"
-    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
-    
-    echo -e "${YELLOW}👤 DATOS DEL REVENDEDOR:${NC}"
-    echo -e "  ID: $RESELLER_ID"
-    echo -e "  Nombre: $RESELLER_NAME"
-    echo -e "  Usuario: $RESELLER_USER"
-    echo -e "  Comisión: ${COM_VAL}${COM_TYPE == 'percentage' ? '%' : ' ARS'}"
-    
-    echo -e "\n${YELLOW}📈 USUARIOS CREADOS:${NC}"
-    echo -e "  Total: $TOTAL_USERS"
-    echo -e "  Activos: $ACTIVE_USERS"
-    echo -e "  Pruebas: $TEST_USERS"
-    echo -e "  Premium: $PREMIUM_USERS"
-    
-    echo -e "\n${YELLOW}💰 VENTAS:${NC}"
-    echo -e "  Total ventas: $TOTAL_SALES"
-    echo -e "  Ingresos: $${TOTAL_INCOME}"
-    echo -e "  Comisiones: $${TOTAL_COMMISSION}"
-    
-    echo -e "\n${YELLOW}📋 ÚLTIMOS USUARIOS CREADOS:${NC}"
-    sqlite3 "$DB" "SELECT username, phone, tipo, created_at FROM users WHERE reseller_id = $RESELLER_ID ORDER BY created_at DESC LIMIT 10" | while IFS='|' read user phone tipo created; do
-        echo -e "  👤 $user - $phone - $tipo - $(echo $created | cut -d' ' -f1)"
-    done
-    
-    echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    read -p "Presiona Enter..."
-}
-
-toggle_reseller() {
-    clear
-    echo -e "${CYAN}🔧 ACTIVAR/DESACTIVAR REVENDEDOR${NC}\n"
-    
-    read -p "ID del revendedor: " RESELLER_ID
-    
-    CURRENT=$(sqlite3 "$DB" "SELECT status, name FROM resellers WHERE id = $RESELLER_ID AND username != 'admin'")
-    
-    if [[ -z "$CURRENT" ]]; then
-        echo -e "${RED}❌ Revendedor no encontrado${NC}"
-        read -p "Presiona Enter..."
-        return
-    fi
-    
-    IFS='|' read STATUS NAME <<< "$CURRENT"
-    
-    if [[ "$STATUS" == "1" ]]; then
-        echo -e "${YELLOW}⚠️ ¿Desactivar revendedor $NAME?${NC}"
-        read -p "(s/N): " CONFIRM
-        if [[ "$CONFIRM" == "s" ]]; then
-            sqlite3 "$DB" "UPDATE resellers SET status = 0 WHERE id = $RESELLER_ID"
-            echo -e "${GREEN}✅ Revendedor desactivado${NC}"
-        fi
-    else
-        echo -e "${YELLOW}⚠️ ¿Activar revendedor $NAME?${NC}"
-        read -p "(s/N): " CONFIRM
-        if [[ "$CONFIRM" == "s" ]]; then
-            sqlite3 "$DB" "UPDATE resellers SET status = 1 WHERE id = $RESELLER_ID"
-            echo -e "${GREEN}✅ Revendedor activado${NC}"
-        fi
-    fi
-    
-    read -p "Presiona Enter..."
-}
-
-edit_commission() {
-    clear
-    echo -e "${CYAN}💰 EDITAR COMISIÓN${NC}\n"
-    
-    read -p "ID del revendedor: " RESELLER_ID
-    
-    CURRENT=$(sqlite3 "$DB" "SELECT name, commission_type, commission_value FROM resellers WHERE id = $RESELLER_ID AND username != 'admin'")
-    
-    if [[ -z "$CURRENT" ]]; then
-        echo -e "${RED}❌ Revendedor no encontrado${NC}"
-        read -p "Presiona Enter..."
-        return
-    fi
-    
-    IFS='|' read NAME COM_TYPE COM_VAL <<< "$CURRENT"
-    
-    echo -e "\n${YELLOW}Revendedor: $NAME${NC}"
-    echo -e "Comisión actual: ${COM_VAL}${COM_TYPE == 'percentage' ? '%' : ' ARS'}\n"
-    
-    echo -e "Nuevo tipo de comisión:"
-    echo -e "  1. Porcentaje (%)"
-    echo -e "  2. Monto fijo (ARS)"
-    echo -e "  0. Mantener actual"
-    read -p "Selecciona: " NEW_TYPE
-    
-    if [[ "$NEW_TYPE" == "1" ]]; then
-        read -p "Nuevo porcentaje: " NEW_VALUE
-        sqlite3 "$DB" "UPDATE resellers SET commission_type = 'percentage', commission_value = $NEW_VALUE WHERE id = $RESELLER_ID"
-        echo -e "${GREEN}✅ Comisión actualizada a ${NEW_VALUE}%${NC}"
-    elif [[ "$NEW_TYPE" == "2" ]]; then
-        read -p "Nuevo monto fijo: " NEW_VALUE
-        sqlite3 "$DB" "UPDATE resellers SET commission_type = 'fixed', commission_value = $NEW_VALUE WHERE id = $RESELLER_ID"
-        echo -e "${GREEN}✅ Comisión actualizada a \$${NEW_VALUE} ARS${NC}"
-    else
-        echo -e "${YELLOW}Comisión sin cambios${NC}"
-    fi
-    
-    read -p "Presiona Enter..."
-}
-
 global_stats() {
     clear
     echo -e "${CYAN}📊 ESTADÍSTICAS GLOBALES${NC}\n"
     
-    # Usuarios
     TOTAL_USERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE username != ''")
     ACTIVE_USERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE status = 1")
-    TEST_TODAY=$(sqlite3 "$DB" "SELECT COUNT(*) FROM daily_tests WHERE date = date('now')")
+    TEST_USERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE tipo = 'test'")
+    PREMIUM_USERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE tipo = 'premium'")
     
-    # Revendedores
     TOTAL_RESELLERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM resellers WHERE username != 'admin'")
     ACTIVE_RESELLERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM resellers WHERE status = 1 AND username != 'admin'")
     
-    # Ventas
     TOTAL_SALES=$(sqlite3 "$DB" "SELECT COUNT(*) FROM payments WHERE status = 'approved'")
     TOTAL_INCOME=$(sqlite3 "$DB" "SELECT printf('%.2f', SUM(amount)) FROM payments WHERE status = 'approved'")
-    TODAY_SALES=$(sqlite3 "$DB" "SELECT COUNT(*) FROM payments WHERE status = 'approved' AND date(approved_at) = date('now')")
-    TODAY_INCOME=$(sqlite3 "$DB" "SELECT printf('%.2f', SUM(amount)) FROM payments WHERE status = 'approved' AND date(approved_at) = date('now')")
-    
-    # Comisiones
     TOTAL_COMMISSIONS=$(sqlite3 "$DB" "SELECT printf('%.2f', SUM(commission)) FROM payments WHERE status = 'approved'")
     
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -1195,7 +1034,8 @@ global_stats() {
     echo -e "${YELLOW}👥 USUARIOS:${NC}"
     echo -e "  Total usuarios creados: $TOTAL_USERS"
     echo -e "  Usuarios activos: $ACTIVE_USERS"
-    echo -e "  Pruebas hoy: $TEST_TODAY"
+    echo -e "  Tests creados: $TEST_USERS"
+    echo -e "  Usuarios premium: $PREMIUM_USERS"
     
     echo -e "\n${YELLOW}🤝 REVENDEDORES:${NC}"
     echo -e "  Total revendedores: $TOTAL_RESELLERS"
@@ -1205,19 +1045,6 @@ global_stats() {
     echo -e "  Total ventas: $TOTAL_SALES"
     echo -e "  Ingresos totales: \$${TOTAL_INCOME}"
     echo -e "  Comisiones totales: \$${TOTAL_COMMISSIONS}"
-    echo -e "  Ventas hoy: $TODAY_SALES"
-    echo -e "  Ingresos hoy: \$${TODAY_INCOME}"
-    
-    echo -e "\n${YELLOW}📊 TOP REVENDEDORES (por ventas):${NC}"
-    sqlite3 "$DB" "SELECT r.name, COUNT(p.id) as sales, printf('%.2f', SUM(p.amount)) as total
-                   FROM resellers r
-                   LEFT JOIN payments p ON r.id = p.reseller_id AND p.status = 'approved'
-                   WHERE r.username != 'admin'
-                   GROUP BY r.id
-                   ORDER BY total DESC
-                   LIMIT 5" | while IFS='|' read name sales total; do
-        echo -e "  🏆 $name - $sales ventas - \$${total}"
-    done
     
     echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     read -p "Presiona Enter..."
@@ -1228,23 +1055,21 @@ while true; do
     
     TOTAL_RESELLERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM resellers WHERE username != 'admin'" 2>/dev/null || echo "0")
     TOTAL_USERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users" 2>/dev/null || echo "0")
-    TODAY_SALES=$(sqlite3 "$DB" "SELECT COUNT(*) FROM payments WHERE status='approved' AND date(approved_at)=date('now')" 2>/dev/null || echo "0")
+    TEST_USERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE tipo='test'" 2>/dev/null || echo "0")
     
     echo -e "${YELLOW}📊 RESUMEN:${NC}"
     echo -e "  Revendedores: ${CYAN}$TOTAL_RESELLERS${NC}"
     echo -e "  Usuarios totales: ${CYAN}$TOTAL_USERS${NC}"
-    echo -e "  Ventas hoy: ${GREEN}$TODAY_SALES${NC}"
+    echo -e "  Tests creados: ${GREEN}$TEST_USERS (ILIMITADOS)${NC}"
+    echo -e "  Contraseña usuarios: ${GREEN}cloudvpn${NC}"
     echo -e ""
     
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${CYAN}[1]${NC} 👤 Crear nuevo revendedor"
     echo -e "${CYAN}[2]${NC} 👥 Listar revendedores"
-    echo -e "${CYAN}[3]${NC} 📊 Ver estadísticas de revendedor"
-    echo -e "${CYAN}[4]${NC} 🔧 Activar/Desactivar revendedor"
-    echo -e "${CYAN}[5]${NC} 💰 Editar comisión"
-    echo -e "${CYAN}[6]${NC} 📈 Estadísticas globales"
-    echo -e "${CYAN}[7]${NC} 💳 Ver pagos pendientes"
-    echo -e "${CYAN}[8]${NC} ⚙️  Configuración general"
+    echo -e "${CYAN}[3]${NC} 📊 Estadísticas globales"
+    echo -e "${CYAN}[4]${NC} 💳 Ver pagos"
+    echo -e "${CYAN}[5]${NC} ⚙️  Ver configuración"
     echo -e "${CYAN}[0]${NC} 🚪 Salir"
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e ""
@@ -1254,17 +1079,14 @@ while true; do
     case $OPTION in
         1) create_reseller ;;
         2) list_resellers ;;
-        3) view_reseller_stats ;;
-        4) toggle_reseller ;;
-        5) edit_commission ;;
-        6) global_stats ;;
-        7)
+        3) global_stats ;;
+        4)
             clear
-            echo -e "${CYAN}💳 PAGOS PENDIENTES${NC}\n"
-            sqlite3 -column -header "$DB" "SELECT payment_id, phone, plan, amount, created_at FROM payments WHERE status='pending' LIMIT 20"
+            echo -e "${CYAN}💳 PAGOS${NC}\n"
+            sqlite3 -column -header "$DB" "SELECT payment_id, phone, plan, amount, status, created_at FROM payments ORDER BY created_at DESC LIMIT 20"
             read -p "Presiona Enter..."
             ;;
-        8)
+        5)
             clear
             echo -e "${CYAN}⚙️ CONFIGURACIÓN${NC}\n"
             echo -e "${YELLOW}Precios actuales:${NC}"
@@ -1273,6 +1095,8 @@ while true; do
             echo -e "  30 días: $ ${get_val '.prices.price_30d'}"
             echo -e "  50 días: $ ${get_val '.prices.price_50d'}"
             echo -e "  Prueba: ${get_val '.prices.test_hours'} horas"
+            echo -e "  Tests: ${GREEN}ILIMITADOS${NC}"
+            echo -e "  Contraseña usuarios: ${GREEN}cloudvpn${NC}"
             echo -e ""
             read -p "Presiona Enter..."
             ;;
@@ -1289,176 +1113,6 @@ done
 ADMINEOF
 
 chmod +x /usr/local/bin/reseller-admin
-
-# Crear panel rápido para revendedores (desde SSH)
-cat > /usr/local/bin/reseller << 'RESELLEREOF'
-#!/bin/bash
-RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; CYAN='\033[0;36m'; NC='\033[0m'
-
-DB="/opt/sshbot-pro/data/users.db"
-
-echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}"
-echo -e "${CYAN}         🎛️  PANEL DE REVENDEDOR SSH BOT PRO                ${NC}"
-echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}\n"
-
-read -p "Usuario: " USERNAME
-read -s -p "Contraseña: " PASSWORD
-echo ""
-
-RESELLER=$(sqlite3 "$DB" "SELECT id, name, commission_type, commission_value FROM resellers WHERE username = '$USERNAME' AND password = '$PASSWORD' AND status = 1")
-
-if [[ -z "$RESELLER" ]]; then
-    echo -e "\n${RED}❌ Credenciales incorrectas o revendedor inactivo${NC}"
-    exit 1
-fi
-
-IFS='|' read RESELLER_ID NAME COM_TYPE COM_VAL <<< "$RESELLER"
-
-echo -e "\n${GREEN}✅ Bienvenido $NAME${NC}\n"
-
-while true; do
-    clear
-    echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}"
-    echo -e "${CYAN}         🎛️  PANEL DE REVENDEDOR - $NAME                    ${NC}"
-    echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}\n"
-    
-    # Estadísticas rápidas
-    STATS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE reseller_id = $RESELLER_ID")
-    ACTIVE=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE reseller_id = $RESELLER_ID AND status = 1")
-    
-    echo -e "${YELLOW}📊 TUS ESTADÍSTICAS:${NC}"
-    echo -e "  Usuarios creados: ${CYAN}$STATS${NC}"
-    echo -e "  Usuarios activos: ${GREEN}$ACTIVE${NC}"
-    echo -e "  Comisión: ${COM_VAL}${COM_TYPE == 'percentage' ? '%' : ' ARS'}"
-    echo -e ""
-    
-    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${CYAN}[1]${NC} 👤 Crear usuario SSH"
-    echo -e "${CYAN}[2]${NC} 👥 Ver mis usuarios"
-    echo -e "${CYAN}[3]${NC} 📊 Ver estadísticas detalladas"
-    echo -e "${CYAN}[4]${NC} 💰 Ver mis comisiones"
-    echo -e "${CYAN}[0]${NC} 🚪 Salir"
-    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e ""
-    
-    read -p "👉 Selecciona: " OPT
-    
-    case $OPT in
-        1)
-            clear
-            echo -e "${CYAN}👤 CREAR USUARIO SSH${NC}\n"
-            
-            read -p "Teléfono del usuario (ej: 5491122334455): " PHONE
-            echo -e "\n${YELLOW}Planes disponibles:${NC}"
-            echo -e "  1. 7 días"
-            echo -e "  2. 15 días"
-            echo -e "  3. 30 días"
-            echo -e "  4. 50 días"
-            echo -e "  5. Prueba (2 horas gratis)"
-            read -p "Selecciona plan (1-5): " PLAN
-            
-            case $PLAN in
-                1) DAYS=7; TYPE="premium";;
-                2) DAYS=15; TYPE="premium";;
-                3) DAYS=30; TYPE="premium";;
-                4) DAYS=50; TYPE="premium";;
-                5) DAYS=0; TYPE="test";;
-                *) echo -e "${RED}❌ Opción inválida${NC}"; sleep 2; continue;;
-            esac
-            
-            USERNAME_GEN="user$(shuf -i 1000-9999 -n 1)"
-            if [[ "$TYPE" == "test" ]]; then
-                USERNAME_GEN="test$(shuf -i 1000-9999 -n 1)"
-            fi
-            
-            echo -e "\n${YELLOW}Creando usuario...${NC}"
-            
-            if [[ "$DAYS" == "0" ]]; then
-                EXPIRE=$(date -d "+2 hours" +"%Y-%m-%d %H:%M:%S")
-                useradd -m -s /bin/bash "$USERNAME_GEN" && echo "$USERNAME_GEN:mgvpn247" | chpasswd
-            else
-                EXPIRE=$(date -d "+$DAYS days" +"%Y-%m-%d 23:59:59")
-                useradd -M -s /bin/false -e "$(date -d "+$DAYS days" +%Y-%m-%d)" "$USERNAME_GEN" && echo "$USERNAME_GEN:mgvpn247" | chpasswd
-            fi
-            
-            if [[ $? -eq 0 ]]; then
-                sqlite3 "$DB" "INSERT INTO users (phone, username, password, tipo, expires_at, status, created_by, reseller_id) 
-                               VALUES ('$PHONE', '$USERNAME_GEN', 'mgvpn247', '$TYPE', '$EXPIRE', 1, '$NAME', $RESELLER_ID)"
-                
-                echo -e "\n${GREEN}✅ USUARIO CREADO${NC}"
-                echo -e "  👤 Usuario: $USERNAME_GEN"
-                echo -e "  🔑 Contraseña: mgvpn247"
-                echo -e "  📱 Teléfono: $PHONE"
-                echo -e "  ⏰ Expira: $EXPIRE"
-                echo -e "  📦 Tipo: $TYPE"
-            else
-                echo -e "\n${RED}❌ Error al crear usuario${NC}"
-            fi
-            read -p "Presiona Enter..."
-            ;;
-        2)
-            clear
-            echo -e "${CYAN}👥 MIS USUARIOS${NC}\n"
-            sqlite3 -column -header "$DB" "SELECT username, phone, tipo, expires_at, status FROM users WHERE reseller_id = $RESELLER_ID ORDER BY created_at DESC LIMIT 30"
-            read -p "Presiona Enter..."
-            ;;
-        3)
-            clear
-            echo -e "${CYAN}📊 ESTADÍSTICAS DETALLADAS${NC}\n"
-            
-            TOTAL=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE reseller_id = $RESELLER_ID")
-            ACTIVE=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE reseller_id = $RESELLER_ID AND status = 1")
-            TESTS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE reseller_id = $RESELLER_ID AND tipo = 'test'")
-            PREMIUM=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE reseller_id = $RESELLER_ID AND tipo = 'premium'")
-            SALES=$(sqlite3 "$DB" "SELECT COUNT(*) FROM payments WHERE reseller_id = $RESELLER_ID AND status = 'approved'")
-            INCOME=$(sqlite3 "$DB" "SELECT printf('%.2f', SUM(amount)) FROM payments WHERE reseller_id = $RESELLER_ID AND status = 'approved'")
-            COMMISSIONS=$(sqlite3 "$DB" "SELECT printf('%.2f', SUM(commission)) FROM payments WHERE reseller_id = $RESELLER_ID AND status = 'approved'")
-            
-            echo -e "${YELLOW}📈 USUARIOS:${NC}"
-            echo -e "  Total creados: $TOTAL"
-            echo -e "  Activos: $ACTIVE"
-            echo -e "  Pruebas: $TESTS"
-            echo -e "  Premium: $PREMIUM"
-            
-            echo -e "\n${YELLOW}💰 VENTAS:${NC}"
-            echo -e "  Ventas realizadas: $SALES"
-            echo -e "  Ingresos generados: \$${INCOME:-0}"
-            echo -e "  Tus comisiones: \$${COMMISSIONS:-0}"
-            
-            read -p "Presiona Enter..."
-            ;;
-        4)
-            clear
-            echo -e "${CYAN}💰 MIS COMISIONES${NC}\n"
-            
-            echo -e "${YELLOW}Configuración de comisión:${NC}"
-            echo -e "  Tipo: ${COM_TYPE}"
-            echo -e "  Valor: ${COM_VAL}${COM_TYPE == 'percentage' ? '%' : ' ARS'}"
-            echo -e ""
-            
-            echo -e "${YELLOW}Últimas comisiones generadas:${NC}"
-            sqlite3 -column -header "$DB" "SELECT plan, amount, commission, approved_at FROM payments WHERE reseller_id = $RESELLER_ID AND status = 'approved' ORDER BY approved_at DESC LIMIT 10"
-            
-            TOTAL_COMM=$(sqlite3 "$DB" "SELECT printf('%.2f', SUM(commission)) FROM payments WHERE reseller_id = $RESELLER_ID AND status = 'approved'")
-            echo -e "\n${GREEN}Total comisiones acumuladas: \$${TOTAL_COMM:-0}${NC}"
-            
-            read -p "Presiona Enter..."
-            ;;
-        0)
-            echo -e "\n${GREEN}👋 Hasta pronto${NC}"
-            exit 0
-            ;;
-        *)
-            echo -e "${RED}❌ Opción inválida${NC}"
-            sleep 1
-            ;;
-    esac
-done
-RESELLEREOF
-
-chmod +x /usr/local/bin/reseller
-
-echo -e "${GREEN}✅ Paneles creados${NC}"
 
 # ================================================
 # INICIAR BOT
@@ -1480,14 +1134,14 @@ echo -e "${GREEN}${BOLD}"
 cat << "FINAL"
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
-║          🎉 INSTALACIÓN COMPLETADA - REVENDEDORES 🎉        ║
+║          🎉 INSTALACIÓN COMPLETADA - TESTS ILIMITADOS 🎉    ║
 ║                                                              ║
 ║       🤖 SSH BOT PRO - SISTEMA DE REVENDEDORES             ║
 ║       🔐 CADA REVENDEDOR CON SU CONTRASEÑA ÚNICA          ║
+║       🔑 CONTRASEÑA USUARIOS: cloudvpn (FIJA)             ║
+║       🎁 TESTS ILIMITADOS - SIN RESTRICCIÓN DIARIA       ║
 ║       💰 CONTROL DE COMISIONES Y VENTAS                   ║
-║       📊 ESTADÍSTICAS POR REVENDEDOR                      ║
-║       🎛️  PANEL ADMINISTRADOR COMPLETO                   ║
-║       👥 REVENDEDORES CREAN USUARIOS SSH                  ║
+║       📊 ESTADÍSTICAS COMPLETAS                           ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 FINAL
@@ -1495,14 +1149,13 @@ echo -e "${NC}"
 
 echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}✅ Sistema completo instalado${NC}"
+echo -e "${GREEN}✅ TESTS ILIMITADOS - Sin límite diario${NC}"
+echo -e "${GREEN}✅ Contraseña usuarios: cloudvpn${NC}"
 echo -e "${GREEN}✅ Sistema de revendedores activo${NC}"
-echo -e "${GREEN}✅ Cada revendedor tiene su propia contraseña${NC}"
-echo -e "${GREEN}✅ Control de comisiones integrado${NC}"
 echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}\n"
 
 echo -e "${YELLOW}📋 COMANDOS PRINCIPALES:${NC}\n"
 echo -e "  ${GREEN}reseller-admin${NC}   - Panel administrador de revendedores"
-echo -e "  ${GREEN}reseller${NC}         - Panel de revendedor (desde SSH)"
 echo -e "  ${GREEN}pm2 logs sshbot-pro${NC} - Ver logs del bot"
 echo -e "  ${GREEN}pm2 restart sshbot-pro${NC} - Reiniciar bot"
 echo -e "\n"
@@ -1513,8 +1166,12 @@ echo -e "  2. Escanear QR cuando aparezca"
 echo -e "  3. Panel admin: ${GREEN}reseller-admin${NC}"
 echo -e "  4. Credenciales admin: usuario 'admin', contraseña 'admin123'"
 echo -e "  5. Crear revendedores desde el panel admin"
-echo -e "  6. Dar credenciales a los revendedores"
-echo -e "  7. Los revendedores se autentican en WhatsApp con: LOGIN usuario pass"
+echo -e "\n"
+
+echo -e "${YELLOW}📱 PARA CLIENTES (WhatsApp):${NC}\n"
+echo -e "  Enviar al bot: ${GREEN}MENU${NC} - Crea prueba automáticamente"
+echo -e "  ${GREEN}APK${NC} - Descargar aplicación"
+echo -e "  🎁 Los clientes pueden crear ${GREEN}TEST ILIMITADOS${NC}"
 echo -e "\n"
 
 echo -e "${YELLOW}📱 PARA REVENDEDORES (WhatsApp):${NC}\n"
@@ -1523,19 +1180,13 @@ echo -e "  Ejemplo: LOGIN juan123 pass123"
 echo -e "  Luego enviar MENU para ver opciones"
 echo -e "\n"
 
-echo -e "${YELLOW}💰 CONFIGURAR COMISIONES:${NC}\n"
-echo -e "  En panel admin: Opción 5 - Editar comisión"
-echo -e "  Tipo: percentage (ej: 20%) o fixed (ej: 500 ARS)"
-echo -e "  Las comisiones se calculan automáticamente"
-echo -e "\n"
-
 echo -e "${YELLOW}🔐 CREDENCIALES ADMIN:${NC}\n"
 echo -e "  Usuario: ${GREEN}admin${NC}"
 echo -e "  Contraseña: ${GREEN}admin123${NC}"
 echo -e "  Cambia la contraseña del admin por seguridad"
 echo -e "\n"
 
-echo -e "${GREEN}${BOLD}¡Sistema de revendedores listo! Escanea el QR y empieza a gestionar tus revendedores 🚀${NC}\n"
+echo -e "${GREEN}${BOLD}🎁 TESTS ILIMITADOS - Los clientes pueden crear todas las pruebas que quieran sin restricción diaria 🚀${NC}\n"
 
 # Ver logs automáticamente
 read -p "$(echo -e "${YELLOW}¿Ver logs ahora? (s/N): ${NC}")" -n 1 -r
