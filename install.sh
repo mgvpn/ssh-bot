@@ -1,8 +1,8 @@
 #!/bin/bash
 # ================================================
-# SSH BOT PRO REVENDEDORES - TESTS ILIMITADOS
-# VERSIÓN: Tests sin límite diario
-# CONTRASEÑA USUARIOS: cloudvpn (FIJA)
+# SSH BOT PRO - INSTALACIÓN COMPLETA
+# VERSIÓN FINAL OPTIMIZADA
+# CONTRASEÑA: cloudvpn | TESTS ILIMITADOS | PLANES: 7,15,30 DIAS
 # ================================================
 
 set -e
@@ -30,24 +30,25 @@ cat << "BANNER"
 ║     ╚══════╝╚══════╝╚═╝  ╚═╝    ╚═════╝  ╚═════╝    ╚═╝     ║
 ╠══════════════════════════════════════════════════════════════╣
 ║                                                              ║
-║          🤖 SSH BOT PRO - SISTEMA DE REVENDEDORES          ║
-║               🔐 CADA REVENDEDOR CON SU CLAVE              ║
-║               🔑 CONTRASEÑA USUARIOS: cloudvpn             ║
-║               🎁 TESTS ILIMITADOS (SIN RESTRICCIÓN)       ║
-║               💰 PANEL ADMINISTRADOR COMPLETO              ║
-║               📊 CONTROL DE COMISIONES Y VENTAS            ║
+║          🚀 SSH BOT PRO - INSTALACIÓN COMPLETA 🚀           ║
+║                                                              ║
+║       🔑 CONTRASEÑA USUARIOS: cloudvpn (FIJA)              ║
+║       🎁 TESTS ILIMITADOS (SIN RESTRICCIÓN)                ║
+║       📅 PLANES: 7, 15, 30 DÍAS (SIN 50)                   ║
+║       👥 SISTEMA DE REVENDEDORES CON COMISIONES            ║
+║       🎛️  PANEL ADMINISTRADOR COMPLETO                     ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 BANNER
 echo -e "${NC}"
 
-echo -e "${GREEN}✅ CARACTERÍSTICAS DEL SISTEMA:${NC}"
-echo -e "  🔐 ${CYAN}Cada revendedor${NC} - Contraseña única personalizada"
-echo -e "  🔑 ${GREEN}Contraseña usuarios${NC} - cloudvpn (FIJA)"
-echo -e "  🎁 ${YELLOW}TESTS ILIMITADOS${NC} - Sin límite diario"
-echo -e "  💰 ${PURPLE}Comisiones${NC} - Control de ventas por revendedor"
-echo -e "  📊 ${BLUE}Estadísticas${NC} - Ventas y usuarios por revendedor"
-echo -e "  🎛️  ${CYAN}Panel Admin${NC} - Crear y gestionar revendedores"
+echo -e "${GREEN}✅ CARACTERÍSTICAS:${NC}"
+echo -e "  🔑 ${CYAN}Contraseña usuarios:${NC} cloudvpn"
+echo -e "  🎁 ${YELLOW}Tests ilimitados${NC} - Sin límite diario"
+echo -e "  📅 ${PURPLE}Planes disponibles:${NC} 7, 15, 30 días"
+echo -e "  👥 ${BLUE}Revendedores${NC} - Cada uno con su clave"
+echo -e "  💰 ${GREEN}Comisiones${NC} - Porcentaje o monto fijo"
+echo -e "  🎛️  ${CYAN}Panel admin${NC} - Gestión completa"
 echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}\n"
 
 # Verificar root
@@ -59,7 +60,7 @@ fi
 
 # Detectar IP
 echo -e "${CYAN}🔍 Detectando IP...${NC}"
-SERVER_IP=$(curl -4 -s --max-time 10 ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}' || echo "127.0.0.1")
+SERVER_IP=$(curl -4 -s --max-time 5 ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
 if [[ -z "$SERVER_IP" || "$SERVER_IP" == "127.0.0.1" ]]; then
     read -p "📝 Ingresa la IP del servidor: " SERVER_IP
 fi
@@ -83,34 +84,21 @@ apt-get upgrade -y
 
 # Node.js 18.x
 curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-apt-get install -y nodejs gcc g++ make
+apt-get install -y nodejs
 
 # Chrome/Chromium
-wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add -
-echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
-apt-get update -y
-apt-get install -y google-chrome-stable
+wget -q -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+dpkg -i /tmp/chrome.deb 2>/dev/null || apt-get install -f -y
 
 # Dependencias del sistema
 apt-get install -y \
     git curl wget sqlite3 jq \
-    build-essential libcairo2-dev \
-    libpango1.0-dev libjpeg-dev \
-    libgif-dev librsvg2-dev \
+    build-essential gcc g++ make \
     python3 python3-pip ffmpeg \
     unzip cron ufw
 
 # Configurar firewall
-ufw allow 22/tcp
-ufw allow 80/tcp
-ufw allow 443/tcp
-ufw allow 8001/tcp
-ufw allow 3000/tcp
-ufw --force enable
-
-# PM2
-npm install -g pm2
-pm2 update
+ufw --force enable 2>/dev/null || true
 
 echo -e "${GREEN}✅ Dependencias instaladas${NC}"
 
@@ -126,31 +114,32 @@ CONFIG_FILE="$INSTALL_DIR/config/config.json"
 APK_PATH="/root/mgvpn.apk"
 
 # Limpiar anterior
-pm2 delete sshbot-pro 2>/dev/null || true
-rm -rf "$INSTALL_DIR" "$USER_HOME" 2>/dev/null || true
-rm -rf /root/.wppconnect 2>/dev/null || true
+pm2 kill 2>/dev/null || true
+pkill -f "node.*bot.js" 2>/dev/null || true
+pkill -f pm2 2>/dev/null || true
+rm -rf "$INSTALL_DIR" "$USER_HOME" /root/.wppconnect /root/.pm2 2>/dev/null || true
+sleep 1
 
 # Crear directorios
-mkdir -p "$INSTALL_DIR"/{data,config,sessions,logs,qr_codes}
+mkdir -p "$INSTALL_DIR"/{data,config,logs,qr_codes}
 mkdir -p "$USER_HOME"
 mkdir -p /root/.wppconnect
 chmod -R 755 "$INSTALL_DIR"
-chmod -R 700 /root/.wppconnect
 
+# Configuración
 cat > "$CONFIG_FILE" << EOF
 {
     "bot": {
-        "name": "SSH Bot Pro Revendedores",
-        "version": "3.0-REVENDEDORES-TESTS-ILIMITADOS",
+        "name": "SSH Bot Pro",
+        "version": "3.0-FINAL",
         "server_ip": "$SERVER_IP",
         "default_password": "cloudvpn"
     },
     "prices": {
         "test_hours": 2,
-        "price_7d": 3000.00,
-        "price_15d": 4000.00,
-        "price_30d": 7000.00,
-        "price_50d": 10000.00,
+        "price_7d": 1800.00,
+        "price_15d": 2400.00,
+        "price_30d": 4500.00,
         "currency": "ARS"
     },
     "commission": {
@@ -158,24 +147,21 @@ cat > "$CONFIG_FILE" << EOF
         "value": 20
     },
     "tests": {
-        "unlimited": true,
-        "test_hours": 2
+        "unlimited": true
     },
     "mercadopago": {
         "access_token": "",
-        "enabled": false,
-        "public_key": ""
+        "enabled": false
     },
     "paths": {
         "database": "$DB_FILE",
-        "qr_codes": "$INSTALL_DIR/qr_codes",
         "sessions": "/root/.wppconnect",
         "apk_file": "$APK_PATH"
     }
 }
 EOF
 
-# Crear base de datos - SIN restricción de tests diarios
+# Base de datos
 sqlite3 "$DB_FILE" << 'SQL'
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -202,6 +188,13 @@ CREATE TABLE resellers (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE daily_tests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    phone TEXT,
+    date DATE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE payments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     payment_id TEXT UNIQUE,
@@ -214,7 +207,6 @@ CREATE TABLE payments (
     commission REAL,
     payment_url TEXT,
     qr_code TEXT,
-    preference_id TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     approved_at DATETIME
 );
@@ -238,29 +230,26 @@ CREATE INDEX idx_users_phone ON users(phone);
 CREATE INDEX idx_users_status ON users(status);
 CREATE INDEX idx_users_reseller ON users(reseller_id);
 CREATE INDEX idx_payments_status ON payments(status);
-CREATE INDEX idx_payments_reseller ON payments(reseller_id);
 SQL
 
-echo -e "${GREEN}✅ Estructura creada (tests ilimitados)${NC}"
-
-# Crear usuario admin por defecto
+# Crear admin
 ADMIN_PASS="admin123"
 sqlite3 "$DB_FILE" << SQL
 INSERT OR REPLACE INTO resellers (username, password, name, phone, commission_type, commission_value, status) 
 VALUES ('admin', '$ADMIN_PASS', 'Administrador', '0000000000', 'percentage', 0, 1);
 SQL
 
+echo -e "${GREEN}✅ Estructura creada${NC}"
 echo -e "${GREEN}✅ Admin creado: usuario 'admin', contraseña '$ADMIN_PASS'${NC}"
 
 # ================================================
-# CREAR BOT CON TESTS ILIMITADOS
+# INSTALAR NPM DEPENDENCIAS
 # ================================================
-echo -e "\n${CYAN}🤖 Creando bot con tests ilimitados...${NC}"
+echo -e "\n${CYAN}📦 Instalando paquetes NPM...${NC}"
 
 cd "$USER_HOME"
 
-# package.json
-cat > package.json << 'PKGEOF'
+cat > package.json << 'EOF'
 {
     "name": "sshbot-pro",
     "version": "3.0.0",
@@ -273,17 +262,20 @@ cat > package.json << 'PKGEOF'
         "sqlite3": "^5.1.7",
         "chalk": "^4.1.2",
         "node-cron": "^3.0.3",
-        "mercadopago": "^2.0.15",
-        "axios": "^1.6.5",
-        "sharp": "^0.33.2"
+        "axios": "^1.6.5"
     }
 }
-PKGEOF
+EOF
 
-echo -e "${YELLOW}📦 Instalando dependencias...${NC}"
-npm install --silent 2>&1 | grep -v "npm WARN" || true
+npm install --silent --no-progress 2>&1 | grep -v "WARN" || true
 
-# Crear bot.js con TESTS ILIMITADOS
+echo -e "${GREEN}✅ Paquetes instalados${NC}"
+
+# ================================================
+# CREAR BOT COMPLETO
+# ================================================
+echo -e "\n${CYAN}🤖 Creando bot...${NC}"
+
 cat > "bot.js" << 'BOTEOF'
 const wppconnect = require('@wppconnect-team/wppconnect');
 const qrcode = require('qrcode-terminal');
@@ -295,7 +287,6 @@ const util = require('util');
 const chalk = require('chalk');
 const cron = require('node-cron');
 const fs = require('fs');
-const path = require('path');
 const axios = require('axios');
 
 const execPromise = util.promisify(exec);
@@ -304,7 +295,7 @@ moment.locale('es');
 console.log(chalk.cyan.bold('\n╔══════════════════════════════════════════════════════════════╗'));
 console.log(chalk.cyan.bold('║      🤖 SSH BOT PRO - TESTS ILIMITADOS                       ║'));
 console.log(chalk.cyan.bold('║              🔐 CONTRASEÑA: cloudvpn                        ║'));
-console.log(chalk.cyan.bold('║                    🎁 TESTS SIN LÍMITE                      ║'));
+console.log(chalk.cyan.bold('║              📅 PLANES: 7, 15, 30 DÍAS                     ║'));
 console.log(chalk.cyan.bold('╚══════════════════════════════════════════════════════════════╝\n'));
 
 function loadConfig() {
@@ -314,11 +305,8 @@ function loadConfig() {
 
 let config = loadConfig();
 const db = new sqlite3.Database('/opt/sshbot-pro/data/users.db');
+const DEFAULT_PASSWORD = 'cloudvpn';
 
-// Variables globales
-let client = null;
-
-// Funciones auxiliares
 function generateUsername() {
     const chars = 'abcdefghijklmnopqrstuvwxyz';
     const randomNum = Math.floor(1000 + Math.random() * 9000);
@@ -333,96 +321,47 @@ function generatePremiumUsername() {
     return `user${randomChar}${randomNum}`;
 }
 
-const DEFAULT_PASSWORD = 'cloudvpn';
-
 async function createSSHUser(phone, username, days, resellerId = null) {
-    const password = DEFAULT_PASSWORD;
-    
     if (days === 0) {
-        // Test - duración configurable
         const expireFull = moment().add(config.prices.test_hours, 'hours').format('YYYY-MM-DD HH:mm:ss');
-        
-        try {
-            await execPromise(`useradd -m -s /bin/bash ${username} && echo "${username}:${password}" | chpasswd`);
-            
-            db.run(`INSERT INTO users (phone, username, password, tipo, expires_at, created_by, reseller_id) VALUES (?, ?, ?, 'test', ?, ?, ?)`,
-                [phone, username, password, expireFull, 'test', resellerId]);
-            
-            return { success: true, username, password, expires: expireFull };
-        } catch (error) {
-            console.error(chalk.red('❌ Error:'), error.message);
-            return { success: false, error: error.message };
-        }
+        await execPromise(`useradd -m -s /bin/bash ${username} && echo "${username}:${DEFAULT_PASSWORD}" | chpasswd`);
+        db.run(`INSERT INTO users (phone, username, password, tipo, expires_at, created_by, reseller_id) VALUES (?, ?, ?, 'test', ?, ?, ?)`,
+            [phone, username, DEFAULT_PASSWORD, expireFull, 'test', resellerId]);
+        return { success: true, username, password: DEFAULT_PASSWORD, expires: expireFull };
     } else {
-        // Premium
         const expireFull = moment().add(days, 'days').format('YYYY-MM-DD 23:59:59');
-        
-        try {
-            await execPromise(`useradd -M -s /bin/false -e ${moment().add(days, 'days').format('YYYY-MM-DD')} ${username} && echo "${username}:${password}" | chpasswd`);
-            
-            db.run(`INSERT INTO users (phone, username, password, tipo, expires_at, created_by, reseller_id) VALUES (?, ?, ?, 'premium', ?, ?, ?)`,
-                [phone, username, password, expireFull, 'premium', resellerId]);
-            
-            return { success: true, username, password, expires: expireFull };
-        } catch (error) {
-            console.error(chalk.red('❌ Error:'), error.message);
-            return { success: false, error: error.message };
-        }
+        await execPromise(`useradd -M -s /bin/false -e ${moment().add(days, 'days').format('YYYY-MM-DD')} ${username} && echo "${username}:${DEFAULT_PASSWORD}" | chpasswd`);
+        db.run(`INSERT INTO users (phone, username, password, tipo, expires_at, created_by, reseller_id) VALUES (?, ?, ?, 'premium', ?, ?, ?)`,
+            [phone, username, DEFAULT_PASSWORD, expireFull, 'premium', resellerId]);
+        return { success: true, username, password: DEFAULT_PASSWORD, expires: expireFull };
     }
-}
-
-// TEST ILIMITADO - Siempre retorna true (sin restricción)
-function canCreateTest(phone) {
-    return true; // TESTS ILIMITADOS - Siempre puede crear test
-}
-
-function registerTest(phone) {
-    // Solo registramos para estadísticas, pero no bloqueamos
-    db.run('INSERT OR IGNORE INTO daily_tests (phone, date) VALUES (?, ?)', [phone, moment().format('YYYY-MM-DD')]);
 }
 
 async function sendAppFile(to) {
     const apkPath = '/root/mgvpn.apk';
-    
-    if (!fs.existsSync(apkPath)) {
-        console.log(chalk.yellow(`⚠️ Archivo APK no encontrado`));
-        return false;
+    if (fs.existsSync(apkPath)) {
+        try {
+            await client.sendFile(to, apkPath, 'mgvpn.apk', '📲 APP MGVPN\nContraseña: cloudvpn');
+            return true;
+        } catch (error) {
+            return false;
+        }
     }
-    
-    try {
-        await client.sendFile(
-            to,
-            apkPath,
-            'mgvpn.apk',
-            '📲 *APP MGVPN*\n\nDescarga nuestra aplicación oficial.\n\n*Credenciales por defecto:*\nUsuario: (el que te proporcionamos)\nContraseña: cloudvpn'
-        );
-        return true;
-    } catch (error) {
-        console.error(chalk.red(`❌ Error enviando APK: ${error.message}`));
-        return false;
-    }
+    return false;
 }
 
 function authenticateReseller(username, password) {
     return new Promise((resolve) => {
         db.get('SELECT id, username, name, commission_type, commission_value, status FROM resellers WHERE username = ? AND password = ? AND status = 1',
-            [username, password], (err, row) => {
-                resolve(err ? null : row);
-            });
+            [username, password], (err, row) => resolve(err ? null : row));
     });
 }
 
 async function getUserState(phone) {
     return new Promise((resolve) => {
         db.get('SELECT state, data FROM user_state WHERE phone = ?', [phone], (err, row) => {
-            if (err || !row) {
-                resolve({ state: 'main_menu', data: null });
-            } else {
-                resolve({
-                    state: row.state || 'main_menu',
-                    data: row.data ? JSON.parse(row.data) : null
-                });
-            }
+            if (err || !row) resolve({ state: 'main_menu', data: null });
+            else resolve({ state: row.state || 'main_menu', data: row.data ? JSON.parse(row.data) : null });
         });
     });
 }
@@ -430,56 +369,41 @@ async function getUserState(phone) {
 function setUserState(phone, state, data = null) {
     return new Promise((resolve) => {
         const dataStr = data ? JSON.stringify(data) : null;
-        db.run(
-            `INSERT OR REPLACE INTO user_state (phone, state, data, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)`,
-            [phone, state, dataStr],
-            (err) => {
-                if (err) console.error(chalk.red('❌ Error estado:'), err.message);
-                resolve();
-            }
-        );
+        db.run(`INSERT OR REPLACE INTO user_state (phone, state, data, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)`,
+            [phone, state, dataStr], () => resolve());
     });
 }
 
 function clearUserState(phone) {
-    db.run('DELETE FROM user_state WHERE phone = ?', [phone]);
+    db.run('DELETE FROM user_state WHERE phone = ?');
 }
 
 async function getResellerStats(resellerId) {
     return new Promise((resolve) => {
         db.get(`
-            SELECT 
-                COUNT(DISTINCT u.id) as total_users,
-                COUNT(CASE WHEN u.status = 1 THEN 1 END) as active_users,
-                COUNT(CASE WHEN u.tipo = 'test' THEN 1 END) as test_users,
-                COUNT(CASE WHEN u.tipo = 'premium' THEN 1 END) as premium_users,
-                COUNT(p.id) as total_sales,
-                COALESCE(SUM(p.amount), 0) as total_income,
-                COALESCE(SUM(p.commission), 0) as total_commission
+            SELECT COUNT(DISTINCT u.id) as total_users,
+                   COUNT(CASE WHEN u.status = 1 THEN 1 END) as active_users,
+                   COUNT(CASE WHEN u.tipo = 'test' THEN 1 END) as test_users,
+                   COUNT(CASE WHEN u.tipo = 'premium' THEN 1 END) as premium_users,
+                   COUNT(p.id) as total_sales,
+                   COALESCE(SUM(p.amount), 0) as total_income,
+                   COALESCE(SUM(p.commission), 0) as total_commission
             FROM users u
             LEFT JOIN payments p ON u.reseller_id = p.reseller_id AND p.status = 'approved'
             WHERE u.reseller_id = ?
-        `, [resellerId], (err, row) => {
-            resolve(row || { total_users: 0, active_users: 0, test_users: 0, premium_users: 0, total_sales: 0, total_income: 0, total_commission: 0 });
-        });
+        `, [resellerId], (err, row) => resolve(row || { total_users: 0, active_users: 0, test_users: 0, premium_users: 0, total_sales: 0, total_income: 0, total_commission: 0 }));
     });
 }
 
 async function getResellerUsers(resellerId, limit = 20) {
     return new Promise((resolve) => {
-        db.all(`
-            SELECT username, phone, tipo, expires_at, status, created_at 
-            FROM users 
-            WHERE reseller_id = ? 
-            ORDER BY created_at DESC 
-            LIMIT ?
-        `, [resellerId, limit], (err, rows) => {
-            resolve(rows || []);
-        });
+        db.all(`SELECT username, phone, tipo, expires_at, status, created_at FROM users WHERE reseller_id = ? ORDER BY created_at DESC LIMIT ?`,
+            [resellerId, limit], (err, rows) => resolve(rows || []));
     });
 }
 
-// Inicializar WPPConnect
+let client = null;
+
 async function initializeBot() {
     try {
         console.log(chalk.yellow('🚀 Inicializando WPPConnect...'));
@@ -491,32 +415,13 @@ async function initializeBot() {
             useChrome: true,
             debug: false,
             logQR: true,
-            browserWS: '',
-            browserArgs: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-accelerated-2d-canvas',
-                '--no-first-run',
-                '--no-zygote',
-                '--disable-gpu',
-                '--disable-background-timer-throttling',
-                '--disable-backgrounding-occluded-windows',
-                '--disable-renderer-backgrounding',
-                '--disable-features=site-per-process',
-                '--window-size=1920,1080'
-            ],
+            browserArgs: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
             puppeteerOptions: {
                 executablePath: '/usr/bin/google-chrome',
                 headless: 'new',
-                args: [
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage'
-                ]
+                args: ['--no-sandbox', '--disable-setuid-sandbox']
             },
             disableWelcome: true,
-            updatesLog: false,
             autoClose: 0,
             tokenStore: 'file',
             folderNameToken: '/root/.wppconnect'
@@ -526,134 +431,95 @@ async function initializeBot() {
         
         client.onStateChange((state) => {
             console.log(chalk.cyan(`📱 Estado: ${state}`));
-            
-            if (state === 'DISCONNECTED') {
-                console.log(chalk.yellow('⚠️ Desconectado, reconectando...'));
-                setTimeout(initializeBot, 10000);
-            }
+            if (state === 'DISCONNECTED') setTimeout(initializeBot, 10000);
         });
         
-        // Manejar mensajes
         client.onMessage(async (message) => {
             try {
                 const text = message.body.trim();
                 const from = message.from;
-                
                 console.log(chalk.cyan(`📩 [${from}]: ${text.substring(0, 30)}`));
                 
                 const userState = await getUserState(from);
                 
-                // Verificar si es un revendedor autenticado
+                // REVENDEDOR AUTENTICADO
                 if (userState.state === 'reseller_authenticated') {
                     const reseller = userState.data;
                     
-                    // MENÚ REVENDEDOR
                     if (text.toLowerCase() === 'menu' || text === '0') {
                         await client.sendText(from, `👤 *PANEL REVENDEDOR - ${reseller.name}*
 
-Elija una opción:
-
-1️⃣ - CREAR USUARIO SSH
-2️⃣ - VER MIS USUARIOS
+1️⃣ - CREAR USUARIO
+2️⃣ - MIS USUARIOS
 3️⃣ - MIS ESTADÍSTICAS
-4️⃣ - DESCARGAR APLICACIÓN
-
+4️⃣ - DESCARGAR APP
 0️⃣ - SALIR`);
                         return;
                     }
                     
-                    // Opción 1: Crear usuario SSH
                     if (text === '1') {
                         await setUserState(from, 'reseller_creating_user', reseller);
-                        await client.sendText(from, `📝 *CREAR USUARIO SSH*
-
-Ingresa el teléfono del usuario (ej: 5491122334455):
-
-*0* - Cancelar`);
+                        await client.sendText(from, `📝 Ingresa el teléfono (ej: 5491122334455):\n0 - Cancelar`);
                         return;
                     }
                     
-                    // Opción 2: Ver usuarios creados
                     if (text === '2') {
                         const users = await getResellerUsers(reseller.id);
-                        
                         if (users.length === 0) {
-                            await client.sendText(from, `📭 *NO HAY USUARIOS CREADOS*
-
-Aún no has creado ningún usuario.
-Usa la opción 1 para crear.`);
+                            await client.sendText(from, '📭 No hay usuarios creados');
                         } else {
-                            let userList = `👥 *MIS USUARIOS (${users.length})*\n\n`;
+                            let msg = `👥 MIS USUARIOS (${users.length})\n\n`;
                             for (const u of users) {
-                                const status = u.status === 1 ? '✅ Activo' : '❌ Inactivo';
-                                const expireDate = moment(u.expires_at).format('DD/MM/YYYY HH:mm');
-                                userList += `👤 *${u.username}*\n📱 ${u.phone}\n📅 Expira: ${expireDate}\n${status}\n\n`;
+                                msg += `👤 ${u.username}\n📱 ${u.phone}\n📅 ${moment(u.expires_at).format('DD/MM/YYYY')}\n✅ ${u.status === 1 ? 'Activo' : 'Inactivo'}\n\n`;
                             }
-                            await client.sendText(from, userList);
+                            await client.sendText(from, msg);
                         }
                         return;
                     }
                     
-                    // Opción 3: Estadísticas
                     if (text === '3') {
                         const stats = await getResellerStats(reseller.id);
-                        
-                        const message = `📊 *MIS ESTADÍSTICAS*
+                        await client.sendText(from, `📊 MIS ESTADÍSTICAS
 
-👤 *${reseller.name}*
+👤 ${reseller.name}
 
-━━━━━━━━━━━━━━━━━
-📈 *USUARIOS CREADOS*
+USUARIOS:
 Total: ${stats.total_users}
 Activos: ${stats.active_users}
 Tests: ${stats.test_users}
 Premium: ${stats.premium_users}
 
-━━━━━━━━━━━━━━━━━
-💰 *VENTAS*
-Total ventas: ${stats.total_sales}
+VENTAS:
+Total: ${stats.total_sales}
 Ingresos: $${stats.total_income}
 Comisiones: $${stats.total_commission}
-━━━━━━━━━━━━━━━━━
 
-💡 *Comisión configurada:* ${reseller.commission_value}%`;
-                        
-                        await client.sendText(from, message);
+Comisión: ${reseller.commission_value}%`);
                         return;
                     }
                     
-                    // Opción 4: Descargar app
                     if (text === '4') {
-                        await client.sendText(from, '📲 Enviando aplicación...');
+                        await client.sendText(from, '📲 Enviando app...');
                         await sendAppFile(from);
                         return;
                     }
                     
-                    // Proceso de creación de usuario
                     if (userState.state === 'reseller_creating_user') {
                         const reseller = userState.data;
-                        
                         if (text === '0') {
                             await setUserState(from, 'reseller_authenticated', reseller);
-                            await client.sendText(from, '❌ Operación cancelada. Envía *MENU* para volver.');
+                            await client.sendText(from, '❌ Cancelado');
                             return;
                         }
-                        
-                        // Guardar teléfono y preguntar por el plan
                         await setUserState(from, 'reseller_selecting_plan', { ...reseller, userPhone: text });
-                        
-                        await client.sendText(from, `📱 *SELECCIONAR PLAN*
+                        await client.sendText(from, `📱 SELECCIONAR PLAN
 
 Usuario: ${text}
-
-🌐 PLANES SSH PREMIUM
 
 1️⃣ - 7 DIAS - $${config.prices.price_7d}
 2️⃣ - 15 DIAS - $${config.prices.price_15d}
 3️⃣ - 30 DIAS - $${config.prices.price_30d}
-4️⃣ - 50 DIAS - $${config.prices.price_50d}
-5️⃣ - PRUEBA (${config.prices.test_hours} horas GRATIS)
-
+4️⃣ - PRUEBA (${config.prices.test_hours}h GRATIS)
 0️⃣ - CANCELAR`);
                         return;
                     }
@@ -665,7 +531,7 @@ Usuario: ${text}
                         
                         if (text === '0') {
                             await setUserState(from, 'reseller_authenticated', reseller);
-                            await client.sendText(from, '❌ Operación cancelada. Envía *MENU* para volver.');
+                            await client.sendText(from, '❌ Cancelado');
                             return;
                         }
                         
@@ -673,14 +539,12 @@ Usuario: ${text}
                             '1': { days: 7, price: config.prices.price_7d, type: 'premium' },
                             '2': { days: 15, price: config.prices.price_15d, type: 'premium' },
                             '3': { days: 30, price: config.prices.price_30d, type: 'premium' },
-                            '4': { days: 50, price: config.prices.price_50d, type: 'premium' },
-                            '5': { days: 0, price: 0, type: 'test' }
+                            '4': { days: 0, price: 0, type: 'test' }
                         };
                         
                         const plan = planMap[text];
-                        
                         if (!plan) {
-                            await client.sendText(from, '❌ Opción inválida. Elige 1-5');
+                            await client.sendText(from, '❌ Opción inválida');
                             return;
                         }
                         
@@ -690,55 +554,31 @@ Usuario: ${text}
                         const result = await createSSHUser(userPhone, username, plan.days, reseller.id);
                         
                         if (result.success) {
-                            let message = `✅ *USUARIO CREADO CON ÉXITO*
+                            let msg = `✅ USUARIO CREADO
 
 👤 Usuario: ${username}
-🔑 Contraseña: ${DEFAULT_PASSWORD}
+🔑 Contraseña: cloudvpn
 📱 Teléfono: ${userPhone}`;
                             
                             if (plan.type === 'test') {
-                                message += `\n⏰ Expira en: ${config.prices.test_hours} horas`;
-                                message += `\n🎁 PRUEBA GRATUITA (SIN LÍMITE DE TESTS)`;
+                                msg += `\n⏰ Expira: ${config.prices.test_hours} horas\n🎁 PRUEBA GRATUITA`;
                             } else {
-                                const expireDate = moment(result.expires).format('DD/MM/YYYY HH:mm');
-                                message += `\n📅 Expira: ${expireDate}`;
-                                message += `\n💰 Plan: ${plan.days} días - $${plan.price} ARS`;
-                                message += `\n💸 *Comisión generada: $${(plan.price * (reseller.commission_value / 100)).toFixed(2)} ARS*`;
+                                msg += `\n📅 Expira: ${moment(result.expires).format('DD/MM/YYYY HH:mm')}`;
+                                msg += `\n💰 Plan: ${plan.days} días - $${plan.price}`;
                                 
-                                // Registrar pago
                                 const paymentId = `RESELLER-${reseller.id}-${Date.now()}`;
                                 const commission = plan.price * (reseller.commission_value / 100);
-                                
-                                db.run(`
-                                    INSERT INTO payments (payment_id, phone, plan, days, amount, status, reseller_id, commission, approved_at)
-                                    VALUES (?, ?, ?, ?, ?, 'approved', ?, ?, CURRENT_TIMESTAMP)
-                                `, [paymentId, userPhone, `${plan.days}d`, plan.days, plan.price, reseller.id, commission]);
+                                db.run(`INSERT INTO payments (payment_id, phone, plan, days, amount, status, reseller_id, commission, approved_at)
+                                        VALUES (?, ?, ?, ?, ?, 'approved', ?, ?, CURRENT_TIMESTAMP)`,
+                                    [paymentId, userPhone, `${plan.days}d`, plan.days, plan.price, reseller.id, commission]);
                             }
                             
-                            await client.sendText(from, message);
-                            
-                            // Enviar mensaje al usuario
-                            if (client) {
-                                let userMessage = `🎉 *CUENTA SSH ACTIVADA*
+                            await client.sendText(from, msg);
+                            await client.sendText(userPhone, `🎉 CUENTA SSH ACTIVADA
 
 👤 Usuario: ${username}
-🔑 Contraseña: ${DEFAULT_PASSWORD}
-
-📲 Descarga la app: Envía *MENU* al bot
-
-🔌 *1 dispositivo máximo*`;
-                                
-                                if (plan.type === 'test') {
-                                    userMessage += `\n⏰ *PRUEBA DE ${config.prices.test_hours} HORAS*`;
-                                    userMessage += `\n🎁 *TESTS ILIMITADOS*`;
-                                } else {
-                                    userMessage += `\n📅 *VÁLIDO HASTA: ${moment(result.expires).format('DD/MM/YYYY')}*`;
-                                }
-                                
-                                await client.sendText(userPhone, userMessage);
-                            }
-                            
-                            console.log(chalk.green(`✅ Revendedor ${reseller.username} creó usuario ${username}`));
+🔑 Contraseña: cloudvpn
+📲 Envía "APK" para descargar la app`);
                         } else {
                             await client.sendText(from, `❌ Error: ${result.error}`);
                         }
@@ -747,159 +587,94 @@ Usuario: ${text}
                         return;
                     }
                     
-                    // Salir
                     if (text.toLowerCase() === 'salir') {
                         await clearUserState(from);
-                        await client.sendText(from, `👋 *SESIÓN CERRADA*
-
-Para iniciar sesión nuevamente, envía:
-
-*LOGIN usuario contraseña*
-Ejemplo: LOGIN revendedor123 pass123
-
-Para clientes:
-Envía *MENU* para crear prueba gratuita`);
+                        await client.sendText(from, '👋 Sesión cerrada');
                         return;
                     }
-                    
                     return;
                 }
                 
-                // MENÚ PRINCIPAL - Para clientes (crear test)
-                if (text.toLowerCase() === 'menu' || text.toLowerCase() === 'hola' || text.toLowerCase() === 'start' || text === '1') {
-                    await setUserState(from, 'main_menu');
+                // CLIENTES - MENU PRINCIPAL
+                if (text.toLowerCase() === 'menu' || text.toLowerCase() === 'hola' || text.toLowerCase() === 'start') {
+                    await client.sendText(from, '⏳ Creando prueba gratuita...');
                     
-                    // Crear test automáticamente sin preguntar
-                    await client.sendText(from, '⏳ Creando cuenta de prueba...');
+                    const username = generateUsername();
+                    const result = await createSSHUser(from, username, 0, null);
                     
-                    try {
-                        const username = generateUsername();
-                        const result = await createSSHUser(from, username, 0, null);
-                        
-                        if (result.success) {
-                            registerTest(from);
-                            
-                            await client.sendText(from, `✅ *PRUEBA GRATUITA CREADA*
+                    if (result.success) {
+                        await client.sendText(from, `✅ PRUEBA CREADA
 
-🎁 *TESTS ILIMITADOS* - Puedes crear todas las pruebas que quieras
+🎁 TESTS ILIMITADOS
 
 👤 Usuario: ${username}
-🔑 Contraseña: ${DEFAULT_PASSWORD}
-🔌 Límite: 1 dispositivo
-⏰ Expira en: ${config.prices.test_hours} horas
+🔑 Contraseña: cloudvpn
+⏰ Expira: ${config.prices.test_hours} horas
 
-📲 *Instrucciones:*
-1. Envía "APK" para descargar la app
-2. Instala la aplicación
-3. Configura con tus credenciales
-
-⏰ *TIENES ${config.prices.test_hours} HORAS DE PRUEBA*
-
-*Para crear otra prueba, solo envía MENU nuevamente*`);
-                            
-                            console.log(chalk.green(`✅ Test creado: ${username} (${config.prices.test_hours} horas) - Tests ilimitados`));
-                        } else {
-                            await client.sendText(from, `❌ Error: ${result.error}`);
-                        }
-                    } catch (error) {
-                        await client.sendText(from, `❌ Error al crear cuenta: ${error.message}`);
+📲 Envía "APK" para descargar la app
+🔄 Envía "MENU" para otra prueba`);
+                    } else {
+                        await client.sendText(from, `❌ Error: ${result.error}`);
                     }
                     return;
                 }
                 
-                // Descargar APK
                 if (text.toLowerCase() === 'apk') {
-                    await sendAppFile(from);
+                    const sent = await sendAppFile(from);
+                    if (!sent) await client.sendText(from, '📲 App no disponible temporalmente');
                     return;
                 }
                 
-                // Autenticación de revendedores
+                // LOGIN REVENDEDORES
                 if (text.toUpperCase().startsWith('LOGIN ')) {
                     const parts = text.split(' ');
                     if (parts.length >= 3) {
-                        const username = parts[1];
-                        const password = parts[2];
-                        
-                        const reseller = await authenticateReseller(username, password);
-                        
+                        const reseller = await authenticateReseller(parts[1], parts[2]);
                         if (reseller) {
                             await setUserState(from, 'reseller_authenticated', reseller);
-                            await client.sendText(from, `✅ *AUTENTICACIÓN EXITOSA*
-
-👤 Bienvenido ${reseller.name}
-
-Envía *MENU* para ver las opciones
-
-*NOTA:* Los clientes solo deben enviar MENU para crear prueba`);
+                            await client.sendText(from, `✅ Bienvenido ${reseller.name}\nEnvía MENU para ver opciones`);
                         } else {
-                            await client.sendText(from, `❌ *AUTENTICACIÓN FALLIDA*
-
-Usuario o contraseña incorrectos.
-
-Para clientes: Envía *MENU* para crear prueba gratuita
-
-Para revendedores: *LOGIN usuario contraseña*`);
+                            await client.sendText(from, '❌ Login fallido');
                         }
-                    } else {
-                        await client.sendText(from, `❌ *FORMATO INCORRECTO*
-
-Usa: *LOGIN usuario contraseña*
-Ejemplo: LOGIN revendedor123 pass123
-
-Para clientes: Envía *MENU* para prueba gratuita`);
                     }
                     return;
                 }
                 
-                // Mensaje por defecto
+                // MENSAJE POR DEFECTO
                 if (text && !text.startsWith('LOGIN')) {
-                    await client.sendText(from, `🤖 *SSH BOT PRO*
+                    await client.sendText(from, `🤖 SSH BOT PRO
 
-🎁 *TESTS ILIMITADOS*
+Envía MENU para prueba gratuita de ${config.prices.test_hours} horas
 
-Envía *MENU* para crear tu prueba gratuita de ${config.prices.test_hours} horas
-
-Si eres revendedor:
-*LOGIN usuario contraseña*
-
-Para descargar la app:
-Envía *APK*`);
+Si eres revendedor: LOGIN usuario contraseña
+Descargar app: APK`);
                 }
                 
             } catch (error) {
-                console.error(chalk.red('❌ Error procesando mensaje:'), error.message);
+                console.error(chalk.red('Error:', error.message));
             }
         });
         
-        // Limpieza cada 15 minutos
+        // LIMPIEZA CADA 15 MINUTOS
         cron.schedule('*/15 * * * *', async () => {
             const now = moment().format('YYYY-MM-DD HH:mm:ss');
-            console.log(chalk.yellow(`🧹 Limpiando usuarios expirados...`));
-            
             db.all('SELECT username FROM users WHERE expires_at < ? AND status = 1', [now], async (err, rows) => {
-                if (err || !rows || rows.length === 0) return;
-                
-                for (const r of rows) {
-                    try {
-                        await execPromise(`pkill -u ${r.username} 2>/dev/null || true`);
+                if (rows && rows.length > 0) {
+                    for (const r of rows) {
                         await execPromise(`userdel -f ${r.username} 2>/dev/null || true`);
                         db.run('UPDATE users SET status = 0 WHERE username = ?', [r.username]);
-                        console.log(chalk.green(`🗑️ Eliminado: ${r.username}`));
-                    } catch (e) {
-                        console.error(chalk.red(`Error eliminando ${r.username}:`), e.message);
                     }
                 }
             });
         });
         
-        // Limpiar estados antiguos
+        // LIMPIAR ESTADOS
         cron.schedule('0 * * * *', () => {
             db.run(`DELETE FROM user_state WHERE updated_at < datetime('now', '-1 hour')`);
         });
         
     } catch (error) {
-        console.error(chalk.red('❌ Error inicializando WPPConnect:'), error.message);
-        console.log(chalk.yellow('🔄 Reintentando en 10 segundos...'));
+        console.error(chalk.red('Error:', error.message));
         setTimeout(initializeBot, 10000);
     }
 }
@@ -907,224 +682,126 @@ Envía *APK*`);
 initializeBot();
 
 process.on('SIGINT', async () => {
-    console.log(chalk.yellow('\n🛑 Cerrando bot...'));
-    if (client) {
-        await client.close();
-    }
+    if (client) await client.close();
     process.exit();
 });
 BOTEOF
 
-echo -e "${GREEN}✅ Bot creado con TESTS ILIMITADOS${NC}"
+echo -e "${GREEN}✅ Bot creado${NC}"
 
 # ================================================
-# CREAR PANEL ADMINISTRADOR
+# INSTALAR PM2
 # ================================================
-echo -e "\n${CYAN}🎛️  Creando panel administrador...${NC}"
+echo -e "\n${CYAN}⚡ Instalando PM2...${NC}"
 
+npm install -g pm2 --silent
+pm2 kill 2>/dev/null || true
+sleep 1
+
+cd "$USER_HOME"
+pm2 start bot.js --name sshbot-pro
+pm2 save
+pm2 startup systemd -u root --hp /root 2>/dev/null || true
+
+echo -e "${GREEN}✅ PM2 instalado${NC}"
+
+# ================================================
+# PANEL ADMIN
+# ================================================
 cat > /usr/local/bin/reseller-admin << 'ADMINEOF'
 #!/bin/bash
-RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; CYAN='\033[0;36m'; BLUE='\033[0;34m'; PURPLE='\033[0;35m'; NC='\033[0m'
-
 DB="/opt/sshbot-pro/data/users.db"
 CONFIG="/opt/sshbot-pro/config/config.json"
 
 get_val() { jq -r "$1" "$CONFIG" 2>/dev/null; }
 
-show_header() {
-    clear
-    echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║         🎛️  PANEL ADMIN - TESTS ILIMITADOS                  ║${NC}"
-    echo -e "${CYAN}║              🎁 SIN RESTRICCIÓN DE PRUEBAS                  ║${NC}"
-    echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
-}
-
-create_reseller() {
-    clear
-    echo -e "${CYAN}👤 CREAR NUEVO REVENDEDOR${NC}\n"
-    
-    read -p "Nombre del revendedor: " NAME
-    read -p "Usuario (login): " USERNAME
-    read -p "Contraseña: " PASSWORD
-    read -p "Teléfono (ej: 5491122334455): " PHONE
-    
-    echo -e "\n${YELLOW}Tipo de comisión:${NC}"
-    echo -e "  1. Porcentaje (%)"
-    echo -e "  2. Monto fijo (ARS)"
-    read -p "Selecciona (1/2): " COMM_TYPE
-    
-    if [[ "$COMM_TYPE" == "1" ]]; then
-        COM_TYPE="percentage"
-        read -p "Porcentaje de comisión (ej: 20): " COM_VALUE
-    else
-        COM_TYPE="fixed"
-        read -p "Monto fijo por venta (ej: 500): " COM_VALUE
-    fi
-    
-    echo -e "\n${YELLOW}Creando revendedor...${NC}"
-    
-    sqlite3 "$DB" "INSERT INTO resellers (username, password, name, phone, commission_type, commission_value, status) 
-                   VALUES ('$USERNAME', '$PASSWORD', '$NAME', '$PHONE', '$COM_TYPE', $COM_VALUE, 1)" 2>/dev/null
-    
-    if [[ $? -eq 0 ]]; then
-        echo -e "\n${GREEN}✅ REVENDEDOR CREADO${NC}"
-        echo -e "  👤 Nombre: $NAME"
-        echo -e "  🔑 Usuario: $USERNAME"
-        echo -e "  🔐 Contraseña: $PASSWORD"
-        echo -e "  📱 Teléfono: $PHONE"
-        echo -e "  💰 Comisión: $COM_VALUE ${COM_TYPE == 'percentage' ? '%' : 'ARS'}"
-    else
-        echo -e "\n${RED}❌ Error: Usuario ya existe${NC}"
-    fi
-    
-    read -p "Presiona Enter..."
-}
-
-list_resellers() {
-    clear
-    echo -e "${CYAN}👥 LISTA DE REVENDEDORES${NC}\n"
-    
-    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    printf "${CYAN}%-20s %-15s %-15s %-15s %-10s${NC}\n" "NOMBRE" "USUARIO" "TELÉFONO" "COMISIÓN" "ESTADO"
-    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    
-    sqlite3 "$DB" "SELECT name, username, phone, commission_type, commission_value, status FROM resellers WHERE username != 'admin'" | while IFS='|' read name username phone com_type com_val status; do
-        if [[ "$com_type" == "percentage" ]]; then
-            COM="${com_val}%"
-        else
-            COM="\$${com_val}"
-        fi
-        
-        if [[ "$status" == "1" ]]; then
-            STATUS="${GREEN}ACTIVO${NC}"
-        else
-            STATUS="${RED}INACTIVO${NC}"
-        fi
-        
-        printf "%-20s %-15s %-15s %-15s ${STATUS}\n" "$name" "$username" "$phone" "$COM"
-    done
-    
-    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    
-    TOTAL=$(sqlite3 "$DB" "SELECT COUNT(*) FROM resellers WHERE username != 'admin'")
-    echo -e "\n${GREEN}Total: $TOTAL revendedores${NC}"
-    read -p "Presiona Enter..."
-}
-
-global_stats() {
-    clear
-    echo -e "${CYAN}📊 ESTADÍSTICAS GLOBALES${NC}\n"
-    
-    TOTAL_USERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE username != ''")
-    ACTIVE_USERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE status = 1")
-    TEST_USERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE tipo = 'test'")
-    PREMIUM_USERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE tipo = 'premium'")
-    
-    TOTAL_RESELLERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM resellers WHERE username != 'admin'")
-    ACTIVE_RESELLERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM resellers WHERE status = 1 AND username != 'admin'")
-    
-    TOTAL_SALES=$(sqlite3 "$DB" "SELECT COUNT(*) FROM payments WHERE status = 'approved'")
-    TOTAL_INCOME=$(sqlite3 "$DB" "SELECT printf('%.2f', SUM(amount)) FROM payments WHERE status = 'approved'")
-    TOTAL_COMMISSIONS=$(sqlite3 "$DB" "SELECT printf('%.2f', SUM(commission)) FROM payments WHERE status = 'approved'")
-    
-    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${GREEN}📈 ESTADÍSTICAS DEL SISTEMA${NC}"
-    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
-    
-    echo -e "${YELLOW}👥 USUARIOS:${NC}"
-    echo -e "  Total usuarios creados: $TOTAL_USERS"
-    echo -e "  Usuarios activos: $ACTIVE_USERS"
-    echo -e "  Tests creados: $TEST_USERS"
-    echo -e "  Usuarios premium: $PREMIUM_USERS"
-    
-    echo -e "\n${YELLOW}🤝 REVENDEDORES:${NC}"
-    echo -e "  Total revendedores: $TOTAL_RESELLERS"
-    echo -e "  Revendedores activos: $ACTIVE_RESELLERS"
-    
-    echo -e "\n${YELLOW}💰 VENTAS:${NC}"
-    echo -e "  Total ventas: $TOTAL_SALES"
-    echo -e "  Ingresos totales: \$${TOTAL_INCOME}"
-    echo -e "  Comisiones totales: \$${TOTAL_COMMISSIONS}"
-    
-    echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    read -p "Presiona Enter..."
-}
-
 while true; do
-    show_header
+    clear
+    echo "========================================="
+    echo "     PANEL ADMIN - SSH BOT PRO"
+    echo "========================================="
+    echo ""
+    echo "1) Crear revendedor"
+    echo "2) Listar revendedores"
+    echo "3) Ver usuarios"
+    echo "4) Ver pagos"
+    echo "5) Estadísticas"
+    echo "6) Editar precios"
+    echo "0) Salir"
+    echo ""
+    read -p "Opción: " OPT
     
-    TOTAL_RESELLERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM resellers WHERE username != 'admin'" 2>/dev/null || echo "0")
-    TOTAL_USERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users" 2>/dev/null || echo "0")
-    TEST_USERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE tipo='test'" 2>/dev/null || echo "0")
-    
-    echo -e "${YELLOW}📊 RESUMEN:${NC}"
-    echo -e "  Revendedores: ${CYAN}$TOTAL_RESELLERS${NC}"
-    echo -e "  Usuarios totales: ${CYAN}$TOTAL_USERS${NC}"
-    echo -e "  Tests creados: ${GREEN}$TEST_USERS (ILIMITADOS)${NC}"
-    echo -e "  Contraseña usuarios: ${GREEN}cloudvpn${NC}"
-    echo -e ""
-    
-    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${CYAN}[1]${NC} 👤 Crear nuevo revendedor"
-    echo -e "${CYAN}[2]${NC} 👥 Listar revendedores"
-    echo -e "${CYAN}[3]${NC} 📊 Estadísticas globales"
-    echo -e "${CYAN}[4]${NC} 💳 Ver pagos"
-    echo -e "${CYAN}[5]${NC} ⚙️  Ver configuración"
-    echo -e "${CYAN}[0]${NC} 🚪 Salir"
-    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e ""
-    
-    read -p "👉 Selecciona: " OPTION
-    
-    case $OPTION in
-        1) create_reseller ;;
-        2) list_resellers ;;
-        3) global_stats ;;
+    case $OPT in
+        1)
+            echo ""
+            read -p "Nombre: " NAME
+            read -p "Usuario: " USER
+            read -p "Contraseña: " PASS
+            read -p "Comisión (%): " COM
+            sqlite3 "$DB" "INSERT INTO resellers (username, password, name, commission_value) VALUES ('$USER', '$PASS', '$NAME', $COM)" 2>/dev/null
+            if [ $? -eq 0 ]; then
+                echo "✅ Revendedor creado"
+            else
+                echo "❌ Error: Usuario ya existe"
+            fi
+            ;;
+        2)
+            echo ""
+            sqlite3 -column -header "$DB" "SELECT id, name, username, commission_value, status FROM resellers WHERE username!='admin'"
+            ;;
+        3)
+            echo ""
+            sqlite3 -column -header "$DB" "SELECT username, phone, tipo, expires_at, status FROM users ORDER BY created_at DESC LIMIT 20"
+            ;;
         4)
-            clear
-            echo -e "${CYAN}💳 PAGOS${NC}\n"
+            echo ""
             sqlite3 -column -header "$DB" "SELECT payment_id, phone, plan, amount, status, created_at FROM payments ORDER BY created_at DESC LIMIT 20"
-            read -p "Presiona Enter..."
             ;;
         5)
-            clear
-            echo -e "${CYAN}⚙️ CONFIGURACIÓN${NC}\n"
-            echo -e "${YELLOW}Precios actuales:${NC}"
-            echo -e "  7 días: $ ${get_val '.prices.price_7d'}"
-            echo -e "  15 días: $ ${get_val '.prices.price_15d'}"
-            echo -e "  30 días: $ ${get_val '.prices.price_30d'}"
-            echo -e "  50 días: $ ${get_val '.prices.price_50d'}"
-            echo -e "  Prueba: ${get_val '.prices.test_hours'} horas"
-            echo -e "  Tests: ${GREEN}ILIMITADOS${NC}"
-            echo -e "  Contraseña usuarios: ${GREEN}cloudvpn${NC}"
-            echo -e ""
-            read -p "Presiona Enter..."
+            echo ""
+            TOTAL=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users")
+            ACTIVE=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE status=1")
+            TESTS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE tipo='test'")
+            PREMIUM=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE tipo='premium'")
+            RESELLERS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM resellers WHERE username!='admin'")
+            SALES=$(sqlite3 "$DB" "SELECT COUNT(*) FROM payments WHERE status='approved'")
+            INCOME=$(sqlite3 "$DB" "SELECT printf('%.2f', SUM(amount)) FROM payments WHERE status='approved'")
+            
+            echo "📊 ESTADÍSTICAS"
+            echo "================"
+            echo "Usuarios totales: $TOTAL"
+            echo "Usuarios activos: $ACTIVE"
+            echo "Tests creados: $TESTS (ILIMITADOS)"
+            echo "Usuarios premium: $PREMIUM"
+            echo "Revendedores: $RESELLERS"
+            echo "Ventas: $SALES"
+            echo "Ingresos: $$INCOME"
+            echo "Contraseña: cloudvpn"
+            ;;
+        6)
+            echo ""
+            echo "Precios actuales:"
+            echo "7 días: $ $(get_val '.prices.price_7d')"
+            echo "15 días: $ $(get_val '.prices.price_15d')"
+            echo "30 días: $ $(get_val '.prices.price_30d')"
+            echo ""
+            read -p "Nuevo precio 7 días: " P7
+            read -p "Nuevo precio 15 días: " P15
+            read -p "Nuevo precio 30 días: " P30
+            [ -n "$P7" ] && sed -i "s/\"price_7d\": [0-9.]*,/\"price_7d\": $P7,/" $CONFIG
+            [ -n "$P15" ] && sed -i "s/\"price_15d\": [0-9.]*,/\"price_15d\": $P15,/" $CONFIG
+            [ -n "$P30" ] && sed -i "s/\"price_30d\": [0-9.]*,/\"price_30d\": $P30,/" $CONFIG
+            echo "✅ Precios actualizados (reinicia el bot)"
             ;;
         0)
-            echo -e "\n${GREEN}👋 Hasta pronto${NC}\n"
             exit 0
             ;;
-        *)
-            echo -e "\n${RED}❌ Opción inválida${NC}"
-            sleep 1
-            ;;
     esac
+    read -p "Enter para continuar..."
 done
 ADMINEOF
 
 chmod +x /usr/local/bin/reseller-admin
-
-# ================================================
-# INICIAR BOT
-# ================================================
-echo -e "\n${CYAN}🚀 Iniciando bot...${NC}"
-
-cd "$USER_HOME"
-pm2 start bot.js --name sshbot-pro
-pm2 save
-pm2 startup systemd -u root --hp /root > /dev/null 2>&1
-
-sleep 3
 
 # ================================================
 # MENSAJE FINAL
@@ -1134,71 +811,52 @@ echo -e "${GREEN}${BOLD}"
 cat << "FINAL"
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
-║          🎉 INSTALACIÓN COMPLETADA - TESTS ILIMITADOS 🎉    ║
+║              🎉 INSTALACIÓN COMPLETADA 🎉                   ║
 ║                                                              ║
-║       🤖 SSH BOT PRO - SISTEMA DE REVENDEDORES             ║
-║       🔐 CADA REVENDEDOR CON SU CONTRASEÑA ÚNICA          ║
-║       🔑 CONTRASEÑA USUARIOS: cloudvpn (FIJA)             ║
-║       🎁 TESTS ILIMITADOS - SIN RESTRICCIÓN DIARIA       ║
-║       💰 CONTROL DE COMISIONES Y VENTAS                   ║
-║       📊 ESTADÍSTICAS COMPLETAS                           ║
+║       🔑 CONTRASEÑA USUARIOS: cloudvpn                     ║
+║       🎁 TESTS ILIMITADOS                                   ║
+║       📅 PLANES: 7, 15, 30 DÍAS                            ║
+║       👥 SISTEMA DE REVENDEDORES                           ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 FINAL
 echo -e "${NC}"
 
 echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}"
-echo -e "${GREEN}✅ Sistema completo instalado${NC}"
-echo -e "${GREEN}✅ TESTS ILIMITADOS - Sin límite diario${NC}"
-echo -e "${GREEN}✅ Contraseña usuarios: cloudvpn${NC}"
-echo -e "${GREEN}✅ Sistema de revendedores activo${NC}"
+echo -e "${GREEN}✅ Sistema instalado correctamente${NC}"
 echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}\n"
 
-echo -e "${YELLOW}📋 COMANDOS PRINCIPALES:${NC}\n"
-echo -e "  ${GREEN}reseller-admin${NC}   - Panel administrador de revendedores"
-echo -e "  ${GREEN}pm2 logs sshbot-pro${NC} - Ver logs del bot"
+echo -e "${YELLOW}📋 COMANDOS PRINCIPALES:${NC}"
+echo -e "  ${GREEN}reseller-admin${NC}      - Panel de administración"
+echo -e "  ${GREEN}pm2 logs sshbot-pro${NC}  - Ver logs y escanear QR"
 echo -e "  ${GREEN}pm2 restart sshbot-pro${NC} - Reiniciar bot"
-echo -e "\n"
+echo -e "  ${GREEN}pm2 status${NC}           - Ver estado del bot"
+echo -e ""
 
-echo -e "${YELLOW}🚀 PRIMEROS PASOS:${NC}\n"
-echo -e "  1. Ver logs: ${GREEN}pm2 logs sshbot-pro${NC}"
-echo -e "  2. Escanear QR cuando aparezca"
-echo -e "  3. Panel admin: ${GREEN}reseller-admin${NC}"
-echo -e "  4. Credenciales admin: usuario 'admin', contraseña 'admin123'"
-echo -e "  5. Crear revendedores desde el panel admin"
-echo -e "\n"
-
-echo -e "${YELLOW}📱 PARA CLIENTES (WhatsApp):${NC}\n"
-echo -e "  Enviar al bot: ${GREEN}MENU${NC} - Crea prueba automáticamente"
-echo -e "  ${GREEN}APK${NC} - Descargar aplicación"
-echo -e "  🎁 Los clientes pueden crear ${GREEN}TEST ILIMITADOS${NC}"
-echo -e "\n"
-
-echo -e "${YELLOW}📱 PARA REVENDEDORES (WhatsApp):${NC}\n"
-echo -e "  Enviar al bot: ${GREEN}LOGIN usuario contraseña${NC}"
-echo -e "  Ejemplo: LOGIN juan123 pass123"
-echo -e "  Luego enviar MENU para ver opciones"
-echo -e "\n"
-
-echo -e "${YELLOW}🔐 CREDENCIALES ADMIN:${NC}\n"
+echo -e "${YELLOW}🔐 CREDENCIALES ADMIN:${NC}"
 echo -e "  Usuario: ${GREEN}admin${NC}"
 echo -e "  Contraseña: ${GREEN}admin123${NC}"
-echo -e "  Cambia la contraseña del admin por seguridad"
-echo -e "\n"
+echo -e ""
 
-echo -e "${GREEN}${BOLD}🎁 TESTS ILIMITADOS - Los clientes pueden crear todas las pruebas que quieran sin restricción diaria 🚀${NC}\n"
+echo -e "${YELLOW}📱 PARA CLIENTES (WhatsApp):${NC}"
+echo -e "  Enviar: ${GREEN}MENU${NC} - Crea prueba gratuita automáticamente"
+echo -e "  Enviar: ${GREEN}APK${NC} - Descargar aplicación"
+echo -e ""
 
-# Ver logs automáticamente
-read -p "$(echo -e "${YELLOW}¿Ver logs ahora? (s/N): ${NC}")" -n 1 -r
+echo -e "${YELLOW}📱 PARA REVENDEDORES (WhatsApp):${NC}"
+echo -e "  Enviar: ${GREEN}LOGIN usuario contraseña${NC}"
+echo -e "  Luego enviar: ${GREEN}MENU${NC} para ver opciones"
+echo -e ""
+
+echo -e "${GREEN}🎁 Los clientes pueden crear TESTS ILIMITADOS sin restricción diaria${NC}"
+echo -e ""
+
+read -p "$(echo -e "${YELLOW}¿Ver logs ahora para escanear el QR? (s/N): ${NC}")" -n 1 -r
 echo
 if [[ $REPLY =~ ^[Ss]$ ]]; then
-    echo -e "\n${CYAN}Mostrando logs...${NC}"
-    echo -e "${YELLOW}📱 Espera que aparezca el QR para escanear...${NC}\n"
+    echo -e "\n${CYAN}Mostrando logs... Espera el código QR para escanear${NC}\n"
     sleep 2
     pm2 logs sshbot-pro
-else
-    echo -e "\n${YELLOW}💡 Para iniciar panel admin: ${GREEN}reseller-admin${NC}"
-    echo -e "${YELLOW}💡 Para logs: ${GREEN}pm2 logs sshbot-pro${NC}\n"
 fi
 
 exit 0
