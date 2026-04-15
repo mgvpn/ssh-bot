@@ -272,7 +272,7 @@ npm install --silent --no-progress 2>&1 | grep -v "WARN" || true
 echo -e "${GREEN}✅ Paquetes instalados${NC}"
 
 # ================================================
-# CREAR BOT COMPLETO
+# CREAR BOT COMPLETO (CON DISABLE STATUS)
 # ================================================
 echo -e "\n${CYAN}🤖 Creando bot...${NC}"
 
@@ -293,7 +293,7 @@ const execPromise = util.promisify(exec);
 moment.locale('es');
 
 console.log(chalk.cyan.bold('\n╔══════════════════════════════════════════════════════════════╗'));
-console.log(chalk.cyan.bold('║      🤖 SSH BOT PRO - TESTS ILIMITADOS                       ║'));
+console.log(chalk.cyan.bold('║      🤖 BOT REVENTAS - TESTS ILIMITADOS                       ║'));
 console.log(chalk.cyan.bold('║              🔐 CONTRASEÑA: cloudvpn                        ║'));
 console.log(chalk.cyan.bold('║              📅 PLANES: 7, 15, 30 DÍAS                     ║'));
 console.log(chalk.cyan.bold('╚══════════════════════════════════════════════════════════════╝\n'));
@@ -424,7 +424,8 @@ async function initializeBot() {
             disableWelcome: true,
             autoClose: 0,
             tokenStore: 'file',
-            folderNameToken: '/root/.wppconnect'
+            folderNameToken: '/root/.wppconnect',
+            disableAutoStatus: true  // 🔥 NO SUBE ESTADO A WHATSAPP
         });
         
         console.log(chalk.green('✅ WPPConnect conectado!'));
@@ -706,14 +707,123 @@ pm2 startup systemd -u root --hp /root 2>/dev/null || true
 echo -e "${GREEN}✅ PM2 instalado${NC}"
 
 # ================================================
-# PANEL ADMIN
+# PANEL ADMIN COMPLETO
 # ================================================
 cat > /usr/local/bin/reseller-admin << 'ADMINEOF'
 #!/bin/bash
+
 DB="/opt/sshbot-pro/data/users.db"
 CONFIG="/opt/sshbot-pro/config/config.json"
+APK_PATH="/root/mgvpn.apk"
 
 get_val() { jq -r "$1" "$CONFIG" 2>/dev/null; }
+
+# Función para escanear QR
+scan_qr() {
+    echo ""
+    echo "========================================="
+    echo "     ESCANEAR QR - WHATSAPP BOT"
+    echo "========================================="
+    echo ""
+    echo "📱 Para conectar el bot a WhatsApp:"
+    echo ""
+    echo "1. Abre WhatsApp en tu teléfono"
+    echo "2. Ve a 'Dispositivos vinculados'"
+    echo "3. Toca 'Vincular un dispositivo'"
+    echo "4. Escanea el código QR que aparecerá"
+    echo ""
+    echo "========================================="
+    echo ""
+    read -p "Presiona Enter para ver el QR..."
+    
+    # Detener y reiniciar para mostrar QR
+    pm2 stop sshbot-pro 2>/dev/null
+    rm -rf /root/.wppconnect/sshbot-pro-session 2>/dev/null
+    pm2 start sshbot-pro
+    sleep 3
+    
+    echo ""
+    echo "📱 ESCANEA EL SIGUIENTE CÓDIGO QR:"
+    echo "========================================="
+    echo ""
+    
+    # Mostrar logs con QR
+    pm2 logs sshbot-pro --lines 50 --nostream
+}
+
+# Función para configurar MercadoPago
+setup_mercadopago() {
+    echo ""
+    echo "========================================="
+    echo "     MERCADOPAGO - CONFIGURACIÓN"
+    echo "========================================="
+    echo ""
+    echo "📝 Ingresa tu Access Token de MercadoPago"
+    echo "👉 Puedes obtenerlo en: developers.mercadopago.com"
+    echo ""
+    read -p "Access Token: " MP_TOKEN
+    
+    if [ -n "$MP_TOKEN" ]; then
+        sed -i "s/\"access_token\": \"[^\"]*\"/\"access_token\": \"$MP_TOKEN\"/" $CONFIG
+        sed -i "s/\"enabled\": false/\"enabled\": true/" $CONFIG
+        echo ""
+        echo "✅ MercadoPago configurado correctamente"
+        echo "ℹ️  Reinicia el bot para aplicar cambios: pm2 restart sshbot-pro"
+    else
+        echo "❌ Token no válido"
+    fi
+}
+
+# Función para subir APK
+upload_apk() {
+    echo ""
+    echo "========================================="
+    echo "     SUBIR APK - APLICACIÓN"
+    echo "========================================="
+    echo ""
+    echo "📲 Sube el archivo APK de MGVPN"
+    echo "El archivo se guardará como: mgvpn.apk"
+    echo ""
+    echo "Opciones:"
+    echo "1) Subir desde URL"
+    echo "2) Subir desde archivo local"
+    echo "0) Cancelar"
+    echo ""
+    read -p "Opción: " UPLOAD_OPT
+    
+    case $UPLOAD_OPT in
+        1)
+            read -p "URL del APK: " APK_URL
+            if [ -n "$APK_URL" ]; then
+                echo "⏳ Descargando APK..."
+                wget -O "$APK_PATH" "$APK_URL"
+                if [ $? -eq 0 ]; then
+                    echo "✅ APK descargado correctamente"
+                    ls -lh "$APK_PATH"
+                else
+                    echo "❌ Error al descargar"
+                fi
+            fi
+            ;;
+        2)
+            echo "📂 Sube el archivo APK a este directorio: /root/"
+            echo "El archivo debe llamarse 'mgvpn.apk'"
+            echo ""
+            echo "Puedes usar SCP o SFTP para transferir el archivo"
+            echo "Ejemplo: scp tu-app.apk root@$SERVER_IP:/root/mgvpn.apk"
+            echo ""
+            read -p "Presiona Enter cuando hayas subido el archivo..."
+            if [ -f "$APK_PATH" ]; then
+                echo "✅ APK encontrado: $(ls -lh $APK_PATH)"
+            else
+                echo "❌ No se encontró el archivo en /root/mgvpn.apk"
+            fi
+            ;;
+        *)
+            echo "❌ Cancelado"
+            ;;
+    esac
+}
 
 while true; do
     clear
@@ -727,6 +837,9 @@ while true; do
     echo "4) Ver pagos"
     echo "5) Estadísticas"
     echo "6) Editar precios"
+    echo "7) 📱 Escanear QR (Conectar WhatsApp)"
+    echo "8) 💰 Configurar MercadoPago"
+    echo "9) 📲 Subir APK"
     echo "0) Salir"
     echo ""
     read -p "Opción: " OPT
@@ -741,6 +854,7 @@ while true; do
             sqlite3 "$DB" "INSERT INTO resellers (username, password, name, commission_value) VALUES ('$USER', '$PASS', '$NAME', $COM)" 2>/dev/null
             if [ $? -eq 0 ]; then
                 echo "✅ Revendedor creado"
+                echo "📝 Login: $USER / $PASS"
             else
                 echo "❌ Error: Usuario ya existe"
             fi
@@ -793,6 +907,15 @@ while true; do
             [ -n "$P30" ] && sed -i "s/\"price_30d\": [0-9.]*,/\"price_30d\": $P30,/" $CONFIG
             echo "✅ Precios actualizados (reinicia el bot)"
             ;;
+        7)
+            scan_qr
+            ;;
+        8)
+            setup_mercadopago
+            ;;
+        9)
+            upload_apk
+            ;;
         0)
             exit 0
             ;;
@@ -817,6 +940,7 @@ cat << "FINAL"
 ║       🎁 TESTS ILIMITADOS                                   ║
 ║       📅 PLANES: 7, 15, 30 DÍAS                            ║
 ║       👥 SISTEMA DE REVENDEDORES                           ║
+║       📱 NO SUBE ESTADO A WHATSAPP                         ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 FINAL
@@ -849,6 +973,7 @@ echo -e "  Luego enviar: ${GREEN}MENU${NC} para ver opciones"
 echo -e ""
 
 echo -e "${GREEN}🎁 Los clientes pueden crear TESTS ILIMITADOS sin restricción diaria${NC}"
+echo -e "${GREEN}🔇 El bot NO SUBE ESTADO a WhatsApp${NC}"
 echo -e ""
 
 read -p "$(echo -e "${YELLOW}¿Ver logs ahora para escanear el QR? (s/N): ${NC}")" -n 1 -r
