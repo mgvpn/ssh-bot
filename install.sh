@@ -1,8 +1,8 @@
 #!/bin/bash
 # ================================================
-# SSH BOT PRO - MULTI-SERVIDOR
+# SSH BOT PRO - MULTI-SERVIDOR CON CONTRASEÑAS
 # 🇦🇷 ARGENTINA | 🇨🇱 CHILE | 🇧🇷 BRASIL
-# EL CLIENTE ELIGE EL PAÍS
+# ¡PIDES CONTRASEÑAS DURANTE LA INSTALACIÓN!
 # ================================================
 
 set -e
@@ -34,7 +34,7 @@ cat << "BANNER"
 ║                                                              ║
 ║         🇦🇷 ARGENTINA  |  🇨🇱 CHILE  |  🇧🇷 BRASIL            ║
 ║                                                              ║
-║           ¡EL CLIENTE ELIGE SU PAÍS PREFERIDO!              ║
+║        🔐 INCLUYE CONTRASEÑAS DE SERVIDORES 🔐              ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 BANNER
@@ -47,7 +47,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 # ================================================
-# CONFIGURACIÓN DE SERVIDORES
+# CONFIGURACIÓN DE SERVIDORES CON CONTRASEÑAS
 # ================================================
 echo -e "\n${CYAN}🌎 CONFIGURACIÓN DE SERVIDORES${NC}\n"
 
@@ -60,6 +60,8 @@ if [[ -z "$IP_ARG" ]]; then
 fi
 read -p "  Puerto SSH (default 22): " PORT_ARG
 PORT_ARG=${PORT_ARG:-22}
+read -p "  🔐 Contraseña ROOT de Argentina: " -s PASS_ARG
+echo ""
 read -p "  Precio 7 días (ARS): " PRICE_ARG_7D
 PRICE_ARG_7D=${PRICE_ARG_7D:-3000}
 read -p "  Precio 15 días (ARS): " PRICE_ARG_15D
@@ -78,6 +80,8 @@ if [[ -z "$IP_CHILE" ]]; then
 fi
 read -p "  Puerto SSH (default 22): " PORT_CHILE
 PORT_CHILE=${PORT_CHILE:-22}
+read -p "  🔐 Contraseña ROOT de Chile: " -s PASS_CHILE
+echo ""
 read -p "  Precio 7 días (ARS): " PRICE_CHILE_7D
 PRICE_CHILE_7D=${PRICE_CHILE_7D:-3500}
 read -p "  Precio 15 días (ARS): " PRICE_CHILE_15D
@@ -96,6 +100,8 @@ if [[ -z "$IP_BRASIL" ]]; then
 fi
 read -p "  Puerto SSH (default 22): " PORT_BRASIL
 PORT_BRASIL=${PORT_BRASIL:-22}
+read -p "  🔐 Contraseña ROOT de Brasil: " -s PASS_BRASIL
+echo ""
 read -p "  Precio 7 días (ARS): " PRICE_BRASIL_7D
 PRICE_BRASIL_7D=${PRICE_BRASIL_7D:-4000}
 read -p "  Precio 15 días (ARS): " PRICE_BRASIL_15D
@@ -112,7 +118,7 @@ echo -e "\n${CYAN}📦 Instalando dependencias...${NC}"
 
 apt-get update -y
 curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-apt-get install -y nodejs gcc g++ make sqlite3 jq
+apt-get install -y nodejs gcc g++ make sqlite3 jq sshpass
 
 # Chrome/Chromium
 wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add -
@@ -121,7 +127,7 @@ apt-get update -y
 apt-get install -y google-chrome-stable
 
 # Otras dependencias
-apt-get install -y git curl wget sqlite3 jq build-essential python3 python3-pip ffmpeg unzip cron ufw sshpass
+apt-get install -y git curl wget build-essential python3 python3-pip ffmpeg unzip cron ufw
 
 # PM2
 npm install -g pm2
@@ -137,56 +143,71 @@ mkdir -p "$INSTALL_DIR"/{data,config,sessions,logs,qr_codes,scripts}
 mkdir -p "$USER_HOME"
 
 # ================================================
-# CREAR SCRIPTS SSH REMOTOS
+# CREAR SCRIPTS SSH CON CONTRASEÑAS
 # ================================================
 
-# Script para crear usuario en servidor remoto
-cat > "$INSTALL_DIR/scripts/create_user.sh" << 'SCRIPTEOF'
+# Script para crear usuario en servidor remoto CON CONTRASEÑA
+cat > "$INSTALL_DIR/scripts/create_user.sh" << SCRIPTEOF
 #!/bin/bash
-# Uso: ./create_user.sh IP PUERTO USERNAME PASSWORD DIAS
-IP="$1"
-PORT="$2"
-USERNAME="$3"
-PASSWORD="$4"
-DAYS="$5"
+IP="\$1"
+PORT="\$2"
+USERNAME="\$3"
+PASSWORD="\$4"
+DAYS="\$5"
 
-# Crear usuario con expiración
-ssh -o StrictHostKeyChecking=no -p "$PORT" "root@$IP" "
-    useradd -m -s /bin/bash $USERNAME 2>/dev/null
-    echo '$USERNAME:$PASSWORD' | chpasswd
-    chage -M $DAYS $USERNAME 2>/dev/null
-    echo '✅ Usuario creado en $IP'
-" 2>/dev/null
+# Configurar contraseñas según IP
+case "\$IP" in
+    "$IP_ARG") ROOT_PASS="$PASS_ARG" ;;
+    "$IP_CHILE") ROOT_PASS="$PASS_CHILE" ;;
+    "$IP_BRASIL") ROOT_PASS="$PASS_BRASIL" ;;
+    *) echo "IP no reconocida"; exit 1 ;;
+esac
 
-echo "$USERNAME|$IP|$DAYS"
+sshpass -p "\$ROOT_PASS" ssh -o StrictHostKeyChecking=no -p "\$PORT" root@"\$IP" "
+    useradd -m -s /bin/bash \$USERNAME 2>/dev/null
+    echo '\$USERNAME:\$PASSWORD' | chpasswd
+    chage -M \$DAYS \$USERNAME 2>/dev/null
+    echo 'OK'
+"
 SCRIPTEOF
 
-# Script para eliminar usuario remoto
-cat > "$INSTALL_DIR/scripts/delete_user.sh" << 'SCRIPTEOF'
+# Script para eliminar usuario remoto CON CONTRASEÑA
+cat > "$INSTALL_DIR/scripts/delete_user.sh" << SCRIPTEOF
 #!/bin/bash
-IP="$1"
-PORT="$2"
-USERNAME="$3"
+IP="\$1"
+PORT="\$2"
+USERNAME="\$3"
 
-ssh -o StrictHostKeyChecking=no -p "$PORT" "root@$IP" "
-    pkill -u $USERNAME 2>/dev/null
-    userdel -f $USERNAME 2>/dev/null
-    echo '✅ Usuario eliminado de $IP'
-" 2>/dev/null
+case "\$IP" in
+    "$IP_ARG") ROOT_PASS="$PASS_ARG" ;;
+    "$IP_CHILE") ROOT_PASS="$PASS_CHILE" ;;
+    "$IP_BRASIL") ROOT_PASS="$PASS_BRASIL" ;;
+    *) exit 1 ;;
+esac
+
+sshpass -p "\$ROOT_PASS" ssh -o StrictHostKeyChecking=no -p "\$PORT" root@"\$IP" "
+    userdel -f \$USERNAME 2>/dev/null
+"
 SCRIPTEOF
 
-# Script para renovar usuario remoto
-cat > "$INSTALL_DIR/scripts/renew_user.sh" << 'SCRIPTEOF'
+# Script para renovar usuario remoto CON CONTRASEÑA
+cat > "$INSTALL_DIR/scripts/renew_user.sh" << SCRIPTEOF
 #!/bin/bash
-IP="$1"
-PORT="$2"
-USERNAME="$3"
-DAYS="$4"
+IP="\$1"
+PORT="\$2"
+USERNAME="\$3"
+DAYS="\$4"
 
-ssh -o StrictHostKeyChecking=no -p "$PORT" "root@$IP" "
-    chage -M $DAYS $USERNAME 2>/dev/null
-    echo '✅ Usuario renovado en $IP por $DAYS días'
-" 2>/dev/null
+case "\$IP" in
+    "$IP_ARG") ROOT_PASS="$PASS_ARG" ;;
+    "$IP_CHILE") ROOT_PASS="$PASS_CHILE" ;;
+    "$IP_BRASIL") ROOT_PASS="$PASS_BRASIL" ;;
+    *) exit 1 ;;
+esac
+
+sshpass -p "\$ROOT_PASS" ssh -o StrictHostKeyChecking=no -p "\$PORT" root@"\$IP" "
+    chage -M \$DAYS \$USERNAME 2>/dev/null
+"
 SCRIPTEOF
 
 chmod +x $INSTALL_DIR/scripts/*.sh
@@ -200,7 +221,7 @@ cat > "$CONFIG_FILE" << EOF
         "name": "SSH Bot Pro Multi-Server",
         "version": "3.0-MULTI",
         "default_password": "mgvpn247",
-        "test_hours": 2
+        "test_hours": 24
     },
     "servers": {
         "argentina": {
@@ -313,10 +334,10 @@ CREATE INDEX idx_users_server ON users(server);
 CREATE INDEX idx_payments_status ON payments(status);
 SQL
 
-echo -e "${GREEN}✅ Configuración guardada con 3 servidores${NC}"
+echo -e "${GREEN}✅ Configuración guardada con 3 servidores y contraseñas${NC}"
 
 # ================================================
-# CREAR BOT.JS COMPLETO
+# CREAR BOT.JS
 # ================================================
 cd "$USER_HOME"
 
@@ -333,132 +354,91 @@ cat > package.json << 'EOF'
         "sqlite3": "^5.1.7",
         "chalk": "^4.1.2",
         "node-cron": "^3.0.3",
-        "axios": "^1.6.5",
-        "ssh2": "^1.15.0"
+        "axios": "^1.6.5"
     }
 }
 EOF
 
 npm install --silent 2>&1 | grep -v "npm WARN" || true
 
-# Crear bot.js con selección de país
+# Aquí va el bot.js (usaré un curl para no exceder longitud)
 cat > bot.js << 'BOTEOF'
 const wppconnect = require('@wppconnect-team/wppconnect');
-const qrcode = require('qrcode-terminal');
-const QRCode = require('qrcode');
 const moment = require('moment');
 const sqlite3 = require('sqlite3').verbose();
 const chalk = require('chalk');
 const cron = require('node-cron');
 const fs = require('fs');
-const { Client } = require('ssh2');
+const { exec } = require('child_process');
 const util = require('util');
-const exec = util.promisify(require('child_process').exec);
+const execPromise = util.promisify(exec);
 
 moment.locale('es');
 
 console.log(chalk.cyan.bold('\n╔══════════════════════════════════════════════════════════════╗'));
 console.log(chalk.cyan.bold('║     🌎 SSH BOT PRO - MULTI-SERVIDOR (ARG | CHILE | BRASIL)    ║'));
-console.log(chalk.cyan.bold('║              🇦🇷 🇨🇱 🇧🇷 - CLIENTE ELIGE PAÍS                   ║'));
+console.log(chalk.cyan.bold('║              🔐 CON CONTRASEÑAS INTEGRADAS 🔐                 ║'));
 console.log(chalk.cyan.bold('╚══════════════════════════════════════════════════════════════╝\n'));
 
 const config = JSON.parse(fs.readFileSync('/opt/sshbot-pro/config/config.json', 'utf8'));
 const db = new sqlite3.Database(config.paths.database);
 const DEFAULT_PASSWORD = config.bot.default_password;
-
 let client = null;
 
-// Función para ejecutar comando SSH remoto
-async function executeRemoteCommand(ip, port, username, password, command) {
-    return new Promise((resolve, reject) => {
-        const conn = new Client();
-        let output = '';
-        
-        conn.on('ready', () => {
-            conn.exec(command, (err, stream) => {
-                if (err) {
-                    conn.end();
-                    reject(err);
-                    return;
-                }
-                
-                stream.on('close', () => {
-                    conn.end();
-                    resolve(output);
-                });
-                
-                stream.on('data', (data) => {
-                    output += data.toString();
-                });
-                
-                stream.stderr.on('data', (data) => {
-                    output += data.toString();
-                });
-            });
-        }).on('error', (err) => {
-            reject(err);
-        }).connect({
-            host: ip,
-            port: port,
-            username: 'root',
-            privateKey: fs.readFileSync('/root/.ssh/id_rsa', 'utf8')
-        });
-    });
+function getScriptPath(scriptName) {
+    return `/opt/sshbot-pro/scripts/${scriptName}`;
 }
 
-// Función para crear usuario en servidor remoto
 async function createRemoteUser(server, username, password, days) {
     const serverConfig = config.servers[server];
     if (!serverConfig) return { success: false, error: 'Servidor no existe' };
     
-    const expireDate = moment().add(days, 'days').format('YYYY-MM-DD');
-    const command = `useradd -m -s /bin/bash ${username} 2>/dev/null; echo "${username}:${password}" | chpasswd; chage -E ${expireDate} ${username} 2>/dev/null; echo "OK"`;
+    const cmd = `${getScriptPath('create_user.sh')} ${serverConfig.ip} ${serverConfig.port} ${username} ${password} ${days}`;
     
     try {
-        await executeRemoteCommand(serverConfig.ip, serverConfig.port, 'root', null, command);
-        return { success: true, server: server, ip: serverConfig.ip };
+        const { stdout } = await execPromise(cmd);
+        if (stdout.includes('OK')) {
+            return { success: true, server: server, ip: serverConfig.ip };
+        }
+        return { success: false, error: 'Error creando usuario' };
     } catch (error) {
         return { success: false, error: error.message };
     }
 }
 
-// Función para renovar usuario remoto
 async function renewRemoteUser(server, username, additionalDays) {
     const serverConfig = config.servers[server];
     if (!serverConfig) return { success: false, error: 'Servidor no existe' };
     
-    const command = `chage -M ${additionalDays} ${username} 2>/dev/null; echo "OK"`;
+    const cmd = `${getScriptPath('renew_user.sh')} ${serverConfig.ip} ${serverConfig.port} ${username} ${additionalDays}`;
     
     try {
-        await executeRemoteCommand(serverConfig.ip, serverConfig.port, 'root', null, command);
+        await execPromise(cmd);
         return { success: true, server: server, ip: serverConfig.ip };
     } catch (error) {
         return { success: false, error: error.message };
     }
 }
 
-// Generar username
 function generateUsername(server) {
     const prefix = server.substring(0, 2);
     const randomNum = Math.floor(1000 + Math.random() * 9000);
     return `${prefix}${randomNum}`;
 }
 
-// Crear usuario en DB y servidor
 async function createUser(phone, server, days) {
     const username = generateUsername(server);
-    const expiresAt = moment().add(days, 'days').format('YYYY-MM-DD HH:mm:ss');
     
     if (days === 0) {
-        // Test gratis
-        expiresTest = moment().add(config.bot.test_hours, 'hours').format('YYYY-MM-DD HH:mm:ss');
+        const expiresTest = moment().add(config.bot.test_hours, 'hours').format('YYYY-MM-DD HH:mm:ss');
         
         db.run(`INSERT INTO users (phone, username, password, server, server_ip, tipo, expires_at) 
                 VALUES (?, ?, ?, ?, ?, 'test', ?)`,
             [phone, username, DEFAULT_PASSWORD, server, config.servers[server].ip, expiresTest]);
         
-        return { success: true, username, password: DEFAULT_PASSWORD, expires: expiresTest, server };
+        return { success: true, username, password: DEFAULT_PASSWORD, expires: expiresTest, server, ip: config.servers[server].ip };
     } else {
+        const expiresAt = moment().add(days, 'days').format('YYYY-MM-DD HH:mm:ss');
         const result = await createRemoteUser(server, username, DEFAULT_PASSWORD, days);
         
         if (result.success) {
@@ -468,12 +448,10 @@ async function createUser(phone, server, days) {
             
             return { success: true, username, password: DEFAULT_PASSWORD, expires: expiresAt, server, ip: config.servers[server].ip };
         }
-        
         return result;
     }
 }
 
-// Verificar estado del usuario
 function getUserState(phone) {
     return new Promise((resolve) => {
         db.get('SELECT state, data FROM user_state WHERE phone = ?', [phone], (err, row) => {
@@ -489,7 +467,6 @@ function setUserState(phone, state, data = null) {
         [phone, state, dataStr]);
 }
 
-// Menú principal
 async function showMainMenu(to) {
     await setUserState(to, 'main_menu');
     await client.sendText(to, `🌎 *SSH BOT PRO - MULTI-SERVIDOR*
@@ -498,7 +475,7 @@ async function showMainMenu(to) {
 
 📋 *MENÚ PRINCIPAL*
 
-1️⃣ - PRUEBA GRATIS (2 horas)
+1️⃣ - PRUEBA GRATIS (${config.bot.test_hours} horas)
 2️⃣ - COMPRAR VPN
 3️⃣ - RENOVAR VPN
 4️⃣ - MIS USUARIOS
@@ -507,7 +484,6 @@ async function showMainMenu(to) {
 Elija una opción:`);
 }
 
-// Inicializar bot
 async function initializeBot() {
     try {
         client = await wppconnect.create({
@@ -530,7 +506,6 @@ async function initializeBot() {
             const from = message.from;
             const userState = await getUserState(from);
             
-            // Comandos rápidos
             if (text === 'menu' || text === 'hola' || text === 'start') {
                 await showMainMenu(from);
                 return;
@@ -555,7 +530,6 @@ async function initializeBot() {
                 return;
             }
             
-            // Opción 1: Prueba gratis
             if (text === '1' && userState.state === 'main_menu') {
                 await client.sendText(from, `🌎 *ELIGE TU PAÍS PARA PRUEBA*
 
@@ -567,13 +541,12 @@ async function initializeBot() {
                 return;
             }
             
-            // Selección de servidor para prueba
             if (userState.state === 'selecting_test_server') {
                 const serverMap = { '1': 'argentina', '2': 'chile', '3': 'brasil' };
                 const server = serverMap[text];
                 
                 if (server && config.servers[server].enabled) {
-                    await client.sendText(from, `⏳ Creando prueba en ${config.servers[server].name}...`);
+                    await client.sendText(from, `⏳ Creando prueba de ${config.bot.test_hours} horas en ${config.servers[server].name}...`);
                     
                     const result = await createUser(from, server, 0);
                     
@@ -596,7 +569,6 @@ async function initializeBot() {
                 return;
             }
             
-            // Opción 2: Comprar - Seleccionar país
             if (text === '2' && userState.state === 'main_menu') {
                 let msg = `🌎 *SELECCIONA TU SERVIDOR*
 
@@ -611,7 +583,6 @@ async function initializeBot() {
                 return;
             }
             
-            // Selección de país para comprar
             if (userState.state === 'selecting_country') {
                 const serverMap = { '1': 'argentina', '2': 'chile', '3': 'brasil' };
                 const server = serverMap[text];
@@ -634,20 +605,17 @@ async function initializeBot() {
                 return;
             }
             
-            // Selección de plan
             if (userState.state === 'selecting_plan') {
                 const server = userState.data.server;
                 const daysMap = { '1': 7, '2': 15, '3': 30, '4': 50 };
                 const days = daysMap[text];
                 
                 if (days) {
-                    const price = config.servers[server].prices[`${days}d`];
-                    
                     await client.sendText(from, `✅ *CONFIRMACIÓN*
 
 🌎 Servidor: ${config.servers[server].name}
 📆 Plan: ${days} días
-💰 Precio: $${price}
+💰 Precio: $${config.servers[server].prices[`${days}d`]}
 
 ⏳ Creando usuario...`);
                     
@@ -674,7 +642,6 @@ async function initializeBot() {
                 return;
             }
             
-            // Opción 3: Renovar
             if (text === '3' && userState.state === 'main_menu') {
                 await client.sendText(from, `🔄 *RENOVAR VPN*
 
@@ -685,7 +652,6 @@ Escribe tu NOMBRE DE USUARIO a renovar:
                 return;
             }
             
-            // Procesar renovación
             if (userState.state === 'renewing_username') {
                 if (text === '0') {
                     await showMainMenu(from);
@@ -728,7 +694,6 @@ Selecciona días a RENOVAR:
                     const result = await renewRemoteUser(server, username, days);
                     
                     if (result.success) {
-                        // Actualizar fecha en DB
                         db.run(`UPDATE users SET expires_at = datetime('now', '+' || ? || ' days') WHERE username = ?`, [days, username]);
                         
                         await client.sendText(from, `✅ *RENOVACIÓN EXITOSA*
@@ -748,7 +713,6 @@ Selecciona días a RENOVAR:
                 return;
             }
             
-            // Opción 4: Mis usuarios
             if (text === '4' && userState.state === 'main_menu') {
                 db.all(`SELECT username, server, expires_at FROM users WHERE phone = ? AND status = 1`, [from], async (err, rows) => {
                     if (!rows || rows.length === 0) {
@@ -767,7 +731,6 @@ Selecciona días a RENOVAR:
                 return;
             }
             
-            // Opción 5: Descargar app
             if (text === '5' && userState.state === 'main_menu') {
                 await client.sendText(from, `📲 *DESCARGAR APP*
 
@@ -779,13 +742,15 @@ Selecciona días a RENOVAR:
         });
         
         // Limpiar usuarios expirados cada hora
-        cron.schedule('0 * * * *', async () => {
-            db.all(`SELECT username, server, server_ip FROM users WHERE expires_at < datetime('now') AND status = 1`, [], async (err, users) => {
+        cron.schedule('*/10 * * * *', async () => {
+            const now = moment().format('YYYY-MM-DD HH:mm:ss');
+            db.all(`SELECT username, server, server_ip FROM users WHERE expires_at < ? AND status = 1`, [now], async (err, users) => {
                 if (!users) return;
                 for (const user of users) {
-                    await executeRemoteCommand(user.server_ip, 22, 'root', null, `userdel -f ${user.username} 2>/dev/null`);
+                    const deleteCmd = `${getScriptPath('delete_user.sh')} ${user.server_ip} 22 ${user.username}`;
+                    await execPromise(deleteCmd).catch(() => {});
                     db.run(`UPDATE users SET status = 0 WHERE username = ?`, [user.username]);
-                    console.log(chalk.yellow(`🗑️ Eliminado: ${user.username} de ${user.server}`));
+                    console.log(chalk.yellow(`🗑️ Eliminado: ${user.username}`));
                 }
             });
         });
@@ -817,6 +782,60 @@ initializeBot();
 BOTEOF
 
 # ================================================
+# CREAR PANEL DE CONTROL
+# ================================================
+cat > /usr/local/bin/sshbot << 'PANELEOF'
+#!/bin/bash
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
+
+DB="/opt/sshbot-pro/data/users.db"
+CONFIG="/opt/sshbot-pro/config/config.json"
+
+show_header() {
+    clear
+    echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║         🎛️  PANEL SSH BOT PRO - MULTI-SERVIDOR             ║${NC}"
+    echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
+}
+
+while true; do
+    show_header
+    
+    TOTAL=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users" 2>/dev/null || echo "0")
+    ACTIVE=$(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE status=1" 2>/dev/null || echo "0")
+    STATUS=$(pm2 jlist 2>/dev/null | jq -r '.[] | select(.name=="sshbot-multi") | .pm2_env.status' 2>/dev/null || echo "stopped")
+    
+    echo -e "${YELLOW}📊 ESTADO${NC}"
+    echo -e "  Bot: $([ "$STATUS" == "online" ] && echo "${GREEN}● ACTIVO${NC}" || echo "${RED}● DETENIDO${NC}")"
+    echo -e "  Usuarios: ${CYAN}$ACTIVE/$TOTAL${NC}"
+    echo -e ""
+    echo -e "${CYAN}[1] Iniciar bot    [2] Detener bot    [3] Ver logs"
+    echo -e "${CYAN}[4] Ver usuarios   [5] Estadísticas   [0] Salir${NC}"
+    echo ""
+    read -p "👉 Selecciona: " OPT
+    
+    case $OPT in
+        1) cd /root/sshbot-pro && pm2 start bot.js --name sshbot-multi 2>/dev/null || pm2 restart sshbot-multi; pm2 save; sleep 2;;
+        2) pm2 stop sshbot-multi; sleep 1;;
+        3) pm2 logs sshbot-multi --lines 50;;
+        4) sqlite3 -column -header "$DB" "SELECT username, phone, server, expires_at FROM users WHERE status=1 ORDER BY expires_at LIMIT 20"; read -p "Enter...";;
+        5)
+            clear
+            echo -e "${CYAN}📊 ESTADÍSTICAS${NC}\n"
+            echo "Usuarios totales: $(sqlite3 "$DB" "SELECT COUNT(*) FROM users")"
+            echo "Usuarios activos: $(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE status=1")"
+            echo "Argentina: $(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE server='argentina' AND status=1")"
+            echo "Chile: $(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE server='chile' AND status=1")"
+            echo "Brasil: $(sqlite3 "$DB" "SELECT COUNT(*) FROM users WHERE server='brasil' AND status=1")"
+            read -p "Enter...";;
+        0) echo -e "\n${GREEN}👋 Hasta luego${NC}"; exit 0;;
+    esac
+done
+PANELEOF
+
+chmod +x /usr/local/bin/sshbot
+
+# ================================================
 # INICIAR BOT
 # ================================================
 cd "$USER_HOME"
@@ -824,14 +843,9 @@ pm2 start bot.js --name sshbot-multi
 pm2 save
 pm2 startup
 
-echo -e "\n${GREEN}✅ INSTALACIÓN COMPLETADA${NC}"
+echo -e "\n${GREEN}✅ INSTALACIÓN COMPLETADA CON CONTRASEÑAS${NC}"
 echo -e "\n${YELLOW}📋 COMANDOS:${NC}"
-echo -e "  ${GREEN}pm2 logs sshbot-multi${NC} - Ver QR"
-echo -e "  ${GREEN}pm2 restart sshbot-multi${NC} - Reiniciar"
+echo -e "  ${GREEN}pm2 logs sshbot-multi${NC} - Ver QR y conectar WhatsApp"
+echo -e "  ${GREEN}sshbot${NC} - Panel de control"
 echo -e ""
-echo -e "${YELLOW}🔑 Configuración SSH entre servidores:${NC}"
-echo -e "  Necesitas conectar los servidores con llave SSH:"
-echo -e "  ssh-keygen -t rsa -b 4096"
-echo -e "  ssh-copy-id root@$IP_ARG"
-echo -e "  ssh-copy-id root@$IP_CHILE"
-echo -e "  ssh-copy-id root@$IP_BRASIL"
+echo -e "${GREEN}🎉 ¡El bot ya puede conectarse a tus servidores con las contraseñas que configuraste!${NC}"
