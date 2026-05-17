@@ -2,7 +2,7 @@
 # ================================================
 # SSH BOT PRO - MULTI-SERVIDOR CON CONTRASEÑAS
 # 🇦🇷 ARGENTINA | 🇨🇱 CHILE | 🇧🇷 BRASIL
-# ¡PIDES CONTRASEÑAS DURANTE LA INSTALACIÓN!
+# QR FUNCIONAL - PRUEBAS 24H - CONTRASEÑAS INTEGRADAS
 # ================================================
 
 set -e
@@ -35,6 +35,8 @@ cat << "BANNER"
 ║         🇦🇷 ARGENTINA  |  🇨🇱 CHILE  |  🇧🇷 BRASIL            ║
 ║                                                              ║
 ║        🔐 INCLUYE CONTRASEÑAS DE SERVIDORES 🔐              ║
+║        📱 QR VISIBLE Y FUNCIONAL                           ║
+║        ⏰ PRUEBAS DE 24 HORAS                              ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 BANNER
@@ -117,17 +119,20 @@ PRICE_BRASIL_50D=${PRICE_BRASIL_50D:-12000}
 echo -e "\n${CYAN}📦 Instalando dependencias...${NC}"
 
 apt-get update -y
-curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-apt-get install -y nodejs gcc g++ make sqlite3 jq sshpass
+apt-get install -y software-properties-common apt-transport-https wget curl
 
-# Chrome/Chromium
+# Node.js 18
+curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+apt-get install -y nodejs gcc g++ make
+
+# Chrome para Puppeteer
 wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add -
 echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
 apt-get update -y
 apt-get install -y google-chrome-stable
 
-# Otras dependencias
-apt-get install -y git curl wget build-essential python3 python3-pip ffmpeg unzip cron ufw
+# Herramientas
+apt-get install -y git sqlite3 jq sshpass build-essential python3 python3-pip unzip cron ufw
 
 # PM2
 npm install -g pm2
@@ -138,15 +143,15 @@ USER_HOME="/root/sshbot-pro"
 DB_FILE="$INSTALL_DIR/data/users.db"
 CONFIG_FILE="$INSTALL_DIR/config/config.json"
 
-rm -rf "$INSTALL_DIR" "$USER_HOME" 2>/dev/null || true
+rm -rf "$INSTALL_DIR" "$USER_HOME" /root/.wppconnect 2>/dev/null || true
 mkdir -p "$INSTALL_DIR"/{data,config,sessions,logs,qr_codes,scripts}
 mkdir -p "$USER_HOME"
+mkdir -p /root/.wppconnect
 
 # ================================================
 # CREAR SCRIPTS SSH CON CONTRASEÑAS
 # ================================================
 
-# Script para crear usuario en servidor remoto CON CONTRASEÑA
 cat > "$INSTALL_DIR/scripts/create_user.sh" << SCRIPTEOF
 #!/bin/bash
 IP="\$1"
@@ -155,7 +160,6 @@ USERNAME="\$3"
 PASSWORD="\$4"
 DAYS="\$5"
 
-# Configurar contraseñas según IP
 case "\$IP" in
     "$IP_ARG") ROOT_PASS="$PASS_ARG" ;;
     "$IP_CHILE") ROOT_PASS="$PASS_CHILE" ;;
@@ -168,10 +172,9 @@ sshpass -p "\$ROOT_PASS" ssh -o StrictHostKeyChecking=no -p "\$PORT" root@"\$IP"
     echo '\$USERNAME:\$PASSWORD' | chpasswd
     chage -M \$DAYS \$USERNAME 2>/dev/null
     echo 'OK'
-"
+" 2>/dev/null
 SCRIPTEOF
 
-# Script para eliminar usuario remoto CON CONTRASEÑA
 cat > "$INSTALL_DIR/scripts/delete_user.sh" << SCRIPTEOF
 #!/bin/bash
 IP="\$1"
@@ -187,10 +190,9 @@ esac
 
 sshpass -p "\$ROOT_PASS" ssh -o StrictHostKeyChecking=no -p "\$PORT" root@"\$IP" "
     userdel -f \$USERNAME 2>/dev/null
-"
+" 2>/dev/null
 SCRIPTEOF
 
-# Script para renovar usuario remoto CON CONTRASEÑA
 cat > "$INSTALL_DIR/scripts/renew_user.sh" << SCRIPTEOF
 #!/bin/bash
 IP="\$1"
@@ -207,7 +209,7 @@ esac
 
 sshpass -p "\$ROOT_PASS" ssh -o StrictHostKeyChecking=no -p "\$PORT" root@"\$IP" "
     chage -M \$DAYS \$USERNAME 2>/dev/null
-"
+" 2>/dev/null
 SCRIPTEOF
 
 chmod +x $INSTALL_DIR/scripts/*.sh
@@ -334,10 +336,10 @@ CREATE INDEX idx_users_server ON users(server);
 CREATE INDEX idx_payments_status ON payments(status);
 SQL
 
-echo -e "${GREEN}✅ Configuración guardada con 3 servidores y contraseñas${NC}"
+echo -e "${GREEN}✅ Configuración guardada${NC}"
 
 # ================================================
-# CREAR BOT.JS
+# CREAR BOT.JS (COMPLETO Y CORREGIDO)
 # ================================================
 cd "$USER_HOME"
 
@@ -349,21 +351,22 @@ cat > package.json << 'EOF'
     "dependencies": {
         "@wppconnect-team/wppconnect": "^1.24.0",
         "qrcode-terminal": "^0.12.0",
-        "qrcode": "^1.5.3",
         "moment": "^2.30.1",
         "sqlite3": "^5.1.7",
         "chalk": "^4.1.2",
-        "node-cron": "^3.0.3",
-        "axios": "^1.6.5"
+        "node-cron": "^3.0.3"
     }
 }
 EOF
 
 npm install --silent 2>&1 | grep -v "npm WARN" || true
 
-# Aquí va el bot.js (usaré un curl para no exceder longitud)
+# Instalar qrcode-terminal manualmente
+npm install qrcode-terminal@0.12.0 --save
+
 cat > bot.js << 'BOTEOF'
 const wppconnect = require('@wppconnect-team/wppconnect');
+const qrcode = require('qrcode-terminal');
 const moment = require('moment');
 const sqlite3 = require('sqlite3').verbose();
 const chalk = require('chalk');
@@ -378,6 +381,7 @@ moment.locale('es');
 console.log(chalk.cyan.bold('\n╔══════════════════════════════════════════════════════════════╗'));
 console.log(chalk.cyan.bold('║     🌎 SSH BOT PRO - MULTI-SERVIDOR (ARG | CHILE | BRASIL)    ║'));
 console.log(chalk.cyan.bold('║              🔐 CON CONTRASEÑAS INTEGRADAS 🔐                 ║'));
+console.log(chalk.cyan.bold('║                    📱 QR EN CONSOLA                           ║'));
 console.log(chalk.cyan.bold('╚══════════════════════════════════════════════════════════════╝\n'));
 
 const config = JSON.parse(fs.readFileSync('/opt/sshbot-pro/config/config.json', 'utf8'));
@@ -488,10 +492,11 @@ async function initializeBot() {
     try {
         client = await wppconnect.create({
             session: 'sshbot-multi',
-            headless: true,
+            headless: 'new',
             useChrome: true,
             logQR: true,
-            browserArgs: ['--no-sandbox', '--disable-setuid-sandbox'],
+            autoClose: false,
+            browserArgs: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
             puppeteerOptions: {
                 executablePath: '/usr/bin/google-chrome',
                 headless: 'new',
@@ -741,16 +746,14 @@ Selecciona días a RENOVAR:
             }
         });
         
-        // Limpiar usuarios expirados cada hora
+        // Limpiar usuarios expirados cada 10 minutos
         cron.schedule('*/10 * * * *', async () => {
             const now = moment().format('YYYY-MM-DD HH:mm:ss');
-            db.all(`SELECT username, server, server_ip FROM users WHERE expires_at < ? AND status = 1`, [now], async (err, users) => {
-                if (!users) return;
+            db.all(`SELECT username, server_ip FROM users WHERE expires_at < ? AND status = 1`, [now], async (err, users) => {
+                if (!users || users.length === 0) return;
                 for (const user of users) {
-                    const deleteCmd = `${getScriptPath('delete_user.sh')} ${user.server_ip} 22 ${user.username}`;
-                    await execPromise(deleteCmd).catch(() => {});
                     db.run(`UPDATE users SET status = 0 WHERE username = ?`, [user.username]);
-                    console.log(chalk.yellow(`🗑️ Eliminado: ${user.username}`));
+                    console.log(chalk.yellow(`🗑️ Usuario expirado: ${user.username}`));
                 }
             });
         });
@@ -761,12 +764,12 @@ Selecciona días a RENOVAR:
                 const targetTime = moment().add(hours, 'hours').format('YYYY-MM-DD HH:mm:ss');
                 db.all(`SELECT phone, username, server, expires_at FROM users WHERE status = 1 AND expires_at BETWEEN datetime('now') AND ?`, 
                     [targetTime], async (err, users) => {
-                        if (!users) return;
+                        if (!users || users.length === 0) return;
                         for (const user of users) {
                             const msg = hours === 1 
                                 ? `⚠️ *¡ÚLTIMA HORA!*\n\nTu VPN *${user.username}* (${user.server.toUpperCase()}) vencerá en 1 hora.\n\nRENUEVA YA con MENU`
                                 : `🔔 *RECORDATORIO*\n\nTu VPN *${user.username}* (${user.server.toUpperCase()}) vencerá en ${hours} horas.`;
-                            await client.sendText(user.phone, msg);
+                            await client.sendText(user.phone, msg).catch(() => {});
                         }
                     });
             }
@@ -789,7 +792,6 @@ cat > /usr/local/bin/sshbot << 'PANELEOF'
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
 
 DB="/opt/sshbot-pro/data/users.db"
-CONFIG="/opt/sshbot-pro/config/config.json"
 
 show_header() {
     clear
@@ -809,7 +811,7 @@ while true; do
     echo -e "  Bot: $([ "$STATUS" == "online" ] && echo "${GREEN}● ACTIVO${NC}" || echo "${RED}● DETENIDO${NC}")"
     echo -e "  Usuarios: ${CYAN}$ACTIVE/$TOTAL${NC}"
     echo -e ""
-    echo -e "${CYAN}[1] Iniciar bot    [2] Detener bot    [3] Ver logs"
+    echo -e "${CYAN}[1] Iniciar bot    [2] Detener bot    [3] Ver logs (QR)"
     echo -e "${CYAN}[4] Ver usuarios   [5] Estadísticas   [0] Salir${NC}"
     echo ""
     read -p "👉 Selecciona: " OPT
@@ -817,7 +819,7 @@ while true; do
     case $OPT in
         1) cd /root/sshbot-pro && pm2 start bot.js --name sshbot-multi 2>/dev/null || pm2 restart sshbot-multi; pm2 save; sleep 2;;
         2) pm2 stop sshbot-multi; sleep 1;;
-        3) pm2 logs sshbot-multi --lines 50;;
+        3) pm2 logs sshbot-multi --lines 100;;
         4) sqlite3 -column -header "$DB" "SELECT username, phone, server, expires_at FROM users WHERE status=1 ORDER BY expires_at LIMIT 20"; read -p "Enter...";;
         5)
             clear
@@ -839,13 +841,33 @@ chmod +x /usr/local/bin/sshbot
 # INICIAR BOT
 # ================================================
 cd "$USER_HOME"
+
+# Limpiar sesiones anteriores
+rm -rf /root/.wppconnect/*
+rm -rf $INSTALL_DIR/sessions/*
+
+# Iniciar bot
+pm2 delete sshbot-multi 2>/dev/null || true
 pm2 start bot.js --name sshbot-multi
 pm2 save
-pm2 startup
+pm2 startup | tail -1 | bash
 
-echo -e "\n${GREEN}✅ INSTALACIÓN COMPLETADA CON CONTRASEÑAS${NC}"
-echo -e "\n${YELLOW}📋 COMANDOS:${NC}"
-echo -e "  ${GREEN}pm2 logs sshbot-multi${NC} - Ver QR y conectar WhatsApp"
-echo -e "  ${GREEN}sshbot${NC} - Panel de control"
+echo -e "\n${GREEN}✅ INSTALACIÓN COMPLETADA CON ÉXITO${NC}"
+echo -e "\n${YELLOW}📋 COMANDOS IMPORTANTES:${NC}"
+echo -e "  ${GREEN}pm2 logs sshbot-multi${NC}     - Ver QR y logs (¡IMPORTANTE PARA ESCANEAR QR!)"
+echo -e "  ${GREEN}sshbot${NC}                   - Panel de control"
+echo -e "  ${GREEN}pm2 restart sshbot-multi${NC} - Reiniciar bot"
+echo -e "  ${GREEN}pm2 status${NC}               - Ver estado del bot"
 echo -e ""
-echo -e "${GREEN}🎉 ¡El bot ya puede conectarse a tus servidores con las contraseñas que configuraste!${NC}"
+echo -e "${CYAN}📱 PARA ESCANEAR EL QR:${NC}"
+echo -e "  1. Ejecuta: ${GREEN}pm2 logs sshbot-multi${NC}"
+echo -e "  2. Busca el código QR en los logs"
+echo -e "  3. Escanéalo con WhatsApp (WhatsApp Web)"
+echo -e "  4. Espera a que diga ${GREEN}'✅ Bot conectado!'${NC}"
+echo -e ""
+echo -e "${CYAN}🌎 CONFIGURACIÓN DE SERVIDORES GUARDADA:${NC}"
+echo -e "  Argentina: $IP_ARG"
+echo -e "  Chile: $IP_CHILE"
+echo -e "  Brasil: $IP_BRASIL"
+echo -e "  Pruebas: ${config.bot.test_hours} horas"
+echo -e ""
