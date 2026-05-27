@@ -1,7 +1,7 @@
 #!/bin/bash
 # ================================================
-# HTTP CUSTOM BOT PRO - CON VALIDACIÓN HWID
-# VERSIÓN COMPLETA CON ENDPOINT DE VERIFICACIÓN
+# HTTP CUSTOM BOT PRO - CON VALIDACIÓN HWID CORREGIDA
+# VERSIÓN CON NOMBRE + HWID
 # ================================================
 
 set -e
@@ -29,11 +29,10 @@ cat << "BANNER"
 ║   ╚═╝  ╚═╝   ╚═╝      ╚═╝   ╚═╝  ╚═╝    ╚═════╝ ╚═════╝    ╚═╝   
 ╠══════════════════════════════════════════════════════════════╣
 ║                                                              ║
-║      🤖 HTTP CUSTOM BOT PRO - HWID COMPLETO                 ║
+║      🤖 HTTP CUSTOM BOT PRO - HWID + NOMBRE                  ║
 ║               📱 WhatsApp + API de Validación               ║
-║               💰 MercadoPago SDK v2.x                       ║
-║               🔑 VALIDACIÓN HWID EN TIEMPO REAL             ║
-║               📂 ENTREGA AUTOMÁTICA .hc                     ║
+║               🔑 VALIDACIÓN HWID CORREGIDA                   ║
+║               📝 PRIMERO NOMBRE, LUEGO HWID                  ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 BANNER
@@ -133,9 +132,6 @@ cat > "$HC_FILES_DIR/mgvpn.hc" << 'HCEOF'
 # HTTP Custom Config
 # MGVPN Premium
 # Generado automáticamente
-# Servidor: MGVPN
-# Puerto: 443
-# Método: HTTPS
 HCEOF
 
 # Configuración principal
@@ -143,7 +139,7 @@ cat > "$CONFIG_FILE" << EOF
 {
     "bot": {
         "name": "HTTP Custom Bot Pro",
-        "version": "4.0-HWID-COMPLETE",
+        "version": "4.1-HWID-CORREGIDO",
         "server_ip": "$SERVER_IP",
         "api_port": 8001
     },
@@ -182,11 +178,12 @@ cat > "$CONFIG_FILE" << EOF
 }
 EOF
 
-# Base de datos
+# Base de datos (agregado campo nombre)
 sqlite3 "$DB_FILE" << 'SQL'
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     phone TEXT,
+    nombre TEXT,
     hwid TEXT UNIQUE,
     username TEXT,
     file_name TEXT DEFAULT 'mgvpn.hc',
@@ -201,6 +198,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS pending_activations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     phone TEXT,
+    nombre TEXT,
     hwid TEXT,
     code TEXT UNIQUE,
     expires_at DATETIME,
@@ -213,6 +211,7 @@ CREATE TABLE IF NOT EXISTS daily_tests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     hwid TEXT,
     phone TEXT,
+    nombre TEXT,
     date DATE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(hwid, date)
@@ -222,6 +221,7 @@ CREATE TABLE IF NOT EXISTS payments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     payment_id TEXT UNIQUE,
     phone TEXT,
+    nombre TEXT,
     hwid TEXT,
     plan TEXT,
     days INTEGER,
@@ -245,6 +245,7 @@ CREATE TABLE IF NOT EXISTS user_state (
 CREATE TABLE IF NOT EXISTS hwid_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     hwid TEXT,
+    nombre TEXT,
     ip TEXT,
     user_agent TEXT,
     check_time DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -261,16 +262,16 @@ SQL
 echo -e "${GREEN}✅ Estructura creada${NC}"
 
 # ================================================
-# CREAR BOT COMPLETO CON VALIDACIÓN HWID
+# CREAR BOT COMPLETO (CORREGIDO)
 # ================================================
-echo -e "\n${CYAN}🤖 Creando bot con validación HWID...${NC}"
+echo -e "\n${CYAN}🤖 Creando bot con validación HWID corregida...${NC}"
 
 cd "$USER_HOME"
 
 cat > package.json << 'PKGEOF'
 {
     "name": "hcbot-pro-complete",
-    "version": "4.0.0",
+    "version": "4.1.0",
     "main": "bot.js",
     "dependencies": {
         "@wppconnect-team/wppconnect": "^1.24.0",
@@ -292,7 +293,7 @@ PKGEOF
 echo -e "${YELLOW}📦 Instalando dependencias NPM...${NC}"
 npm install --silent 2>&1 | grep -v "npm WARN" || true
 
-# Crear bot.js completo
+# Crear bot.js CORREGIDO
 cat > "bot.js" << 'BOTEOF'
 const wppconnect = require('@wppconnect-team/wppconnect');
 const qrcode = require('qrcode-terminal');
@@ -309,8 +310,8 @@ const cors = require('cors');
 moment.locale('es');
 
 console.log(chalk.cyan.bold('\n╔══════════════════════════════════════════════════════════════╗'));
-console.log(chalk.cyan.bold('║   🤖 HTTP CUSTOM BOT PRO - CON VALIDACIÓN HWID COMPLETA      ║'));
-console.log(chalk.cyan.bold('║         🔑 API DE VALIDACIÓN EN TIEMPO REAL ACTIVADA         ║'));
+console.log(chalk.cyan.bold('║   🤖 HTTP CUSTOM BOT PRO - VALIDACIÓN HWID CORREGIDA        ║'));
+console.log(chalk.cyan.bold('║         🔑 PRIMERO NOMBRE, LUEGO HWID                       ║'));
 console.log(chalk.cyan.bold('╚══════════════════════════════════════════════════════════════╝\n'));
 
 // Configuración
@@ -351,12 +352,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Función para verificar HWID (reutilizable)
+// Función para verificar HWID (reutilizable) - CORREGIDA
 function checkHWIDAccess(hwid) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
         db.get(`SELECT * FROM users WHERE hwid = ? AND status = 1 AND expires_at > datetime('now')`,
             [hwid], (err, row) => {
-            resolve({ active: !!row, user: row });
+            if (err) {
+                console.error(chalk.red(`Error DB: ${err.message}`));
+                resolve({ active: false, user: null, error: err.message });
+            } else {
+                resolve({ active: !!row, user: row });
+            }
         });
     });
 }
@@ -366,7 +372,7 @@ function getDaysRemaining(expiresAt) {
     return diff > 0 ? diff : 0;
 }
 
-// Endpoint PRINCIPAL que usa HTTP Custom
+// Endpoint PRINCIPAL que usa HTTP Custom - CORREGIDO
 app.get('/api/validate/:hwid', async (req, res) => {
     const hwid = req.params.hwid;
     const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
@@ -374,6 +380,7 @@ app.get('/api/validate/:hwid', async (req, res) => {
     console.log(chalk.yellow(`🔍 Validación HWID: ${hwid} desde ${ip}`));
     
     if (!hwid || hwid.length < 5) {
+        console.log(chalk.red(`❌ HWID inválido: ${hwid}`));
         return res.json({ 
             success: false, 
             active: false, 
@@ -391,7 +398,7 @@ app.get('/api/validate/:hwid', async (req, res) => {
         
         if (result.active) {
             const daysLeft = getDaysRemaining(result.user.expires_at);
-            console.log(chalk.green(`✅ HWID válido: ${hwid} - Días restantes: ${daysLeft}`));
+            console.log(chalk.green(`✅ HWID VÁLIDO: ${hwid} - Días restantes: ${daysLeft} - Usuario: ${result.user.nombre || 'sin nombre'}`));
             
             // Actualizar último checkin
             db.run(`UPDATE users SET last_checkin = CURRENT_TIMESTAMP WHERE hwid = ?`, [hwid]);
@@ -404,10 +411,11 @@ app.get('/api/validate/:hwid', async (req, res) => {
                 days_left: daysLeft,
                 tipo: result.user.tipo,
                 file: result.user.file_name || 'mgvpn.hc',
-                server: config.bot.name
+                server: config.bot.name,
+                nombre: result.user.nombre || ''
             });
         } else {
-            console.log(chalk.red(`❌ HWID inválido/expirado: ${hwid}`));
+            console.log(chalk.red(`❌ HWID INVÁLIDO/EXPIRADO: ${hwid}`));
             return res.json({
                 success: false,
                 active: false,
@@ -426,29 +434,7 @@ app.get('/api/validate/:hwid', async (req, res) => {
     }
 });
 
-// Endpoint para verificar en lote (múltiples HWIDs)
-app.post('/api/validate-batch', async (req, res) => {
-    const { hwids } = req.body;
-    
-    if (!hwids || !Array.isArray(hwids) || hwids.length === 0) {
-        return res.json({ success: false, error: 'Se requiere array de HWIDs' });
-    }
-    
-    const results = [];
-    for (const hwid of hwids) {
-        const result = await checkHWIDAccess(hwid);
-        results.push({
-            hwid,
-            active: result.active,
-            expires_at: result.active ? result.user.expires_at : null,
-            days_left: result.active ? getDaysRemaining(result.user.expires_at) : 0
-        });
-    }
-    
-    res.json({ success: true, count: results.length, results });
-});
-
-// Endpoint de configuración para el cliente
+// Endpoint de configuración
 app.get('/api/config', (req, res) => {
     res.json({
         success: true,
@@ -459,78 +445,14 @@ app.get('/api/config', (req, res) => {
         },
         validation_endpoint: `http://${config.bot.server_ip}:${config.bot.api_port}/api/validate/`,
         prices: config.prices,
-        links: {
-            app_download: config.links.app_download,
-            support: config.links.support,
-            how_to_get_hwid: config.links.how_to_get_hwid
-        }
+        links: config.links
     });
 });
-
-// Endpoint de estadísticas para admin
-app.get('/api/stats', async (req, res) => {
-    db.get(`SELECT 
-        (SELECT COUNT(*) FROM users) as total_users,
-        (SELECT COUNT(*) FROM users WHERE status = 1 AND expires_at > datetime('now')) as active_users,
-        (SELECT COUNT(*) FROM hwid_logs WHERE date(check_time) = date('now')) as todays_checks
-    `, (err, stats) => {
-        res.json({ success: true, stats: stats || { total_users: 0, active_users: 0, todays_checks: 0 } });
-    });
-});
-
-// Endpoint para verificar si un pago fue aprobado (desde HTTP Custom)
-app.get('/api/check-payment/:payment_id', async (req, res) => {
-    const { payment_id } = req.params;
-    
-    db.get(`SELECT * FROM payments WHERE payment_id = ? OR preference_id = ?`, 
-        [payment_id, payment_id], async (err, payment) => {
-        if (err || !payment) {
-            return res.json({ success: false, status: 'not_found' });
-        }
-        
-        if (payment.status === 'approved') {
-            return res.json({ success: true, status: 'approved', message: 'Pago confirmado' });
-        }
-        
-        // Verificar en MercadoPago si está pendiente
-        if (mpEnabled && payment.status === 'pending') {
-            try {
-                const response = await axios.get(`https://api.mercadopago.com/v1/payments/search?external_reference=${payment.payment_id}`, {
-                    headers: { 'Authorization': `Bearer ${config.mercadopago.access_token}` }
-                });
-                
-                if (response.data.results?.[0]?.status === 'approved') {
-                    await activatePayment(payment);
-                    return res.json({ success: true, status: 'approved', message: 'Pago confirmado' });
-                }
-            } catch (e) {}
-        }
-        
-        res.json({ success: false, status: payment.status });
-    });
-});
-
-// Función auxiliar para activar pago
-async function activatePayment(payment) {
-    const expiresAt = moment().add(payment.days, 'days').format('YYYY-MM-DD HH:mm:ss');
-    
-    if (payment.is_renewal) {
-        db.run(`UPDATE users SET expires_at = ?, tipo = 'premium' WHERE hwid = ?`,
-            [expiresAt, payment.hwid]);
-    } else {
-        db.run(`INSERT OR REPLACE INTO users (phone, hwid, tipo, expires_at, status)
-                VALUES (?, ?, 'premium', ?, 1)`,
-            [payment.phone, payment.hwid, expiresAt]);
-    }
-    
-    db.run(`UPDATE payments SET status = 'approved', approved_at = CURRENT_TIMESTAMP WHERE id = ?`, 
-        [payment.id]);
-}
 
 // Iniciar servidor HTTP
 const HTTP_PORT = config.bot.api_port || 8001;
 app.listen(HTTP_PORT, '0.0.0.0', () => {
-    console.log(chalk.green(`✅ Servidor de validación HWID activo`));
+    console.log(chalk.green(`✅ Servidor de validación HWID activo en puerto ${HTTP_PORT}`));
     console.log(chalk.cyan(`   URL: http://${config.bot.server_ip}:${HTTP_PORT}/api/validate/{HWID}`));
 });
 
@@ -544,18 +466,21 @@ function generateActivationCode() {
     return Math.random().toString(36).substring(2, 10).toUpperCase();
 }
 
-function createTestAccess(phone, hwid) {
+// Crear acceso con NOMBRE y HWID
+function createTestAccess(phone, nombre, hwid) {
     return new Promise((resolve) => {
         const expiresAt = moment().add(config.prices.test_hours, 'hours').format('YYYY-MM-DD HH:mm:ss');
         
-        db.run(`INSERT OR REPLACE INTO users (phone, hwid, tipo, expires_at, status, file_name)
-                VALUES (?, ?, 'test', ?, 1, 'mgvpn.hc')`,
-            [phone, hwid, expiresAt],
+        db.run(`INSERT OR REPLACE INTO users (phone, nombre, hwid, tipo, expires_at, status, file_name)
+                VALUES (?, ?, ?, 'test', ?, 1, 'mgvpn.hc')`,
+            [phone, nombre, hwid, expiresAt],
             function(err) {
                 if (err) {
+                    console.error(chalk.red(`Error createTestAccess: ${err.message}`));
                     resolve({ success: false, error: err.message });
                 } else {
-                    resolve({ success: true, hwid, expiresAt });
+                    console.log(chalk.green(`✅ Test creado: ${nombre} - ${hwid}`));
+                    resolve({ success: true, hwid, expiresAt, nombre });
                 }
             });
     });
@@ -571,12 +496,12 @@ function canGetTest(hwid, phone) {
     });
 }
 
-function registerTest(hwid, phone) {
-    db.run(`INSERT INTO daily_tests (hwid, phone, date) VALUES (?, ?, ?)`,
-        [hwid, phone, moment().format('YYYY-MM-DD')]);
+function registerTest(hwid, phone, nombre) {
+    db.run(`INSERT INTO daily_tests (hwid, phone, nombre, date) VALUES (?, ?, ?, ?)`,
+        [hwid, phone, nombre, moment().format('YYYY-MM-DD')]);
 }
 
-async function sendHCFile(to) {
+async function sendHCFile(to, hwid, nombre) {
     const hcPath = '/opt/hcbot-pro/hc_files/mgvpn.hc';
     
     if (!fs.existsSync(hcPath)) {
@@ -584,23 +509,39 @@ async function sendHCFile(to) {
         return false;
     }
     
+    const validationUrl = `http://${config.bot.server_ip}:${HTTP_PORT}/api/validate/${hwid}`;
+    
     try {
         await client.sendFile(
             to,
             hcPath,
             'mgvpn.hc',
-            `📱 *HTTP CUSTOM CONFIG - MGVPN*\n\n🔗 *URL DE VALIDACIÓN:*\nhttp://${config.bot.server_ip}:${HTTP_PORT}/api/validate/TU-HWID\n\n📌 *Instrucciones:*\n1. Importa este archivo en HTTP Custom\n2. Ve a Ajustes → Validación HWID\n3. Configura la URL de validación\n4. Tu HWID se validará automáticamente\n\n✅ Tu acceso ya está activo`
+            `📱 *CONFIGURACIÓN MGVPN*
+
+👤 *Cliente:* ${nombre}
+🔑 *HWID:* ${hwid}
+🌐 *URL de validación:* 
+${validationUrl}
+
+📌 *INSTRUCCIONES:*
+1. Importa este archivo en HTTP Custom
+2. Ve a Ajustes → Validación HWID
+3. Activar validación
+4. Pegar la URL de arriba
+5. Conectar
+
+✅ Tu acceso ya está activo`
         );
         return true;
     } catch (error) {
-        console.error(chalk.red(`❌ Error: ${error.message}`));
+        console.error(chalk.red(`❌ Error enviando archivo: ${error.message}`));
         return false;
     }
 }
 
 function getUserActiveAccess(phone) {
     return new Promise((resolve) => {
-        db.all(`SELECT hwid, tipo, expires_at, file_name FROM users 
+        db.all(`SELECT nombre, hwid, tipo, expires_at, file_name FROM users 
                 WHERE phone = ? AND status = 1 AND expires_at > datetime('now')`,
             [phone], (err, rows) => {
             resolve(rows || []);
@@ -608,7 +549,7 @@ function getUserActiveAccess(phone) {
     });
 }
 
-async function createPayment(phone, hwid, days, amount, planName, isRenewal = false) {
+async function createPayment(phone, nombre, hwid, days, amount, planName, isRenewal = false) {
     if (!mpEnabled || !mpPreference) {
         return { success: false, error: 'MercadoPago no configurado. Contacta al administrador.' };
     }
@@ -619,7 +560,7 @@ async function createPayment(phone, hwid, days, amount, planName, isRenewal = fa
         const preferenceData = {
             items: [{
                 title: isRenewal ? `RENOVACIÓN ${days} DÍAS - MGVPN` : `HTTP CUSTOM MGVPN - ${days} DÍAS`,
-                description: `Acceso VPN por ${days} días con validación HWID`,
+                description: `Acceso VPN por ${days} días para ${nombre}`,
                 quantity: 1,
                 currency_id: 'ARS',
                 unit_price: parseFloat(amount)
@@ -631,16 +572,15 @@ async function createPayment(phone, hwid, days, amount, planName, isRenewal = fa
             back_urls: {
                 success: `https://wa.me/${phone.replace('@c.us', '')}`,
                 failure: `https://wa.me/${phone.replace('@c.us', '')}`
-            },
-            notification_url: `http://${config.bot.server_ip}:${HTTP_PORT}/api/webhook`
+            }
         };
         
         const response = await mpPreference.create({ body: preferenceData });
         
         if (response && response.id) {
-            db.run(`INSERT INTO payments (payment_id, phone, hwid, plan, days, amount, status, payment_url, preference_id, is_renewal)
-                    VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`,
-                [paymentId, phone, hwid, `${days}d`, days, amount, response.init_point, response.id, isRenewal ? 1 : 0]);
+            db.run(`INSERT INTO payments (payment_id, phone, nombre, hwid, plan, days, amount, status, payment_url, preference_id, is_renewal)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`,
+                [paymentId, phone, nombre, hwid, `${days}d`, days, amount, response.init_point, response.id, isRenewal ? 1 : 0]);
             
             return { success: true, paymentUrl: response.init_point, amount, paymentId };
         }
@@ -651,55 +591,6 @@ async function createPayment(phone, hwid, days, amount, planName, isRenewal = fa
     }
 }
 
-// Webhook para MercadoPago
-app.post('/api/webhook', express.json(), async (req, res) => {
-    console.log(chalk.yellow('Webhook recibido:'), req.body);
-    res.sendStatus(200);
-});
-
-// Verificar pagos pendientes
-async function checkPendingPayments() {
-    if (!mpEnabled) return;
-    
-    db.all(`SELECT * FROM payments WHERE status = 'pending'`, async (err, payments) => {
-        if (err || !payments) return;
-        
-        for (const payment of payments) {
-            try {
-                const response = await axios.get(`https://api.mercadopago.com/v1/payments/search?external_reference=${payment.payment_id}`, {
-                    headers: { 'Authorization': `Bearer ${config.mercadopago.access_token}` }
-                });
-                
-                if (response.data && response.data.results && response.data.results[0]?.status === 'approved') {
-                    console.log(chalk.green(`✅ Pago aprobado: ${payment.payment_id}`));
-                    
-                    const expiresAt = moment().add(payment.days, 'days').format('YYYY-MM-DD HH:mm:ss');
-                    
-                    if (payment.is_renewal) {
-                        db.run(`UPDATE users SET expires_at = ?, tipo = 'premium' WHERE hwid = ?`,
-                            [expiresAt, payment.hwid]);
-                    } else {
-                        db.run(`INSERT OR REPLACE INTO users (phone, hwid, tipo, expires_at, status)
-                                VALUES (?, ?, 'premium', ?, 1)`,
-                            [payment.phone, payment.hwid, expiresAt]);
-                    }
-                    
-                    db.run(`UPDATE payments SET status = 'approved', approved_at = CURRENT_TIMESTAMP WHERE payment_id = ?`,
-                        [payment.payment_id]);
-                    
-                    if (client) {
-                        await client.sendText(payment.phone, `✅ *PAGO CONFIRMADO - MGVPN*\n\nTu acceso ha sido activado por ${payment.days} días.\n\n🔑 HWID: ${payment.hwid}\n📅 Expira: ${moment(expiresAt).format('DD/MM/YYYY')}\n\n📲 Envía "MENU" para más opciones.`);
-                        await sendHCFile(payment.phone);
-                    }
-                }
-            } catch (error) {
-                console.error(chalk.red(`Error verificando: ${error.message}`));
-            }
-        }
-    });
-}
-
-// Estado de usuario
 function getUserState(phone) {
     return new Promise((resolve) => {
         db.get('SELECT state, data FROM user_state WHERE phone = ?', [phone], (err, row) => {
@@ -763,63 +654,83 @@ async function initializeBot() {
 │ 6️⃣ - ❓ CÓMO OBTENER HWID│
 └─────────────────────────┘
 
-🔑 *URL DE VALIDACIÓN:*
+🔑 *URL DE VALIDACIÓN BASE:*
 http://${config.bot.server_ip}:${HTTP_PORT}/api/validate/TU-HWID`);
                 }
                 
-                // Opción 1: Prueba gratis
+                // Opción 1: Prueba gratis - PRIMERO NOMBRE
                 else if (text === '1' && userState.state === 'main_menu') {
-                    await setUserState(from, 'waiting_hwid_test');
+                    await setUserState(from, 'waiting_name_test');
                     await client.sendText(from, `🧪 *PRUEBA GRATIS - 2 HORAS*
 
-📱 Para activar tu prueba necesito tu *HWID*
+📝 *Primero, ingresa tu NOMBRE:*
+(Ej: Juan Pérez)
 
-📍 *URL de validación que usarás:*
-http://${config.bot.server_ip}:${HTTP_PORT}/api/validate/TU-HWID
+📍 Luego te pediré tu HWID
 
-✏️ *Envía tu HWID ahora* (ej: abc123def456)
-
-O envía 0 para cancelar`);
+0 para cancelar`);
                 }
                 
-                else if (userState.state === 'waiting_hwid_test' && text !== '0' && text.length > 5) {
+                // Esperando NOMBRE para prueba
+                else if (userState.state === 'waiting_name_test' && text !== '0' && text.length > 2) {
+                    const nombre = message.body.trim();
+                    await setUserState(from, 'waiting_hwid_test', { nombre: nombre });
+                    await client.sendText(from, `✅ *Nombre registrado:* ${nombre}
+
+📱 *Ahora ingresa tu HWID:*
+
+📍 *¿Cómo obtener HWID?*
+Ajustes → ID del dispositivo en HTTP Custom
+
+*Envía el código HWID* (ej: abc123def456)
+
+0 para cancelar`);
+                }
+                
+                // Esperando HWID para prueba
+                else if (userState.state === 'waiting_hwid_test' && text !== '0' && message.body.trim().length > 5) {
                     const hwid = message.body.trim();
+                    const nombre = userState.data.nombre;
                     
                     if (!(await canGetTest(hwid, from))) {
                         await client.sendText(from, `⚠️ *Ya usaste tu prueba hoy*
 
-Vuelve mañana para otra prueba gratuita de 2 horas.
+Vuelve mañana para otra prueba gratuita.
 O compra acceso completo con la opción 2.`);
                         await setUserState(from, 'main_menu');
                         return;
                     }
                     
-                    const result = await createTestAccess(from, hwid);
+                    await client.sendText(from, `⏳ *Activando prueba para ${nombre}...*`);
+                    
+                    const result = await createTestAccess(from, nombre, hwid);
                     
                     if (result.success) {
-                        registerTest(hwid, from);
+                        registerTest(hwid, from, nombre);
                         await client.sendText(from, `✅ *PRUEBA ACTIVADA - MGVPN*
 
-🔑 HWID: ${hwid}
-⏰ Válido hasta: ${formatExpiration(result.expiresAt)}
-🌐 URL de validación: http://${config.bot.server_ip}:${HTTP_PORT}/api/validate/${hwid}
+👤 *Nombre:* ${nombre}
+🔑 *HWID:* ${hwid}
+⏰ *Válido hasta:* ${formatExpiration(result.expiresAt)}
+🌐 *URL de validación:* 
+http://${config.bot.server_ip}:${HTTP_PORT}/api/validate/${hwid}
 
 📲 *Configura en HTTP Custom:*
 1. Ajustes → Validación HWID
 2. Activar validación
 3. Pegar la URL de arriba
 
-📂 *Envía "5" para descargar tu archivo .hc*`);
-                        await sendHCFile(from);
+📂 *Enviando tu archivo .hc...*`);
+                        await sendHCFile(from, hwid, nombre);
                     } else {
                         await client.sendText(from, `❌ Error: ${result.error}`);
                     }
                     await setUserState(from, 'main_menu');
                 }
                 
-                // Opción 2: Comprar
+                // Opción 2: Comprar - PRIMERO NOMBRE
                 else if (text === '2' && userState.state === 'main_menu') {
-                    await setUserState(from, 'buying_hwid');
+                    await setUserState(from, 'buying_name');
                     await client.sendText(from, `💎 *PLANES MGVPN*
 
 ┌─────────────────────────┐
@@ -835,7 +746,7 @@ O compra acceso completo con la opción 2.`);
 0 para cancelar`);
                 }
                 
-                else if (userState.state === 'buying_hwid' && ['1', '2', '3', '4'].includes(text)) {
+                else if (userState.state === 'buying_name' && ['1', '2', '3', '4'].includes(text)) {
                     const plans = {
                         '1': { days: 7, price: config.prices.price_7d, name: '7 DÍAS' },
                         '2': { days: 15, price: config.prices.price_15d, name: '15 DÍAS' },
@@ -844,10 +755,23 @@ O compra acceso completo con la opción 2.`);
                     };
                     const plan = plans[text];
                     
-                    await setUserState(from, 'buying_waiting_hwid', { plan });
-                    await client.sendText(from, `📱 *Plan seleccionado:* ${plan.name} - $${plan.price}
+                    await setUserState(from, 'buying_waiting_name', { plan });
+                    await client.sendText(from, `✅ *Plan seleccionado:* ${plan.name} - $${plan.price}
 
-Ahora *envía tu HWID* para generar el pago
+📝 *Primero, ingresa tu NOMBRE:*
+(Ej: Juan Pérez)
+
+0 para cancelar`);
+                }
+                
+                else if (userState.state === 'buying_waiting_name' && text !== '0' && message.body.trim().length > 2) {
+                    const nombre = message.body.trim();
+                    const plan = userState.data.plan;
+                    
+                    await setUserState(from, 'buying_waiting_hwid', { plan, nombre });
+                    await client.sendText(from, `✅ *Nombre registrado:* ${nombre}
+
+📱 *Ahora ingresa tu HWID:*
 
 📍 *Tu URL de validación será:*
 http://${config.bot.server_ip}:${HTTP_PORT}/api/validate/TU-HWID
@@ -855,41 +779,32 @@ http://${config.bot.server_ip}:${HTTP_PORT}/api/validate/TU-HWID
 0 para cancelar`);
                 }
                 
-                else if (userState.state === 'buying_waiting_hwid') {
-                    if (text === '0') {
-                        await setUserState(from, 'main_menu');
-                        await client.sendText(from, `✅ Compra cancelada`);
-                        return;
-                    }
-                    
+                else if (userState.state === 'buying_waiting_hwid' && text !== '0' && message.body.trim().length > 5) {
                     const hwid = message.body.trim();
                     const plan = userState.data.plan;
+                    const nombre = userState.data.nombre;
                     
-                    if (hwid.length < 5) {
-                        await client.sendText(from, `❌ HWID inválido. Envía un código válido (mínimo 5 caracteres)`);
-                        return;
-                    }
+                    await client.sendText(from, `⏳ *Generando pago para ${nombre}...*`);
                     
-                    await client.sendText(from, `⏳ Generando pago...`);
-                    
-                    const payment = await createPayment(from, hwid, plan.days, plan.price, plan.name, false);
+                    const payment = await createPayment(from, nombre, hwid, plan.days, plan.price, plan.name, false);
                     
                     if (payment.success) {
                         await client.sendText(from, `💳 *PAGO CON MERCADOPAGO - MGVPN*
 
-📆 Plan: ${plan.name}
-💰 Total: $${payment.amount}
-🔑 HWID: ${hwid}
+👤 *Cliente:* ${nombre}
+📆 *Plan:* ${plan.name}
+💰 *Total:* $${payment.amount}
+🔑 *HWID:* ${hwid}
 
 🔗 *LINK DE PAGO:*
 ${payment.paymentUrl}
 
-⏰ Válido por 24 horas
+⏰ *Válido por 24 horas*
 
 ✅ Una vez pagado, tu acceso se activará automáticamente
-📲 Tu HWID quedará registrado: http://${config.bot.server_ip}:${HTTP_PORT}/api/validate/${hwid}`);
+📲 Tu HWID quedará registrado para validación`);
                     } else {
-                        await client.sendText(from, `❌ Error: ${payment.error}\n\nContacta al administrador:\n${config.links.support}`);
+                        await client.sendText(from, `❌ *Error:* ${payment.error}\n\nContacta al administrador:\n${config.links.support}`);
                     }
                     
                     await setUserState(from, 'main_menu');
@@ -910,10 +825,11 @@ http://${config.bot.server_ip}:${HTTP_PORT}/api/validate/`);
                     } else {
                         let message = `📋 *TUS ACCESOS ACTIVOS - MGVPN*\n\n`;
                         for (const a of accesos) {
-                            message += `🔑 HWID: ${a.hwid}\n`;
-                            message += `📁 Config: ${a.file_name}\n`;
-                            message += `⏰ Expira: ${formatExpiration(a.expires_at)}\n`;
-                            message += `🌐 Validación: http://${config.bot.server_ip}:${HTTP_PORT}/api/validate/${a.hwid}\n`;
+                            message += `👤 *Nombre:* ${a.nombre || 'No registrado'}\n`;
+                            message += `🔑 *HWID:* ${a.hwid}\n`;
+                            message += `📁 *Config:* ${a.file_name}\n`;
+                            message += `⏰ *Expira:* ${formatExpiration(a.expires_at)}\n`;
+                            message += `🌐 *Validación:* http://${config.bot.server_ip}:${HTTP_PORT}/api/validate/${a.hwid}\n`;
                             message += `━━━━━━━━━━━━━━━━━━━━━\n`;
                         }
                         message += `\n🔄 Para renovar: MENU → 3\n📂 Para descargar config: MENU → 5`;
@@ -930,8 +846,10 @@ http://${config.bot.server_ip}:${HTTP_PORT}/api/validate/`);
 
 Primero activa una prueba o compra acceso.`);
                     } else {
+                        // Enviar config para el primer acceso activo
+                        const acceso = accesos[0];
                         await client.sendText(from, `📂 *Enviando configuración MGVPN...*`);
-                        await sendHCFile(from);
+                        await sendHCFile(from, acceso.hwid, acceso.nombre || 'Cliente');
                     }
                 }
                 
@@ -952,6 +870,87 @@ http://${config.bot.server_ip}:${HTTP_PORT}/api/validate/TU-HWID
 ✏️ Una vez tengas tu HWID, vuelve y usa las opciones del menú.`);
                 }
                 
+                // Opción 3: Renovar
+                else if (text === '3' && userState.state === 'main_menu') {
+                    const accesos = await getUserActiveAccess(from);
+                    
+                    if (accesos.length === 0) {
+                        await client.sendText(from, `❌ *No tienes accesos activos para renovar*
+
+Para activar uno nuevo: MENU → 2`);
+                    } else {
+                        let message = `🔄 *RENOVAR ACCESO - MGVPN*\n\nSelecciona el HWID a renovar:\n\n`;
+                        for (let i = 0; i < accesos.length; i++) {
+                            message += `${i+1}️⃣ - ${accesos[i].nombre || 'Sin nombre'} (${accesos[i].hwid.substring(0, 10)}...)\n`;
+                        }
+                        message += `\n0 - Cancelar\n\n📝 *Envía el número*`;
+                        await setUserState(from, 'renew_select', { accesos });
+                        await client.sendText(from, message);
+                    }
+                }
+                
+                else if (userState.state === 'renew_select' && text !== '0') {
+                    const idx = parseInt(text) - 1;
+                    const accesos = userState.data.accesos;
+                    
+                    if (idx >= 0 && idx < accesos.length) {
+                        const selected = accesos[idx];
+                        await setUserState(from, 'renew_plan', { hwid: selected.hwid, nombre: selected.nombre });
+                        
+                        await client.sendText(from, `🔄 *RENOVAR para ${selected.nombre || selected.hwid}*
+
+💎 *ELIGE PLAN:*
+
+┌─────────────────────────┐
+│ 1️⃣ - 7 DÍAS    - $${config.prices.price_7d} │
+│ 2️⃣ - 15 DÍAS   - $${config.prices.price_15d}│
+│ 3️⃣ - 30 DÍAS   - $${config.prices.price_30d}│
+│ 4️⃣ - 50 DÍAS   - $${config.prices.price_50d}│
+└─────────────────────────┘
+
+*Envía el número del plan*
+0 para cancelar`);
+                    } else {
+                        await client.sendText(from, `❌ Opción inválida. Envía MENU para volver.`);
+                        await setUserState(from, 'main_menu');
+                    }
+                }
+                
+                else if (userState.state === 'renew_plan' && ['1', '2', '3', '4'].includes(text)) {
+                    const plans = {
+                        '1': { days: 7, price: config.prices.price_7d, name: '7 DÍAS' },
+                        '2': { days: 15, price: config.prices.price_15d, name: '15 DÍAS' },
+                        '3': { days: 30, price: config.prices.price_30d, name: '30 DÍAS' },
+                        '4': { days: 50, price: config.prices.price_50d, name: '50 DÍAS' }
+                    };
+                    const plan = plans[text];
+                    const { hwid, nombre } = userState.data;
+                    
+                    await client.sendText(from, `⏳ *Generando pago de renovación...*`);
+                    
+                    const payment = await createPayment(from, nombre, hwid, plan.days, plan.price, plan.name, true);
+                    
+                    if (payment.success) {
+                        await client.sendText(from, `💳 *RENOVACIÓN MERCADOPAGO - MGVPN*
+
+👤 *Cliente:* ${nombre}
+📆 *Plan:* ${plan.name}
+💰 *Total:* $${payment.amount}
+🔑 *HWID:* ${hwid}
+
+🔗 *LINK DE PAGO:*
+${payment.paymentUrl}
+
+⏰ *Válido por 24 horas*
+
+✅ Una vez pagado, tu acceso se extenderá automáticamente`);
+                    } else {
+                        await client.sendText(from, `❌ *Error:* ${payment.error}`);
+                    }
+                    
+                    await setUserState(from, 'main_menu');
+                }
+                
                 // Mostrar menú si no reconoce
                 else if (userState.state === 'main_menu' && !['1','2','3','4','5','6','menu','hola','start','0'].includes(text)) {
                     await client.sendText(from, `❓ Opción no reconocida.
@@ -959,48 +958,53 @@ http://${config.bot.server_ip}:${HTTP_PORT}/api/validate/TU-HWID
 Envía *MENU* para ver las opciones disponibles.`);
                 }
                 
+                // Cancelar en cualquier estado
+                else if (text === '0' && userState.state !== 'main_menu') {
+                    await setUserState(from, 'main_menu');
+                    await client.sendText(from, `✅ *Operación cancelada*
+
+Envía MENU para volver al inicio.`);
+                }
+                
             } catch (error) {
                 console.error(chalk.red(`Error en mensaje: ${error.message}`));
+                await client.sendText(message.from, `⚠️ *Error:* ${error.message}\n\nEnvía MENU para continuar.`);
             }
         });
         
         // ============ CRON JOBS ============
         
-        // Verificar pagos cada 2 minutos
-        cron.schedule('*/2 * * * *', () => {
-            checkPendingPayments();
-        });
-        
         // Limpiar expirados cada hora
         cron.schedule('0 * * * *', () => {
             db.run(`UPDATE users SET status = 0 WHERE expires_at < datetime('now')`);
-            db.run(`DELETE FROM pending_activations WHERE expires_at < datetime('now')`);
             console.log(chalk.yellow('🔄 Limpieza de accesos expirados completada'));
         });
         
         // Recordatorios diarios
         cron.schedule('0 10 * * *', async () => {
-            const tomorrow = moment().add(1, 'day').format('YYYY-MM-DD');
-            
-            db.all(`SELECT phone, hwid, expires_at FROM users 
-                    WHERE status = 1 AND date(expires_at) = ? AND last_reminder_sent = 0`,
-                [tomorrow], async (err, users) => {
+            db.all(`SELECT phone, nombre, hwid, expires_at FROM users 
+                    WHERE status = 1 AND date(expires_at) = date('now', '+1 day') AND last_reminder_sent = 0`,
+                [], async (err, users) => {
                 if (err || !users) return;
                 
                 for (const user of users) {
                     try {
                         await client.sendText(user.phone, `⚠️ *RECORDATORIO MGVPN*
 
-Tu acceso para HWID *${user.hwid}* expirará MAÑANA.
+👤 *Cliente:* ${user.nombre || 'Usuario'}
+🔑 *HWID:* ${user.hwid}
 
-📅 Fecha: ${formatExpiration(user.expires_at)}
-🌐 Validación: http://${config.bot.server_ip}:${HTTP_PORT}/api/validate/${user.hwid}
+Tu acceso expirará MAÑANA.
+
+📅 *Fecha expiración:* ${formatExpiration(user.expires_at)}
 
 🔄 *RENUEVA AHORA* enviando MENU → opción 3`);
                         
                         db.run(`UPDATE users SET last_reminder_sent = 1 WHERE hwid = ?`, [user.hwid]);
-                        console.log(chalk.green(`✅ Recordatorio enviado a ${user.hwid}`));
-                    } catch (e) {}
+                        console.log(chalk.green(`✅ Recordatorio enviado a ${user.nombre}`));
+                    } catch (e) {
+                        console.error(chalk.red(`Error enviando recordatorio: ${e.message}`));
+                    }
                 }
             });
         });
@@ -1020,7 +1024,7 @@ process.on('SIGINT', async () => {
 });
 BOTEOF
 
-echo -e "${GREEN}✅ Bot.js creado con validación HWID completa${NC}"
+echo -e "${GREEN}✅ Bot.js creado con validación HWID corregida y flujo nombre→HWID${NC}"
 
 # ================================================
 # CREAR PANEL DE CONTROL
@@ -1133,7 +1137,7 @@ while true; do
             ;;
         7)
             echo -e "\n${CYAN}📋 USUARIOS ACTIVOS${NC}\n"
-            sqlite3 -column -header "$DB" "SELECT hwid, phone, tipo, substr(expires_at,1,16) as expira FROM users WHERE status=1 AND expires_at>datetime('now') ORDER BY expires_at LIMIT 30"
+            sqlite3 -column -header "$DB" "SELECT nombre, hwid, phone, tipo, substr(expires_at,1,16) as expira FROM users WHERE status=1 AND expires_at>datetime('now') ORDER BY expires_at LIMIT 30"
             echo ""
             read -p "Enter..."
             ;;
@@ -1205,7 +1209,7 @@ cat << "FINAL"
 ║                                                              ║
 ║       ✅ WhatsApp Bot funcionando                          ║
 ║       ✅ API de validación HWID activa                     ║
-║       ✅ Login por HWID en tiempo real                     ║
+║       ✅ Flujo: PRIMERO NOMBRE → LUEGO HWID                 ║
 ║       ✅ Entrega automática de archivo .hc                 ║
 ║       ✅ Prueba gratuita 2 horas                           ║
 ║       ✅ MercadoPago integrado                             ║
@@ -1218,18 +1222,18 @@ echo -e "${GREEN}✅ Instalación completa${NC}"
 echo -e ""
 echo -e "${YELLOW}📋 COMANDOS ÚTILES:${NC}"
 echo -e "  ${GREEN}hcbot${NC}              - Panel de control"
-echo -e "  ${GREEN}pm2 logs hcbot-pro${NC}  - Ver logs y QR"
+echo -e "  ${GREEN}pm2 logs hcbot-pro${NC}  - Ver logs y QR para escanear"
 echo -e "  ${GREEN}pm2 restart hcbot-pro${NC} - Reiniciar bot"
 echo -e ""
 echo -e "${CYAN}🔗 URL DE VALIDACIÓN PARA USUARIOS:${NC}"
 echo -e "  ${GREEN}http://$SERVER_IP:$PORT/api/validate/TU-HWID${NC}"
 echo -e ""
-echo -e "${YELLOW}📌 INSTRUCCIONES PARA USUARIOS:${NC}"
-echo -e "  1. Obtener HWID en HTTP Custom (Ajustes → ID del dispositivo)"
-echo -e "  2. Enviar 'MENU' al bot de WhatsApp"
-echo -e "  3. Usar opción 1 para prueba gratis o 2 para comprar"
-echo -e "  4. Configurar en HTTP Custom: Ajustes → Validación HWID"
-echo -e "  5. Pegar la URL: http://$SERVER_IP:$PORT/api/validate/SU-HWID"
+echo -e "${YELLOW}📌 NUEVO FLUJO DEL BOT:${NC}"
+echo -e "  1️⃣ Usuario envía MENU"
+echo -e "  2️⃣ Opción 1 (Prueba gratis) o 2 (Comprar)"
+echo -e "  3️⃣ 📝 PRIMERO pide NOMBRE del cliente"
+echo -e "  4️⃣ 🔑 LUEGO pide HWID"
+echo -e "  5️⃣ Activa acceso y envía archivo .hc"
 echo -e ""
 echo -e "${YELLOW}🚀 PRIMEROS PASOS:${NC}"
 echo -e "  1. ${GREEN}pm2 logs hcbot-pro${NC} - Escanear QR para conectar WhatsApp"
