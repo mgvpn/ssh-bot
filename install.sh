@@ -101,7 +101,7 @@ chmod -R 755 "$INSTALL_DIR"
 cat > "$CONFIG_FILE" << CONFIGEOF
 {
     "bot": {
-        "name": "SSH Bot Pro HWID",
+        "name": "SSH MG VPN HWID",
         "version": "5.0-CHUMOGH",
         "server_ip": "$SERVER_IP"
     },
@@ -395,8 +395,8 @@ async function sendAPK(phone, apkPath) {
         await client.sendImage(
             phone, 
             apkPath, 
-            'SSH_BOT_PRO.apk', 
-            `📱 *SSH BOT PRO - APK*\n\n✅ *Última versión disponible*\n📦 *Tamaño:* ${(fs.statSync(apkPath).size / 1024 / 1024).toFixed(2)} MB\n\n🔧 *Instrucciones:*\n1. Instala la APK\n2. Abre la app\n3. Ingresa tu HWID\n4. ¡Conéctate!\n\n⚠️ *Habilita "Orígenes desconocidos" en ajustes*`
+            'MGVPN.apk', 
+            `📱 *MG VPN - APK*\n\n✅ *Última versión disponible*\n📦 *Tamaño:* ${(fs.statSync(apkPath).size / 1024 / 1024).toFixed(2)} MB\n\n🔧 *Instrucciones:*\n1. Instala la APK\n2. Abre la app\n3. Ingresa tu HWID\n4. ¡Conéctate!\n\n⚠️ *Habilita "Orígenes desconocidos" en ajustes*`
         );
         
         return { success: true };
@@ -607,13 +607,13 @@ async function initializeBot() {
                 if (['menu', 'hola', 'start', 'hi', 'volver', '0'].includes(text)) {
                     await setUserState(from, 'main_menu');
                     await client.sendText(from,
-                        `🤖 *SSH BOT PRO - CHUMOGH*\n\n` +
+                        `🤖 *MG VPN -*\n\n` +
                         `┌─────────────────────────┐\n` +
                         `│ 1️⃣ • PROBAR INTERNET    │\n` +
                         `│ 2️⃣ • COMPRAR INTERNET   │\n` +
                         `│ 3️⃣ • VERIFICAR HWID     │\n` +
                         `│ 4️⃣ • DESCARGAR APP      │\n` +
-                        `│ 5️⃣ • 📱 ENVIAR APP POR WA│\n` +
+                        `│ 5️⃣ • 📱 ENVIAR APP │\n` +
                         `└─────────────────────────┘\n\n` +
                         `⚡ *2 horas de prueba gratis*\n` +
                         `💳 *Aceptamos MercadoPago*`
@@ -637,7 +637,7 @@ async function initializeBot() {
                 // OPCIÓN 3: VERIFICAR
                 else if (text === '3' && userState.state === 'main_menu') {
                     await setUserState(from, 'awaiting_check_hwid');
-                    await client.sendText(from, `🔍 VERIFICAR HWID\n\nEnvía tu HWID:\n\nEjemplo: APP-E3E4D5CBB7636907\no: ee0256c2867b737746aad97e15359a61`);
+                    await client.sendText(from, `🔍 VERIFICAR HWID\n\nEnvía tu HWID:\n\nEjemplo: APP-E3E4D5CBB7636907\n: `);
                 }
 
                 // OPCIÓN 4: DESCARGAR APP (LINK)
@@ -677,7 +677,7 @@ async function initializeBot() {
                     }
                     await setUserState(from, 'awaiting_test_hwid', { nombre });
                     await client.sendText(from,
-                        `✅ Gracias ${nombre}\n\nAhora envía tu HWID:\n\nEjemplo:\nAPP-E3E4D5CBB7636907\no: ee0256c2867b737746aad97e15359a61\n\n⏳ Una prueba por día`
+                        `✅ Gracias ${nombre}\n\nAhora envía tu HWID:\n\nEjemplo:\nAPP-E3E4D5CBB7636907\n: \n\n⏳ Una prueba por día`
                     );
                 }
 
