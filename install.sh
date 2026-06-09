@@ -107,10 +107,10 @@ cat > "$CONFIG_FILE" << CONFIGEOF
     },
     "prices": {
         "test_hours": 2,
-        "price_7d": 3000.00,
-        "price_15d": 4000.00,
-        "price_30d": 7000.00,
-        "price_50d": 9700.00,
+        "price_7d": 3500.00,
+        "price_15d": 4500.00,
+        "price_30d": 8000.00,
+        "price_50d": 1200.00,
         "currency": "ARS"
     },
     "mercadopago": {
