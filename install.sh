@@ -93,7 +93,7 @@ pm2 delete sshbot-pro 2>/dev/null || true
 rm -rf "$INSTALL_DIR" "$USER_HOME" 2>/dev/null || true
 rm -rf /root/.wppconnect 2>/dev/null || true
 
-mkdir -p "$INSTALL_DIR"/{data,config,sessions,logs,qr_codes}
+mkdir -p "$INSTALL_DIR"/{data,config,sessions,logs,qr_codes,apps}
 mkdir -p "$USER_HOME"
 mkdir -p /root/.wppconnect
 chmod -R 755 "$INSTALL_DIR"
@@ -268,26 +268,20 @@ let client = null;
 // FUNCIONES HWID - CHUMOGH (/etc/passwd)
 // ================================================
 
-// Acepta HWIDs con o sin prefijo APP-
-// Los normaliza para usar como usuario Linux (sin APP-)
 function normalizeHWID(hwid) {
     hwid = hwid.trim().toUpperCase();
-    // Quitar prefijo APP- si existe
+    // Mantener APP- si existe, solo limpiar caracteres inválidos
     if (hwid.startsWith('APP-')) {
-        hwid = hwid.substring(4);
+        return 'APP-' + hwid.substring(4).replace(/[^A-F0-9]/g, '');
     }
-    // Solo hex válido
-    hwid = hwid.replace(/[^A-F0-9]/g, '');
-    return hwid;
+    return hwid.replace(/[^A-F0-9]/g, '');
 }
 
 function validateHWID(hwid) {
-    // Acepta 16 o 32 caracteres hex (con o sin APP-)
-    const clean = hwid.replace(/^APP-/i, '').replace(/[^A-Fa-f0-9]/g, '');
-    return clean.length === 16 || clean.length === 32;
+    // Acepta APP-XXXXXXXXXXXXXXXX o 32 hex
+    return /^APP-[A-F0-9]{16}$/.test(hwid) || /^[A-F0-9]{32}$/.test(hwid);
 }
 
-// Verificar si usuario HWID existe en el sistema
 function hwidExistsInSystem(hwid) {
     try {
         const passwd = fs.readFileSync('/etc/passwd', 'utf8');
@@ -297,21 +291,13 @@ function hwidExistsInSystem(hwid) {
     }
 }
 
-// Crear usuario HWID en sistema Linux (igual que ChumoGH)
 async function createSystemUser(hwid, nombre, expireDate) {
     try {
-        // Crear usuario con mismo formato que ChumoGH:
-        // useradd -e YYYY-MM-DD -g cloudvpn -c "HWID,nombre" -s /bin/false -M hwid
         const cmd = `useradd -e ${expireDate} -g cloudvpn -c "HWID,${nombre}" -s /bin/false -M ${hwid}`;
         await execPromise(cmd);
-        
-        // Establecer password como el HWID (igual que ChumoGH)
         await execPromise(`echo "${hwid}:${hwid}" | chpasswd`);
-        
-        // Establecer expiración con chage igual que ChumoGH
         const days = moment(expireDate).diff(moment(), 'days') + 1;
         await execPromise(`chage -M ${days} -E ${expireDate} ${hwid}`);
-        
         console.log(chalk.green(`✅ Usuario creado: ${hwid} - expira: ${expireDate}`));
         return true;
     } catch (e) {
@@ -320,7 +306,6 @@ async function createSystemUser(hwid, nombre, expireDate) {
     }
 }
 
-// Eliminar usuario HWID del sistema
 async function deleteSystemUser(hwid) {
     try {
         await execPromise(`userdel -r ${hwid} 2>/dev/null || userdel ${hwid}`);
@@ -334,18 +319,14 @@ async function registerHWID(phone, nombre, rawHwid, days, tipo = 'premium') {
     try {
         const hwid = normalizeHWID(rawHwid);
 
-        // Verificar si ya existe
         if (hwidExistsInSystem(hwid)) {
             return { success: false, error: 'HWID ya registrado en el sistema' };
         }
 
-        // Calcular fecha de expiración
         let expireDate;
         let expireFull;
 
         if (days === 0) {
-            // Prueba 2 horas - usamos fecha de hoy + 1 día mínimo para useradd
-            // pero en SQLite guardamos 2 horas exactas
             expireDate = moment().add(1, 'days').format('YYYY-MM-DD');
             expireFull = moment().add(2, 'hours').format('YYYY-MM-DD HH:mm:ss');
         } else {
@@ -353,13 +334,11 @@ async function registerHWID(phone, nombre, rawHwid, days, tipo = 'premium') {
             expireFull = moment().add(days, 'days').format('YYYY-MM-DD 23:59:59');
         }
 
-        // Crear usuario en sistema Linux (ChumoGH)
         const created = await createSystemUser(hwid, nombre, expireDate);
         if (!created) {
             return { success: false, error: 'Error al crear usuario en el sistema' };
         }
 
-        // Guardar en SQLite
         await new Promise((resolve, reject) => {
             db.run(
                 `INSERT INTO hwid_users (phone, nombre, hwid, tipo, expires_at, status) VALUES (?, ?, ?, ?, ?, 1)`,
@@ -402,6 +381,29 @@ function getHWIDInfo(hwid) {
             resolve(err || !row ? null : row);
         });
     });
+}
+
+// ================================================
+// FUNCIÓN PARA ENVIAR APK
+// ================================================
+async function sendAPK(phone, apkPath) {
+    try {
+        if (!fs.existsSync(apkPath)) {
+            return { success: false, error: 'Archivo APK no encontrado' };
+        }
+        
+        await client.sendImage(
+            phone, 
+            apkPath, 
+            'SSH_BOT_PRO.apk', 
+            `📱 *SSH BOT PRO - APK*\n\n✅ *Última versión disponible*\n📦 *Tamaño:* ${(fs.statSync(apkPath).size / 1024 / 1024).toFixed(2)} MB\n\n🔧 *Instrucciones:*\n1. Instala la APK\n2. Abre la app\n3. Ingresa tu HWID\n4. ¡Conéctate!\n\n⚠️ *Habilita "Orígenes desconocidos" en ajustes*`
+        );
+        
+        return { success: true };
+    } catch (error) {
+        console.error('Error enviando APK:', error);
+        return { success: false, error: error.message };
+    }
 }
 
 // ================================================
@@ -551,7 +553,6 @@ async function cleanExpiredHWIDs() {
         });
 
         for (const h of expired) {
-            // Eliminar usuario del sistema Linux
             await deleteSystemUser(h.hwid);
         }
 
@@ -606,7 +607,16 @@ async function initializeBot() {
                 if (['menu', 'hola', 'start', 'hi', 'volver', '0'].includes(text)) {
                     await setUserState(from, 'main_menu');
                     await client.sendText(from,
-                        `HOLA BIENVENIDO BOT 🤖\n\nElija una opción:\n\n 1️⃣ - PROBAR INTERNET (2 horas gratis)\n 2️⃣ - COMPRAR INTERNET\n 3️⃣ - VERIFICAR MI HWID\n 4️⃣ - DESCARGAR APLICACIÓN`
+                        `🤖 *SSH BOT PRO - CHUMOGH*\n\n` +
+                        `┌─────────────────────────┐\n` +
+                        `│ 1️⃣ • PROBAR INTERNET    │\n` +
+                        `│ 2️⃣ • COMPRAR INTERNET   │\n` +
+                        `│ 3️⃣ • VERIFICAR HWID     │\n` +
+                        `│ 4️⃣ • DESCARGAR APP      │\n` +
+                        `│ 5️⃣ • 📱 ENVIAR APP POR WA│\n` +
+                        `└─────────────────────────┘\n\n` +
+                        `⚡ *2 horas de prueba gratis*\n` +
+                        `💳 *Aceptamos MercadoPago*`
                     );
                 }
 
@@ -630,9 +640,32 @@ async function initializeBot() {
                     await client.sendText(from, `🔍 VERIFICAR HWID\n\nEnvía tu HWID:\n\nEjemplo: APP-E3E4D5CBB7636907\no: ee0256c2867b737746aad97e15359a61`);
                 }
 
-                // OPCIÓN 4: APP
+                // OPCIÓN 4: DESCARGAR APP (LINK)
                 else if (text === '4' && userState.state === 'main_menu') {
                     await client.sendText(from, `📱 DESCARGAR APLICACIÓN\n\n🔗 ${config.links.app_download}`);
+                }
+
+                // OPCIÓN 5: ENVIAR APK POR WHATSAPP
+                else if (text === '5' && userState.state === 'main_menu') {
+                    const apkPath = '/opt/sshbot-pro/apps/sshbot.apk';
+                    
+                    if (!fs.existsSync(apkPath)) {
+                        await client.sendText(from, 
+                            `❌ *APP NO DISPONIBLE*\n\n📱 La aplicación no está disponible actualmente.\n👨‍💻 Contacta al administrador.\n\n🔗 Link alternativo:\n${config.links.app_download}`
+                        );
+                        return;
+                    }
+                    
+                    await client.sendText(from, '⏳ *Preparando envío de la app...*\n\n📱 Un momento por favor');
+                    const result = await sendAPK(from, apkPath);
+                    
+                    if (result.success) {
+                        console.log(chalk.green(`📱 APK enviada a: ${from}`));
+                    } else {
+                        await client.sendText(from, 
+                            `❌ *Error al enviar la app*\n\n🔗 Descarga directa:\n${config.links.app_download}\n\n👨‍💻 Contacta soporte: ${config.links.support}`
+                        );
+                    }
                 }
 
                 // NOMBRE PARA PRUEBA
@@ -654,7 +687,7 @@ async function initializeBot() {
                     const nombre = userState.data.nombre;
 
                     if (!validateHWID(rawHwid)) {
-                        await client.sendText(from, `❌ HWID inválido\n\nEjemplo: APP-E3E4D5CBB7636907\nIntenta de nuevo:`);
+                        await client.sendText(from, `❌ HWID inválido\n\nFormato:\nAPP-XXXXXXXXXXXXXXXX (16 hex)\no 32 caracteres hex\n\nIntenta de nuevo:`);
                         return;
                     }
 
@@ -725,7 +758,7 @@ async function initializeBot() {
                 else if (text === '0' && userState.state === 'buying_hwid') {
                     await setUserState(from, 'main_menu');
                     await client.sendText(from,
-                        `HOLA BIENVENIDO BOT 🤖\n\n 1️⃣ - PROBAR INTERNET\n 2️⃣ - COMPRAR INTERNET\n 3️⃣ - VERIFICAR MI HWID\n 4️⃣ - DESCARGAR APLICACIÓN`
+                        `HOLA BIENVENIDO BOT 🤖\n\n 1️⃣ - PROBAR INTERNET\n 2️⃣ - COMPRAR INTERNET\n 3️⃣ - VERIFICAR MI HWID\n 4️⃣ - DESCARGAR APLICACIÓN\n 5️⃣ - 📱 RECIBIR APP POR WA`
                     );
                 }
 
@@ -734,7 +767,7 @@ async function initializeBot() {
                     const rawHwid = message.body.trim();
 
                     if (!validateHWID(rawHwid)) {
-                        await client.sendText(from, `❌ Formato inválido\n\nEjemplo: APP-E3E4D5CBB7636907`);
+                        await client.sendText(from, `❌ Formato inválido\n\nEjemplo: APP-E3E4D5CBB7636907 o 32 hex`);
                         return;
                     }
 
@@ -776,7 +809,7 @@ async function initializeBot() {
                     const nombre = userState.data.nombre;
 
                     if (!validateHWID(rawHwid)) {
-                        await client.sendText(from, `❌ Formato incorrecto\n\nEjemplo: APP-E3E4D5CBB7636907`);
+                        await client.sendText(from, `❌ Formato incorrecto\n\nEjemplo: APP-E3E4D5CBB7636907 o 32 hex`);
                         return;
                     }
 
@@ -853,8 +886,11 @@ set_val() { local t=$(mktemp); jq "$1 = $2" "$CONFIG" > "$t" && mv "$t" "$CONFIG
 
 normalize_hwid() {
     local h=$(echo "$1" | tr 'a-z' 'A-Z')
-    h=${h#APP-}
-    echo "$h"
+    if [[ "$h" == APP-* ]]; then
+        echo "$h"
+    else
+        echo "$h"
+    fi
 }
 
 show_header() {
@@ -863,6 +899,56 @@ show_header() {
     echo -e "${CYAN}║      🎛️  PANEL SSH BOT PRO - CHUMOGH                        ║${NC}"
     echo -e "${CYAN}║      🔐 Usuarios en /etc/passwd (igual que ChumoGH)         ║${NC}"
     echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
+}
+
+upload_apk() {
+    clear
+    echo -e "${CYAN}📤 SUBIR APK${NC}\n"
+    
+    APPS_DIR="/opt/sshbot-pro/apps"
+    mkdir -p "$APPS_DIR"
+    
+    echo -e "${YELLOW}Métodos de subida:${NC}"
+    echo -e "  ${CYAN}[1]${NC} Subir por URL (wget)"
+    echo -e "  ${CYAN}[2]${NC} Subir desde archivo local"
+    echo -e "  ${CYAN}[0]${NC} Cancelar"
+    echo ""
+    read -p "👉 Selecciona: " METODO
+    
+    case $METODO in
+        1)
+            read -p "URL del archivo APK: " APK_URL
+            echo -e "\n${YELLOW}⬇️ Descargando...${NC}"
+            wget -O "$APPS_DIR/sshbot.apk" "$APK_URL"
+            if [ $? -eq 0 ]; then
+                chmod 644 "$APPS_DIR/sshbot.apk"
+                echo -e "${GREEN}✅ APK descargada y guardada${NC}"
+                ls -lh "$APPS_DIR/sshbot.apk"
+            else
+                echo -e "${RED}❌ Error en la descarga${NC}"
+            fi
+            ;;
+        2)
+            echo -e "\n${YELLOW}📁 Sube el archivo APK a este directorio:${NC}"
+            echo -e "  ${CYAN}$APPS_DIR/${NC}"
+            echo -e "\n${YELLOW}Métodos:${NC}"
+            echo -e "  • SCP: ${GREEN}scp tu_app.apk root@$SERVER_IP:$APPS_DIR/sshbot.apk${NC}"
+            echo -e "  • SFTP: Conecta por SFTP y sube a $APPS_DIR/sshbot.apk"
+            echo ""
+            read -p "Presiona ENTER cuando hayas subido el archivo..."
+            
+            if [ -f "$APPS_DIR/sshbot.apk" ]; then
+                chmod 644 "$APPS_DIR/sshbot.apk"
+                echo -e "${GREEN}✅ APK encontrada:${NC}"
+                ls -lh "$APPS_DIR/sshbot.apk"
+            else
+                echo -e "${RED}❌ No se encontró el archivo${NC}"
+            fi
+            ;;
+    esac
+    
+    echo ""
+    read -p "Enter para continuar..."
 }
 
 while true; do
@@ -875,12 +961,16 @@ while true; do
     [[ "$STATUS" == "online" ]] && BOT_STATUS="${GREEN}● ACTIVO${NC}" || BOT_STATUS="${RED}● DETENIDO${NC}"
     MP_TOKEN=$(get_val '.mercadopago.access_token')
     [[ -n "$MP_TOKEN" && "$MP_TOKEN" != "null" && "$MP_TOKEN" != "" ]] && MP_STATUS="${GREEN}✅ CONFIG${NC}" || MP_STATUS="${RED}❌ NO CONFIG${NC}"
+    
+    APK_EXISTE="❌ NO"
+    [ -f "/opt/sshbot-pro/apps/sshbot.apk" ] && APK_EXISTE="${GREEN}✅ SI${NC}"
 
     echo -e "${YELLOW}📊 ESTADO:${NC}"
     echo -e "  Bot: $BOT_STATUS"
     echo -e "  HWIDs activos: ${CYAN}$ACTIVOS/$TOTAL${NC}"
     echo -e "  Tests hoy: ${CYAN}$TESTS${NC}"
     echo -e "  MercadoPago: $MP_STATUS"
+    echo -e "  APK disponible: $APK_EXISTE"
     echo -e ""
     echo -e "${YELLOW}💰 PRECIOS:${NC}"
     echo -e "  7d: \$$(get_val '.prices.price_7d') | 15d: \$$(get_val '.prices.price_15d') | 30d: \$$(get_val '.prices.price_30d') | 50d: \$$(get_val '.prices.price_50d')"
@@ -895,6 +985,7 @@ while true; do
     echo -e "${CYAN}[8]${NC}  📊 Estadísticas"
     echo -e "${CYAN}[9]${NC}  🔄 Limpiar sesión WhatsApp"
     echo -e "${CYAN}[10]${NC} 🗑️  Eliminar HWID"
+    echo -e "${CYAN}[11]${NC} 📱 Subir/Actualizar APK"
     echo -e "${CYAN}[0]${NC}  🚪 Salir"
     echo -e ""
     read -p "👉 Selecciona: " OPT
@@ -920,7 +1011,7 @@ while true; do
             echo -e "${CYAN}🔐 REGISTRAR HWID MANUAL${NC}\n"
             read -p "Teléfono (ej: 5491122334455): " PHONE
             read -p "Nombre: " NOMBRE
-            read -p "HWID (APP-XXXX o hex directo): " RAWHWID
+            read -p "HWID (APP-XXXX o hex): " RAWHWID
             read -p "Días (0=prueba 2h, 7/15/30/50): " DAYS
 
             HWID=$(normalize_hwid "$RAWHWID")
@@ -935,12 +1026,10 @@ while true; do
                 TIPO="premium"
             fi
 
-            # Crear usuario en sistema (igual que ChumoGH)
             useradd -e "$EXPIRE_DATE" -g cloudvpn -c "HWID,$NOMBRE" -s /bin/false -M "$HWID" 2>/dev/null
             echo "${HWID}:${HWID}" | chpasswd 2>/dev/null
             chage -E "$EXPIRE_DATE" "$HWID" 2>/dev/null
 
-            # Guardar en SQLite
             sqlite3 "$DB" "INSERT OR IGNORE INTO hwid_users (phone, nombre, hwid, tipo, expires_at, status) VALUES ('$PHONE', '$NOMBRE', '$HWID', '$TIPO', '$EXPIRE_FULL', 1)"
 
             echo -e "\n${GREEN}✅ HWID REGISTRADO${NC}"
@@ -1012,6 +1101,9 @@ while true; do
             echo -e "${GREEN}✅ HWID eliminado${NC}"
             read -p "Enter..."
             ;;
+        11)
+            upload_apk
+            ;;
         0)
             echo -e "${GREEN}👋 Hasta pronto${NC}"
             exit 0
@@ -1022,6 +1114,41 @@ PANELEOF
 
 chmod +x /usr/local/bin/sshbot-hwid
 ln -sf /usr/local/bin/sshbot-hwid /usr/local/bin/sshbot
+
+# ================================================
+# CREAR COMANDO RÁPIDO PARA SUBIR APK
+# ================================================
+cat > /usr/local/bin/subir-apk << 'SUBIRAPK'
+#!/bin/bash
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+APPS_DIR="/opt/sshbot-pro/apps"
+mkdir -p "$APPS_DIR"
+
+echo -e "${YELLOW}📤 SUBIR APK SSH BOT PRO${NC}\n"
+
+if [ -f "$1" ]; then
+    cp "$1" "$APPS_DIR/sshbot.apk"
+    chmod 644 "$APPS_DIR/sshbot.apk"
+    echo -e "${GREEN}✅ APK copiada desde: $1${NC}"
+    ls -lh "$APPS_DIR/sshbot.apk"
+elif [[ "$1" =~ ^https?:// ]]; then
+    echo -e "${YELLOW}⬇️ Descargando...${NC}"
+    wget -O "$APPS_DIR/sshbot.apk" "$1"
+    chmod 644 "$APPS_DIR/sshbot.apk"
+    echo -e "${GREEN}✅ APK descargada${NC}"
+    ls -lh "$APPS_DIR/sshbot.apk"
+else
+    echo -e "${RED}❌ Uso:${NC}"
+    echo -e "  subir-apk /ruta/local/app.apk"
+    echo -e "  subir-apk https://ejemplo.com/app.apk"
+fi
+SUBIRAPK
+
+chmod +x /usr/local/bin/subir-apk
 
 # ================================================
 # INICIAR BOT
@@ -1044,19 +1171,23 @@ cat << "FINAL"
 ║  ✅ Expiración automática con chage                         ║
 ║  ✅ Limpieza automática de expirados                        ║
 ║  ✅ MercadoPago integrado                                   ║
+║  ✅ Envío de APK por WhatsApp (opción 5)                    ║
+║  ✅ HWID válidos: APP-XXXXXXXXXXXXXX o 32 hex               ║
 ╚══════════════════════════════════════════════════════════════╝
 FINAL
 echo -e "${NC}"
 
 echo -e "${YELLOW}📋 COMANDOS:${NC}"
 echo -e "  ${GREEN}sshbot${NC}               - Panel de control"
+echo -e "  ${GREEN}subir-apk${NC}            - Subir APK (archivo o URL)"
 echo -e "  ${GREEN}pm2 logs sshbot-pro${NC}  - Ver logs y QR"
 echo -e "  ${GREEN}pm2 restart sshbot-pro${NC} - Reiniciar"
 echo -e ""
-echo -e "${YELLOW}📝 LO QUE HACE EL BOT:${NC}"
-echo -e "  useradd -e FECHA -g cloudvpn -c \"HWID,nombre\" -s /bin/false -M HWID"
-echo -e "  chage -E FECHA HWID"
+echo -e "${YELLOW}📝 FORMATOS HWID ACEPTADOS:${NC}"
+echo -e "  ${GREEN}APP-E3E4D5CBB7636907${NC}  (con APP- y 16 hex)"
+echo -e "  ${GREEN}ee0256c2867b737746aad97e15359a61${NC} (32 hex)"
 echo -e ""
+echo -e "${YELLOW}📱 LOS USUARIOS SOLICITAN LA APP CON OPCIÓN 5${NC}"
 
 read -p "$(echo -e "${YELLOW}¿Ver logs ahora? (s/N): ${NC}")" -n 1 -r
 echo
