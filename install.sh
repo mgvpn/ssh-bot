@@ -1,8 +1,6 @@
 #!/bin/bash
 # ================================================
-# SSH BOT PRO - WPPCONNECT + MERCADOPAGO + HWID
-# INTEGRADO CON CHUMOGH - CREA USUARIOS EN /etc/passwd
-# CON ENVÍO DE APK FUNCIONAL
+# SSH BOT PRO - MGVPN - ENVÍO DE APK FUNCIONAL
 # ================================================
 
 set -e
@@ -17,10 +15,10 @@ clear
 echo -e "${CYAN}"
 cat << "BANNER"
 ╔══════════════════════════════════════════════════════════════╗
-║         🤖 SSH BOT PRO - CHUMOGH + MERCADOPAGO              ║
+║         🤖 MGVPN BOT - CHUMOGH + MERCADOPAGO                ║
 ║         🔐 Crea usuarios HWID en /etc/passwd                ║
 ║         ⏱️  PRUEBA 2 HORAS - PAGO AUTOMATICO                ║
-║         📲 ENVÍO DE APK POR WHATSAPP FUNCIONAL              ║
+║         📲 ENVÍO DE APK POR WHATSAPP - MGVPN                ║
 ╚══════════════════════════════════════════════════════════════╝
 BANNER
 echo -e "${NC}"
@@ -71,7 +69,6 @@ ufw --force enable
 npm install -g pm2
 pm2 update
 
-# Verificar que existe el grupo cloudvpn
 if ! getent group cloudvpn > /dev/null 2>&1; then
     groupadd cloudvpn
     echo -e "${GREEN}✅ Grupo cloudvpn creado${NC}"
@@ -103,8 +100,8 @@ chmod -R 755 "$INSTALL_DIR"
 cat > "$CONFIG_FILE" << CONFIGEOF
 {
     "bot": {
-        "name": "SSH Bot Pro HWID",
-        "version": "5.0-CHUMOGH",
+        "name": "MGVPN BOT",
+        "version": "5.0-MGVPN",
         "server_ip": "$SERVER_IP"
     },
     "prices": {
@@ -128,7 +125,7 @@ cat > "$CONFIG_FILE" << CONFIGEOF
         "database": "$DB_FILE",
         "qr_codes": "$INSTALL_DIR/qr_codes",
         "sessions": "/root/.wppconnect",
-        "apk_file": "$INSTALL_DIR/apps/sshbot.apk"
+        "apk_file": "$INSTALL_DIR/apps/mgvpn.apk"
     }
 }
 CONFIGEOF
@@ -181,15 +178,15 @@ SQL
 echo -e "${GREEN}✅ Estructura creada${NC}"
 
 # ================================================
-# CREAR BOT CON ENVÍO DE APK CORREGIDO
+# CREAR BOT CON MGVPN
 # ================================================
-echo -e "\n${CYAN}🤖 Creando bot...${NC}"
+echo -e "\n${CYAN}🤖 Creando bot MGVPN...${NC}"
 
 cd "$USER_HOME"
 
 cat > package.json << 'PKGEOF'
 {
-    "name": "sshbot-pro-chumogh",
+    "name": "mgvpn-bot",
     "version": "5.0.0",
     "main": "bot.js",
     "dependencies": {
@@ -224,9 +221,9 @@ const execPromise = util.promisify(exec);
 moment.locale('es');
 
 console.log(chalk.cyan.bold('\n╔══════════════════════════════════════════════════════╗'));
-console.log(chalk.cyan.bold('║   🤖 SSH BOT PRO - CHUMOGH                          ║'));
-console.log(chalk.cyan.bold('║   🔐 Crea usuarios HWID en /etc/passwd              ║'));
-console.log(chalk.cyan.bold('║   📲 Envío de APK por WhatsApp FUNCIONAL            ║'));
+console.log(chalk.cyan.bold('║         🤖 MGVPN BOT - CHUMOGH                        ║'));
+console.log(chalk.cyan.bold('║         🔐 Crea usuarios HWID en /etc/passwd         ║'));
+console.log(chalk.cyan.bold('║         📱 APP: MGVPN - Envío directo                ║'));
 console.log(chalk.cyan.bold('╚══════════════════════════════════════════════════════╝\n'));
 
 function loadConfig() {
@@ -237,9 +234,7 @@ function loadConfig() {
 let config = loadConfig();
 const db = new sqlite3.Database('/opt/sshbot-pro/data/hwid.db');
 
-// ================================================
 // MERCADOPAGO SDK V2
-// ================================================
 let mpEnabled = false;
 let mpPreference = null;
 
@@ -259,7 +254,7 @@ function initMercadoPago() {
             console.log(chalk.red('❌ Error MP:'), e.message);
         }
     } else {
-        console.log(chalk.yellow('⚠️  MercadoPago NO configurado'));
+        console.log(chalk.yellow('⚠️ MercadoPago NO configurado'));
     }
 }
 
@@ -267,10 +262,7 @@ initMercadoPago();
 
 let client = null;
 
-// ================================================
-// FUNCIONES HWID - CHUMOGH (/etc/passwd)
-// ================================================
-
+// FUNCIONES HWID
 function normalizeHWID(hwid) {
     hwid = hwid.trim().toUpperCase();
     if (hwid.startsWith('APP-')) {
@@ -310,7 +302,7 @@ async function createSystemUser(hwid, nombre, expireDate) {
 async function deleteSystemUser(hwid) {
     try {
         await execPromise(`userdel -r ${hwid} 2>/dev/null || userdel ${hwid}`);
-        console.log(chalk.yellow(`🗑️  Usuario eliminado: ${hwid}`));
+        console.log(chalk.yellow(`🗑️ Usuario eliminado: ${hwid}`));
     } catch (e) {
         console.error(chalk.red('❌ Error eliminando usuario:'), e.message);
     }
@@ -385,40 +377,37 @@ function getHWIDInfo(hwid) {
 }
 
 // ================================================
-// FUNCIÓN CORREGIDA PARA ENVIAR APK
+// FUNCIÓN ENVIAR APK - MGVPN
 // ================================================
-async function sendAPK(phone, apkPath) {
+async function sendMGVPN(phone, apkPath) {
     try {
         if (!fs.existsSync(apkPath)) {
-            console.log(chalk.yellow(`⚠️ APK no encontrada en: ${apkPath}`));
-            return { success: false, error: 'Archivo APK no encontrado' };
+            console.log(chalk.yellow(`⚠️ APK MGVPN no encontrada en: ${apkPath}`));
+            return { success: false, error: 'Archivo MGVPN.apk no encontrado' };
         }
         
         const stats = fs.statSync(apkPath);
         const fileSizeMB = (stats.size / 1024 / 1024).toFixed(2);
         
-        console.log(chalk.cyan(`📱 Enviando APK a ${phone} (${fileSizeMB} MB)...`));
+        console.log(chalk.cyan(`📱 Enviando MGVPN a ${phone} (${fileSizeMB} MB)...`));
         
-        // USAR sendFile para archivos APK
         await client.sendFile(
             phone,
             apkPath,
-            'SSH_BOT_PRO.apk',
-            `📱 *SSH BOT PRO - APK*\n\n✅ *Última versión disponible*\n📦 *Tamaño:* ${fileSizeMB} MB\n\n🔧 *Instrucciones:*\n1. Instala la APK\n2. Abre la app\n3. Ingresa tu HWID\n4. ¡Conéctate!\n\n⚠️ *Habilita "Orígenes desconocidos" en ajustes*`
+            'MGVPN.apk',
+            `📱 *MGVPN - VPN SEGURA*\n\n✅ *Última versión disponible*\n📦 *Tamaño:* ${fileSizeMB} MB\n\n🔧 *Instrucciones:*\n1. Instala MGVPN\n2. Abre la app\n3. Ingresa tu HWID\n4. ¡Conéctate!\n\n⚠️ *Habilita "Orígenes desconocidos" en ajustes*\n\n🌐 *Servidor:* ${config.bot.server_ip}`
         );
         
-        console.log(chalk.green(`✅ APK enviada a ${phone}`));
+        console.log(chalk.green(`✅ MGVPN enviada a ${phone}`));
         return { success: true };
         
     } catch (error) {
-        console.error(chalk.red('❌ Error enviando APK:'), error.message);
+        console.error(chalk.red('❌ Error enviando MGVPN:'), error.message);
         return { success: false, error: error.message };
     }
 }
 
-// ================================================
 // ESTADOS
-// ================================================
 function getUserState(phone) {
     return new Promise((resolve) => {
         db.get('SELECT state, data FROM user_state WHERE phone = ?', [phone], (err, row) => {
@@ -438,20 +427,18 @@ function setUserState(phone, state, data = null) {
     });
 }
 
-// ================================================
 // MERCADOPAGO
-// ================================================
 async function createMercadoPagoPayment(phone, days, amount, planName) {
     try {
         if (!mpEnabled || !mpPreference) return { success: false, error: 'MercadoPago no configurado' };
 
         const phoneClean = phone.replace('@c.us', '');
-        const paymentId = `HWID-${phoneClean}-${days}d-${Date.now()}`;
+        const paymentId = `MGVPN-${phoneClean}-${days}d-${Date.now()}`;
 
         const response = await mpPreference.create({
             body: {
                 items: [{
-                    title: `HWID SSH PREMIUM ${days} DÍAS`,
+                    title: `MGVPN PREMIUM ${days} DÍAS`,
                     quantity: 1,
                     currency_id: config.prices.currency || 'ARS',
                     unit_price: parseFloat(amount)
@@ -461,7 +448,7 @@ async function createMercadoPagoPayment(phone, days, amount, planName) {
                 expiration_date_from: moment().toISOString(),
                 expiration_date_to: moment().add(24, 'hours').toISOString(),
                 back_urls: {
-                    success: `https://wa.me/${phoneClean}?text=Ya+pague`,
+                    success: `https://wa.me/${phoneClean}?text=Ya+pague+MGVPN`,
                     failure: `https://wa.me/${phoneClean}?text=Pago+fallido`,
                     pending: `https://wa.me/${phoneClean}?text=Pago+pendiente`
                 },
@@ -511,7 +498,7 @@ async function checkPendingPayments() {
 
                             if (client) {
                                 await client.sendText(payment.phone,
-                                    `✅ PAGO CONFIRMADO\n\n🎉 Tu pago fue aprobado\n\n📝 Primero escribe tu NOMBRE:`
+                                    `✅ PAGO CONFIRMADO MGVPN\n\n🎉 Tu pago fue aprobado\n\n📝 Primero escribe tu NOMBRE:`
                                 );
                                 await setUserState(payment.phone, 'awaiting_hwid', {
                                     payment_id: payment.payment_id,
@@ -528,9 +515,6 @@ async function checkPendingPayments() {
         });
 }
 
-// ================================================
-// NOTIFICACIONES DE VENCIMIENTO
-// ================================================
 async function checkExpiringHWIDs() {
     try {
         const expiringSoon = await new Promise((resolve, reject) => {
@@ -543,7 +527,7 @@ async function checkExpiringHWIDs() {
             const hoursLeft = moment(h.expires_at).diff(moment(), 'hours');
             if (client) {
                 await client.sendText(h.phone,
-                    `⏰ RECORDATORIO\n\nHola ${h.nombre}, tu acceso expira en ${hoursLeft} horas.\n\n🔐 HWID: ${h.hwid}\n\nEnvía 2 para renovar.`
+                    `⏰ RECORDATORIO MGVPN\n\nHola ${h.nombre}, tu acceso expira en ${hoursLeft} horas.\n\n🔐 HWID: ${h.hwid}\n\nEnvía 2 para renovar.`
                 );
             }
         }
@@ -552,9 +536,6 @@ async function checkExpiringHWIDs() {
     }
 }
 
-// ================================================
-// LIMPIAR EXPIRADOS
-// ================================================
 async function cleanExpiredHWIDs() {
     try {
         const expired = await new Promise((resolve, reject) => {
@@ -576,15 +557,13 @@ async function cleanExpiredHWIDs() {
     }
 }
 
-// ================================================
 // INICIALIZAR BOT
-// ================================================
 async function initializeBot() {
     try {
-        console.log(chalk.yellow('🚀 Inicializando WPPConnect...'));
+        console.log(chalk.yellow('🚀 Inicializando WPPConnect para MGVPN...'));
 
         client = await wppconnect.create({
-            session: 'sshbot-pro-hwid',
+            session: 'mgvpn-bot-hwid',
             headless: true,
             devtools: false,
             useChrome: true,
@@ -613,17 +592,16 @@ async function initializeBot() {
                 const from = message.from;
                 const userState = await getUserState(from);
 
-                // MENÚ PRINCIPAL
+                // MENÚ PRINCIPAL MGVPN
                 if (['menu', 'hola', 'start', 'hi', 'volver', '0'].includes(text)) {
                     await setUserState(from, 'main_menu');
                     await client.sendText(from,
-                        `🤖 *SSH BOT PRO - CHUMOGH*\n\n` +
+                        `🤖 *MGVPN - VPN SEGURA*\n\n` +
                         `┌─────────────────────────┐\n` +
                         `│ 1️⃣ • PROBAR INTERNET    │\n` +
                         `│ 2️⃣ • COMPRAR INTERNET   │\n` +
                         `│ 3️⃣ • VERIFICAR HWID     │\n` +
-                        `│ 4️⃣ • DESCARGAR APP      │\n` +
-                        `│ 5️⃣ • 📱 ENVIAR APP POR WA│\n` +
+                        `│ 4️⃣ • 📱 DESCARGAR MGVPN │\n` +
                         `└─────────────────────────┘\n\n` +
                         `⚡ *2 horas de prueba gratis*\n` +
                         `💳 *Aceptamos MercadoPago*`
@@ -633,47 +611,42 @@ async function initializeBot() {
                 // OPCIÓN 1: PRUEBA
                 else if (text === '1' && userState.state === 'main_menu') {
                     await setUserState(from, 'awaiting_test_nombre');
-                    await client.sendText(from, `⏳️ PRUEBA GRATUITA - 2 HORAS\n\nPrimero, dime tu nombre:`);
+                    await client.sendText(from, `⏳️ PRUEBA GRATUITA MGVPN - 2 HORAS\n\nPrimero, dime tu nombre:`);
                 }
 
                 // OPCIÓN 2: COMPRAR
                 else if (text === '2' && userState.state === 'main_menu') {
                     await setUserState(from, 'buying_hwid');
                     await client.sendText(from,
-                        `💰 PLANES DE INTERNET\n\n 1️⃣ - 7 DÍAS - $${config.prices.price_7d}\n 2️⃣ - 15 DÍAS - $${config.prices.price_15d}\n 3️⃣ - 30 DÍAS - $${config.prices.price_30d}\n 4️⃣ - 50 DÍAS - $${config.prices.price_50d}\n\n 0️⃣ - VOLVER`
+                        `💰 PLANES MGVPN\n\n 1️⃣ - 7 DÍAS - $${config.prices.price_7d}\n 2️⃣ - 15 DÍAS - $${config.prices.price_15d}\n 3️⃣ - 30 DÍAS - $${config.prices.price_30d}\n 4️⃣ - 50 DÍAS - $${config.prices.price_50d}\n\n 0️⃣ - VOLVER`
                     );
                 }
 
                 // OPCIÓN 3: VERIFICAR
                 else if (text === '3' && userState.state === 'main_menu') {
                     await setUserState(from, 'awaiting_check_hwid');
-                    await client.sendText(from, `🔍 VERIFICAR HWID\n\nEnvía tu HWID:\n\nEjemplo: APP-E3E4D5CBB7636907\no: ee0256c2867b737746aad97e15359a61`);
+                    await client.sendText(from, `🔍 VERIFICAR HWID MGVPN\n\nEnvía tu HWID:\n\nEjemplo: APP-E3E4D5CBB7636907\no: ee0256c2867b737746aad97e15359a61`);
                 }
 
-                // OPCIÓN 4: DESCARGAR APP (LINK)
+                // OPCIÓN 4: ENVIAR MGVPN POR WHATSAPP (ÚNICA OPCIÓN)
                 else if (text === '4' && userState.state === 'main_menu') {
-                    await client.sendText(from, `📱 DESCARGAR APLICACIÓN\n\n🔗 ${config.links.app_download}`);
-                }
-
-                // OPCIÓN 5: ENVIAR APK POR WHATSAPP (CORREGIDO)
-                else if (text === '5' && userState.state === 'main_menu') {
-                    const apkPath = '/opt/sshbot-pro/apps/sshbot.apk';
+                    const apkPath = '/opt/sshbot-pro/apps/mgvpn.apk';
                     
                     if (!fs.existsSync(apkPath)) {
                         await client.sendText(from, 
-                            `❌ *APP NO DISPONIBLE*\n\n📱 La aplicación no está disponible actualmente.\n👨‍💻 Contacta al administrador.\n\n🔗 Link alternativo:\n${config.links.app_download}`
+                            `❌ *MGVPN NO DISPONIBLE*\n\n📱 La aplicación no está disponible actualmente.\n👨‍💻 Contacta al administrador.\n\n🔗 Link alternativo:\n${config.links.app_download}`
                         );
                         return;
                     }
                     
-                    await client.sendText(from, '⏳ *Preparando envío de la app...*\n\n📱 Un momento por favor');
-                    const result = await sendAPK(from, apkPath);
+                    await client.sendText(from, '⏳ *Preparando envío de MGVPN...*\n\n📱 Un momento por favor');
+                    const result = await sendMGVPN(from, apkPath);
                     
                     if (result.success) {
-                        console.log(chalk.green(`📱 APK enviada a: ${from}`));
+                        console.log(chalk.green(`📱 MGVPN enviada a: ${from}`));
                     } else {
                         await client.sendText(from, 
-                            `❌ *Error al enviar la app*\n\n🔗 Descarga directa:\n${config.links.app_download}\n\n👨‍💻 Contacta soporte: ${config.links.support}`
+                            `❌ *Error al enviar MGVPN*\n\n🔗 Descarga directa:\n${config.links.app_download}\n\n👨‍💻 Contacta soporte: ${config.links.support}`
                         );
                     }
                 }
@@ -704,7 +677,7 @@ async function initializeBot() {
                     const hwid = normalizeHWID(rawHwid);
 
                     if (!(await canCreateTest(from))) {
-                        await client.sendText(from, `❌ Ya usaste tu prueba hoy\n\nVuelve mañana o compra un plan`);
+                        await client.sendText(from, `❌ Ya usaste tu prueba hoy\n\nVuelve mañana o compra un plan MGVPN`);
                         await setUserState(from, 'main_menu');
                         return;
                     }
@@ -715,14 +688,14 @@ async function initializeBot() {
                         return;
                     }
 
-                    await client.sendText(from, '⏳ Activando prueba...');
+                    await client.sendText(from, '⏳ Activando prueba MGVPN...');
                     const result = await registerHWID(from, nombre, rawHwid, 0, 'test');
 
                     if (result.success) {
                         registerTest(from, nombre);
                         const expireTime = moment(result.expires).format('HH:mm DD/MM/YYYY');
                         await client.sendText(from,
-                            `✅ PRUEBA ACTIVADA ${nombre}\n\n🔐 HWID: ${result.hwid}\n⏰ Expira: ${expireTime}\n⚡ Tipo: PRUEBA (2 horas)\n\n📱 Abre la app y conéctate`
+                            `✅ PRUEBA MGVPN ACTIVADA ${nombre}\n\n🔐 HWID: ${result.hwid}\n⏰ Expira: ${expireTime}\n⚡ Tipo: PRUEBA (2 horas)\n\n📱 Abre MGVPN y conéctate`
                         );
                         console.log(chalk.green(`✅ Test activado: ${result.hwid} - ${nombre}`));
                     } else {
@@ -742,12 +715,12 @@ async function initializeBot() {
                     const plan = plans[text];
 
                     if (mpEnabled) {
-                        await client.sendText(from, '⏳ Generando pago...');
+                        await client.sendText(from, '⏳ Generando pago MGVPN...');
                         const payment = await createMercadoPagoPayment(from, plan.days, plan.price, plan.name);
 
                         if (payment.success) {
                             await client.sendText(from,
-                                `💰 PAGO PARA HWID\n\n🌐 Plan: ${plan.name}\n💰 Precio: $${payment.amount}\n\nLINK DE PAGO:\n${payment.paymentUrl}\n\n⏰ Válido 24 horas\n\n📌 Después de pagar:\n1. Espera la confirmación\n2. Te pediremos tu nombre\n3. Luego tu HWID\n4. Se activa automático`
+                                `💰 PAGO MGVPN\n\n🌐 Plan: ${plan.name}\n💰 Precio: $${payment.amount}\n\nLINK DE PAGO:\n${payment.paymentUrl}\n\n⏰ Válido 24 horas\n\n📌 Después de pagar:\n1. Espera la confirmación\n2. Te pediremos tu nombre\n3. Luego tu HWID\n4. Se activa automático`
                             );
                             if (fs.existsSync(payment.qrPath)) {
                                 await client.sendImage(from, payment.qrPath, 'qr-pago.jpg',
@@ -759,7 +732,7 @@ async function initializeBot() {
                         }
                     } else {
                         await client.sendText(from,
-                            `📋 PLAN: ${plan.name}\nPrecio: $${plan.price} ARS\n\nContacta al administrador:\n${config.links.support}`
+                            `📋 PLAN MGVPN: ${plan.name}\nPrecio: $${plan.price} ARS\n\nContacta al administrador:\n${config.links.support}`
                         );
                     }
                     await setUserState(from, 'main_menu');
@@ -768,7 +741,13 @@ async function initializeBot() {
                 else if (text === '0' && userState.state === 'buying_hwid') {
                     await setUserState(from, 'main_menu');
                     await client.sendText(from,
-                        `HOLA BIENVENIDO BOT 🤖\n\n 1️⃣ - PROBAR INTERNET\n 2️⃣ - COMPRAR INTERNET\n 3️⃣ - VERIFICAR MI HWID\n 4️⃣ - DESCARGAR APLICACIÓN\n 5️⃣ - 📱 RECIBIR APP POR WA`
+                        `🤖 *MGVPN - VPN SEGURA*\n\n` +
+                        `┌─────────────────────────┐\n` +
+                        `│ 1️⃣ • PROBAR INTERNET    │\n` +
+                        `│ 2️⃣ • COMPRAR INTERNET   │\n` +
+                        `│ 3️⃣ • VERIFICAR HWID     │\n` +
+                        `│ 4️⃣ • 📱 DESCARGAR MGVPN │\n` +
+                        `└─────────────────────────┘`
                     );
                 }
 
@@ -789,11 +768,11 @@ async function initializeBot() {
                         const expires = moment(info.expires_at).format('DD/MM/YYYY HH:mm');
                         const remaining = moment(info.expires_at).fromNow();
                         await client.sendText(from,
-                            `✅ HWID ACTIVO\n\n👤 ${info.nombre}\n🔐 ${hwid}\n📅 ${info.tipo === 'test' ? 'PRUEBA' : 'PREMIUM'}\n⏰ Hasta: ${expires}\n⌛ ${remaining}`
+                            `✅ HWID MGVPN ACTIVO\n\n👤 ${info.nombre}\n🔐 ${hwid}\n📅 ${info.tipo === 'test' ? 'PRUEBA' : 'PREMIUM'}\n⏰ Hasta: ${expires}\n⌛ ${remaining}`
                         );
                     } else {
                         await client.sendText(from,
-                            `❌ HWID NO ACTIVO\n\nEnvía 1 para prueba gratis o 2 para comprar`
+                            `❌ HWID NO ACTIVO\n\nEnvía 1 para prueba gratis MGVPN o 2 para comprar`
                         );
                     }
                     await setUserState(from, 'main_menu');
@@ -830,7 +809,7 @@ async function initializeBot() {
                         return;
                     }
 
-                    await client.sendText(from, '⏳ Activando tu HWID...');
+                    await client.sendText(from, '⏳ Activando tu HWID en MGVPN...');
                     const result = await registerHWID(from, nombre, rawHwid, userState.data.days, 'premium');
 
                     if (result.success) {
@@ -838,7 +817,7 @@ async function initializeBot() {
                             [result.hwid, nombre, userState.data.payment_id]);
                         const expireDate = moment(result.expires).format('DD/MM/YYYY');
                         await client.sendText(from,
-                            `✅ ACTIVADO ${nombre}\n\n🔐 HWID: ${result.hwid}\n⏰ Válido hasta: ${expireDate}\n\n¡Ya puedes usar la app!`
+                            `✅ ACTIVADO ${nombre}\n\n🔐 HWID: ${result.hwid}\n⏰ Válido hasta: ${expireDate}\n\n¡Ya puedes usar MGVPN!`
                         );
                         console.log(chalk.green(`✅ Premium activado: ${result.hwid} - ${nombre}`));
                     } else {
@@ -860,7 +839,7 @@ async function initializeBot() {
             db.run(`DELETE FROM user_state WHERE updated_at < datetime('now', '-1 hour')`);
         });
 
-        console.log(chalk.green('✅ Bot listo y escuchando mensajes'));
+        console.log(chalk.green('✅ Bot MGVPN listo y escuchando mensajes'));
 
     } catch (error) {
         console.error(chalk.red('❌ Error iniciando:'), error.message);
@@ -877,12 +856,12 @@ process.on('SIGINT', async () => {
 });
 BOTEOF
 
-echo -e "${GREEN}✅ Bot creado${NC}"
+echo -e "${GREEN}✅ Bot MGVPN creado${NC}"
 
 # ================================================
 # PANEL DE CONTROL
 # ================================================
-echo -e "\n${CYAN}🎛️  Creando panel de control...${NC}"
+echo -e "\n${CYAN}🎛️ Creando panel de control MGVPN...${NC}"
 
 cat > /usr/local/bin/sshbot-hwid << 'PANELEOF'
 #!/bin/bash
@@ -906,14 +885,14 @@ normalize_hwid() {
 show_header() {
     clear
     echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║      🎛️  PANEL SSH BOT PRO - CHUMOGH                        ║${NC}"
-    echo -e "${CYAN}║      🔐 Usuarios en /etc/passwd (igual que ChumoGH)         ║${NC}"
+    echo -e "${CYAN}║         🎛️  PANEL MGVPN BOT - CHUMOGH                        ║${NC}"
+    echo -e "${CYAN}║         🔐 Usuarios en /etc/passwd (igual que ChumoGH)       ║${NC}"
     echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
 }
 
 upload_apk() {
     clear
-    echo -e "${CYAN}📤 SUBIR APK${NC}\n"
+    echo -e "${CYAN}📤 SUBIR MGVPN.APK${NC}\n"
     
     APPS_DIR="/opt/sshbot-pro/apps"
     mkdir -p "$APPS_DIR"
@@ -929,28 +908,28 @@ upload_apk() {
         1)
             read -p "URL del archivo APK: " APK_URL
             echo -e "\n${YELLOW}⬇️ Descargando...${NC}"
-            wget -O "$APPS_DIR/sshbot.apk" "$APK_URL"
+            wget -O "$APPS_DIR/mgvpn.apk" "$APK_URL"
             if [ $? -eq 0 ]; then
-                chmod 644 "$APPS_DIR/sshbot.apk"
-                echo -e "${GREEN}✅ APK descargada y guardada${NC}"
-                ls -lh "$APPS_DIR/sshbot.apk"
+                chmod 644 "$APPS_DIR/mgvpn.apk"
+                echo -e "${GREEN}✅ MGVPN.apk descargada y guardada${NC}"
+                ls -lh "$APPS_DIR/mgvpn.apk"
             else
                 echo -e "${RED}❌ Error en la descarga${NC}"
             fi
             ;;
         2)
-            echo -e "\n${YELLOW}📁 Sube el archivo APK a este directorio:${NC}"
-            echo -e "  ${CYAN}$APPS_DIR/${NC}"
+            echo -e "\n${YELLOW}📁 Sube tu archivo MGVPN.apk a:${NC}"
+            echo -e "  ${CYAN}$APPS_DIR/mgvpn.apk${NC}"
             echo -e "\n${YELLOW}Métodos:${NC}"
-            echo -e "  • SCP: ${GREEN}scp tu_app.apk root@$SERVER_IP:$APPS_DIR/sshbot.apk${NC}"
-            echo -e "  • SFTP: Conecta por SFTP y sube a $APPS_DIR/sshbot.apk"
+            echo -e "  • SCP: ${GREEN}scp MGVPN.apk root@$SERVER_IP:$APPS_DIR/mgvpn.apk${NC}"
+            echo -e "  • SFTP: Conecta por SFTP y sube a $APPS_DIR/mgvpn.apk"
             echo ""
             read -p "Presiona ENTER cuando hayas subido el archivo..."
             
-            if [ -f "$APPS_DIR/sshbot.apk" ]; then
-                chmod 644 "$APPS_DIR/sshbot.apk"
-                echo -e "${GREEN}✅ APK encontrada:${NC}"
-                ls -lh "$APPS_DIR/sshbot.apk"
+            if [ -f "$APPS_DIR/mgvpn.apk" ]; then
+                chmod 644 "$APPS_DIR/mgvpn.apk"
+                echo -e "${GREEN}✅ MGVPN.apk encontrada:${NC}"
+                ls -lh "$APPS_DIR/mgvpn.apk"
             else
                 echo -e "${RED}❌ No se encontró el archivo${NC}"
             fi
@@ -973,16 +952,16 @@ while true; do
     [[ -n "$MP_TOKEN" && "$MP_TOKEN" != "null" && "$MP_TOKEN" != "" ]] && MP_STATUS="${GREEN}✅ CONFIG${NC}" || MP_STATUS="${RED}❌ NO CONFIG${NC}"
     
     APK_EXISTE="❌ NO"
-    [ -f "/opt/sshbot-pro/apps/sshbot.apk" ] && APK_EXISTE="${GREEN}✅ SI${NC}"
+    [ -f "/opt/sshbot-pro/apps/mgvpn.apk" ] && APK_EXISTE="${GREEN}✅ SI${NC}"
 
-    echo -e "${YELLOW}📊 ESTADO:${NC}"
+    echo -e "${YELLOW}📊 ESTADO MGVPN:${NC}"
     echo -e "  Bot: $BOT_STATUS"
     echo -e "  HWIDs activos: ${CYAN}$ACTIVOS/$TOTAL${NC}"
     echo -e "  Tests hoy: ${CYAN}$TESTS${NC}"
     echo -e "  MercadoPago: $MP_STATUS"
-    echo -e "  APK disponible: $APK_EXISTE"
+    echo -e "  MGVPN.apk disponible: $APK_EXISTE"
     echo -e ""
-    echo -e "${YELLOW}💰 PRECIOS:${NC}"
+    echo -e "${YELLOW}💰 PRECIOS MGVPN:${NC}"
     echo -e "  7d: \$$(get_val '.prices.price_7d') | 15d: \$$(get_val '.prices.price_15d') | 30d: \$$(get_val '.prices.price_30d') | 50d: \$$(get_val '.prices.price_50d')"
     echo -e ""
     echo -e "${CYAN}[1]${NC}  🚀 Iniciar/Reiniciar bot"
@@ -994,8 +973,8 @@ while true; do
     echo -e "${CYAN}[7]${NC}  🔑 Configurar MercadoPago"
     echo -e "${CYAN}[8]${NC}  📊 Estadísticas"
     echo -e "${CYAN}[9]${NC}  🔄 Limpiar sesión WhatsApp"
-    echo -e "${CYAN}[10]${NC} 🗑️  Eliminar HWID"
-    echo -e "${CYAN}[11]${NC} 📱 Subir/Actualizar APK"
+    echo -e "${CYAN}[10]${NC} 🗑️ Eliminar HWID"
+    echo -e "${CYAN}[11]${NC} 📱 Subir/Actualizar MGVPN.apk"
     echo -e "${CYAN}[0]${NC}  🚪 Salir"
     echo -e ""
     read -p "👉 Selecciona: " OPT
@@ -1005,12 +984,12 @@ while true; do
             cd /root/sshbot-pro
             pm2 restart sshbot-pro 2>/dev/null || pm2 start bot.js --name sshbot-pro
             pm2 save
-            echo -e "${GREEN}✅ Bot reiniciado${NC}"
+            echo -e "${GREEN}✅ Bot MGVPN reiniciado${NC}"
             sleep 2
             ;;
         2)
             pm2 stop sshbot-pro
-            echo -e "${GREEN}✅ Bot detenido${NC}"
+            echo -e "${GREEN}✅ Bot MGVPN detenido${NC}"
             sleep 2
             ;;
         3)
@@ -1018,7 +997,7 @@ while true; do
             ;;
         4)
             clear
-            echo -e "${CYAN}🔐 REGISTRAR HWID MANUAL${NC}\n"
+            echo -e "${CYAN}🔐 REGISTRAR HWID MANUAL MGVPN${NC}\n"
             read -p "Teléfono (ej: 5491122334455): " PHONE
             read -p "Nombre: " NOMBRE
             read -p "HWID (APP-XXXX o hex): " RAWHWID
@@ -1042,7 +1021,7 @@ while true; do
 
             sqlite3 "$DB" "INSERT OR IGNORE INTO hwid_users (phone, nombre, hwid, tipo, expires_at, status) VALUES ('$PHONE', '$NOMBRE', '$HWID', '$TIPO', '$EXPIRE_FULL', 1)"
 
-            echo -e "\n${GREEN}✅ HWID REGISTRADO${NC}"
+            echo -e "\n${GREEN}✅ HWID REGISTRADO EN MGVPN${NC}"
             echo -e "  Usuario Linux: ${HWID}"
             echo -e "  Nombre: ${NOMBRE}"
             echo -e "  Expira: ${EXPIRE_DATE}"
@@ -1050,7 +1029,7 @@ while true; do
             ;;
         5)
             clear
-            echo -e "${CYAN}👥 HWIDs ACTIVOS${NC}\n"
+            echo -e "${CYAN}👥 HWIDs ACTIVOS MGVPN${NC}\n"
             sqlite3 -column -header "$DB" "SELECT nombre, hwid, tipo, expires_at FROM hwid_users WHERE status=1 ORDER BY expires_at DESC LIMIT 20"
             read -p "\nEnter..."
             ;;
@@ -1064,12 +1043,12 @@ while true; do
             [[ -n "$P15" ]] && set_val '.prices.price_15d' "$P15"
             [[ -n "$P30" ]] && set_val '.prices.price_30d' "$P30"
             [[ -n "$P50" ]] && set_val '.prices.price_50d' "$P50"
-            echo -e "${GREEN}✅ Precios actualizados${NC}"
+            echo -e "${GREEN}✅ Precios MGVPN actualizados${NC}"
             sleep 2
             ;;
         7)
             clear
-            echo -e "${CYAN}🔑 CONFIGURAR MERCADOPAGO${NC}\n"
+            echo -e "${CYAN}🔑 CONFIGURAR MERCADOPAGO PARA MGVPN${NC}\n"
             echo -e "1. https://www.mercadopago.com.ar/developers"
             echo -e "2. Tus credenciales → Access Token PRODUCCIÓN\n"
             read -p "¿Configurar token? (s/N): " C
@@ -1079,7 +1058,7 @@ while true; do
                     set_val '.mercadopago.access_token' "\"$TOKEN\""
                     set_val '.mercadopago.enabled' "true"
                     cd /root/sshbot-pro && pm2 restart sshbot-pro
-                    echo -e "${GREEN}✅ MercadoPago configurado${NC}"
+                    echo -e "${GREEN}✅ MercadoPago configurado para MGVPN${NC}"
                 else
                     echo -e "${RED}❌ Token inválido${NC}"
                 fi
@@ -1088,7 +1067,7 @@ while true; do
             ;;
         8)
             clear
-            echo -e "${CYAN}📊 ESTADÍSTICAS${NC}\n"
+            echo -e "${CYAN}📊 ESTADÍSTICAS MGVPN${NC}\n"
             echo -e "${YELLOW}HWIDs:${NC}"
             sqlite3 "$DB" "SELECT 'Total: '||COUNT(*)||' | Activos: '||SUM(CASE WHEN status=1 THEN 1 ELSE 0 END)||' | Tests hoy: '||(SELECT COUNT(*) FROM daily_tests WHERE date=date('now')) FROM hwid_users"
             echo -e "\n${YELLOW}Pagos:${NC}"
@@ -1098,24 +1077,24 @@ while true; do
         9)
             pm2 stop sshbot-pro
             rm -rf /root/.wppconnect/*
-            echo -e "${GREEN}✅ Sesión limpiada${NC}"
+            echo -e "${GREEN}✅ Sesión WhatsApp limpiada${NC}"
             sleep 2
             ;;
         10)
             clear
-            echo -e "${CYAN}🗑️  ELIMINAR HWID${NC}\n"
+            echo -e "${CYAN}🗑️ ELIMINAR HWID MGVPN${NC}\n"
             read -p "HWID a eliminar: " RAWHWID
             HWID=$(normalize_hwid "$RAWHWID")
             userdel -r "$HWID" 2>/dev/null || userdel "$HWID" 2>/dev/null
             sqlite3 "$DB" "UPDATE hwid_users SET status=0 WHERE hwid='$HWID'"
-            echo -e "${GREEN}✅ HWID eliminado${NC}"
+            echo -e "${GREEN}✅ HWID eliminado de MGVPN${NC}"
             read -p "Enter..."
             ;;
         11)
             upload_apk
             ;;
         0)
-            echo -e "${GREEN}👋 Hasta pronto${NC}"
+            echo -e "${GREEN}👋 Hasta pronto - MGVPN${NC}"
             exit 0
             ;;
     esac
@@ -1126,9 +1105,9 @@ chmod +x /usr/local/bin/sshbot-hwid
 ln -sf /usr/local/bin/sshbot-hwid /usr/local/bin/sshbot
 
 # ================================================
-# CREAR COMANDO RÁPIDO PARA SUBIR APK
+# COMANDO RÁPIDO PARA SUBIR MGVPN.apk
 # ================================================
-cat > /usr/local/bin/subir-apk << 'SUBIRAPK'
+cat > /usr/local/bin/subir-mgvpn << 'SUBIRAPK'
 #!/bin/bash
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -1138,44 +1117,41 @@ NC='\033[0m'
 APPS_DIR="/opt/sshbot-pro/apps"
 mkdir -p "$APPS_DIR"
 
-echo -e "${YELLOW}📤 SUBIR APK SSH BOT PRO${NC}\n"
+echo -e "${YELLOW}📤 SUBIR MGVPN.apk${NC}\n"
 
 if [ -f "$1" ]; then
-    cp "$1" "$APPS_DIR/sshbot.apk"
-    chmod 644 "$APPS_DIR/sshbot.apk"
-    echo -e "${GREEN}✅ APK copiada desde: $1${NC}"
-    ls -lh "$APPS_DIR/sshbot.apk"
+    cp "$1" "$APPS_DIR/mgvpn.apk"
+    chmod 644 "$APPS_DIR/mgvpn.apk"
+    echo -e "${GREEN}✅ MGVPN.apk copiada desde: $1${NC}"
+    ls -lh "$APPS_DIR/mgvpn.apk"
 elif [[ "$1" =~ ^https?:// ]]; then
     echo -e "${YELLOW}⬇️ Descargando...${NC}"
-    wget -O "$APPS_DIR/sshbot.apk" "$1"
-    chmod 644 "$APPS_DIR/sshbot.apk"
-    echo -e "${GREEN}✅ APK descargada${NC}"
-    ls -lh "$APPS_DIR/sshbot.apk"
+    wget -O "$APPS_DIR/mgvpn.apk" "$1"
+    chmod 644 "$APPS_DIR/mgvpn.apk"
+    echo -e "${GREEN}✅ MGVPN.apk descargada${NC}"
+    ls -lh "$APPS_DIR/mgvpn.apk"
 else
     echo -e "${RED}❌ Uso:${NC}"
-    echo -e "  subir-apk /ruta/local/app.apk"
-    echo -e "  subir-apk https://ejemplo.com/app.apk"
+    echo -e "  subir-mgvpn /ruta/local/MGVPN.apk"
+    echo -e "  subir-mgvpn https://ejemplo.com/MGVPN.apk"
     echo -e ""
     echo -e "${YELLOW}O también puedes copiar manualmente:${NC}"
-    echo -e "  scp tu_app.apk root@IP_SERVIDOR:/opt/sshbot-pro/apps/sshbot.apk"
+    echo -e "  scp MGVPN.apk root@IP_SERVIDOR:/opt/sshbot-pro/apps/mgvpn.apk"
 fi
 SUBIRAPK
 
-chmod +x /usr/local/bin/subir-apk
+chmod +x /usr/local/bin/subir-mgvpn
 
 # ================================================
-# CREAR APK DE EJEMPLO (TEXTO)
+# ARCHIVO TEMPORAL (para que no de error)
 # ================================================
-echo -e "\n${CYAN}📱 Creando archivo APK de ejemplo...${NC}"
-cat > /opt/sshbot-pro/apps/sshbot.apk << 'EOF'
-ESTE ES UN ARCHIVO DE EJEMPLO
-SUBRE UNA APK REAL CON: subir-apk /ruta/miapp.apk
-EOF
+echo -e "\n${CYAN}📱 Creando archivo temporal...${NC}"
+echo "Sube tu MGVPN.apk real con: subir-mgvpn /ruta/MGVPN.apk" > /opt/sshbot-pro/apps/mgvpn.apk
 
 # ================================================
 # INICIAR BOT
 # ================================================
-echo -e "\n${CYAN}🚀 Iniciando bot...${NC}"
+echo -e "\n${CYAN}🚀 Iniciando bot MGVPN...${NC}"
 cd "$USER_HOME"
 pm2 start bot.js --name sshbot-pro
 pm2 save
@@ -1185,34 +1161,37 @@ clear
 echo -e "${GREEN}"
 cat << "FINAL"
 ╔══════════════════════════════════════════════════════════════╗
-║         🎉 INSTALACIÓN COMPLETADA                           ║
+║         🎉 INSTALACIÓN MGVPN COMPLETADA 🎉                   ║
 ║                                                              ║
-║  ✅ Bot integrado con ChumoGH                               ║
-║  ✅ Crea usuarios en /etc/passwd con useradd                ║
+║  ✅ Bot MGVPN funcionando                                   ║
+║  ✅ Crea usuarios HWID en /etc/passwd                       ║
 ║  ✅ Mismo formato que ChumoGH                               ║
-║  ✅ Expiración automática con chage                         ║
-║  ✅ Limpieza automática de expirados                        ║
+║  ✅ Envío de MGVPN.apk por WhatsApp (Opción 4)              ║
 ║  ✅ MercadoPago integrado                                   ║
-║  ✅ ENVÍO DE APK POR WHATSAPP FUNCIONAL ✓                   ║
-║  ✅ HWID válidos: APP-XXXXXXXXXXXXXX o 32 hex               ║
+║  ✅ Prueba de 2 horas                                       ║
+║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 FINAL
 echo -e "${NC}"
 
-echo -e "${YELLOW}📋 COMANDOS:${NC}"
-echo -e "  ${GREEN}sshbot${NC}               - Panel de control"
-echo -e "  ${GREEN}subir-apk${NC}            - Subir APK (archivo o URL)"
-echo -e "  ${GREEN}pm2 logs sshbot-pro${NC}  - Ver logs y QR"
-echo -e "  ${GREEN}pm2 restart sshbot-pro${NC} - Reiniciar"
+echo -e "${YELLOW}📋 COMANDOS MGVPN:${NC}"
+echo -e "  ${GREEN}sshbot${NC}                    - Panel de control"
+echo -e "  ${GREEN}subir-mgvpn /ruta/MGVPN.apk${NC} - Subir tu APK"
+echo -e "  ${GREEN}pm2 logs sshbot-pro${NC}       - Ver logs y QR"
+echo -e "  ${GREEN}pm2 restart sshbot-pro${NC}    - Reiniciar"
 echo -e ""
 echo -e "${YELLOW}📝 FORMATOS HWID ACEPTADOS:${NC}"
 echo -e "  ${GREEN}APP-E3E4D5CBB7636907${NC}  (con APP- y 16 hex)"
 echo -e "  ${GREEN}ee0256c2867b737746aad97e15359a61${NC} (32 hex)"
 echo -e ""
-echo -e "${YELLOW}📱 PARA QUE FUNCIONE EL ENVÍO DE APK:${NC}"
-echo -e "  1. Sube tu APK real: ${GREEN}subir-apk /ruta/miapp.apk${NC}"
-echo -e "  2. Los usuarios envían ${GREEN}5${NC} al bot"
-echo -e "  3. Recibirán la app directamente por WhatsApp"
+echo -e "${YELLOW}📱 PARA SUBIR TU MGVPN.apk:${NC}"
+echo -e "  ${GREEN}subir-mgvpn /ruta/de/tu/MGVPN.apk${NC}"
+echo -e ""
+echo -e "${YELLOW}🎯 MENÚ DEL BOT (solo 4 opciones):${NC}"
+echo -e "  1️⃣ • PROBAR INTERNET"
+echo -e "  2️⃣ • COMPRAR INTERNET"
+echo -e "  3️⃣ • VERIFICAR HWID"
+echo -e "  4️⃣ • 📱 DESCARGAR MGVPN"
 
 read -p "$(echo -e "${YELLOW}¿Ver logs ahora? (s/N): ${NC}")" -n 1 -r
 echo
