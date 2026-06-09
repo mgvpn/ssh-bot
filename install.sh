@@ -2,6 +2,7 @@
 # ================================================
 # SSH BOT PRO - WPPCONNECT + MERCADOPAGO + HWID
 # INTEGRADO CON CHUMOGH - CREA USUARIOS EN /etc/passwd
+# CON ENVÍO DE APK FUNCIONAL
 # ================================================
 
 set -e
@@ -19,6 +20,7 @@ cat << "BANNER"
 ║         🤖 SSH BOT PRO - CHUMOGH + MERCADOPAGO              ║
 ║         🔐 Crea usuarios HWID en /etc/passwd                ║
 ║         ⏱️  PRUEBA 2 HORAS - PAGO AUTOMATICO                ║
+║         📲 ENVÍO DE APK POR WHATSAPP FUNCIONAL              ║
 ╚══════════════════════════════════════════════════════════════╝
 BANNER
 echo -e "${NC}"
@@ -101,7 +103,7 @@ chmod -R 755 "$INSTALL_DIR"
 cat > "$CONFIG_FILE" << CONFIGEOF
 {
     "bot": {
-        "name": "SSH MG VPN HWID",
+        "name": "SSH Bot Pro HWID",
         "version": "5.0-CHUMOGH",
         "server_ip": "$SERVER_IP"
     },
@@ -110,7 +112,7 @@ cat > "$CONFIG_FILE" << CONFIGEOF
         "price_7d": 3500.00,
         "price_15d": 4500.00,
         "price_30d": 8000.00,
-        "price_50d": 1200.00,
+        "price_50d": 12000.00,
         "currency": "ARS"
     },
     "mercadopago": {
@@ -125,7 +127,8 @@ cat > "$CONFIG_FILE" << CONFIGEOF
     "paths": {
         "database": "$DB_FILE",
         "qr_codes": "$INSTALL_DIR/qr_codes",
-        "sessions": "/root/.wppconnect"
+        "sessions": "/root/.wppconnect",
+        "apk_file": "$INSTALL_DIR/apps/sshbot.apk"
     }
 }
 CONFIGEOF
@@ -178,7 +181,7 @@ SQL
 echo -e "${GREEN}✅ Estructura creada${NC}"
 
 # ================================================
-# CREAR BOT
+# CREAR BOT CON ENVÍO DE APK CORREGIDO
 # ================================================
 echo -e "\n${CYAN}🤖 Creando bot...${NC}"
 
@@ -223,7 +226,7 @@ moment.locale('es');
 console.log(chalk.cyan.bold('\n╔══════════════════════════════════════════════════════╗'));
 console.log(chalk.cyan.bold('║   🤖 SSH BOT PRO - CHUMOGH                          ║'));
 console.log(chalk.cyan.bold('║   🔐 Crea usuarios HWID en /etc/passwd              ║'));
-console.log(chalk.cyan.bold('║   Formato: useradd -e FECHA -g cloudvpn             ║'));
+console.log(chalk.cyan.bold('║   📲 Envío de APK por WhatsApp FUNCIONAL            ║'));
 console.log(chalk.cyan.bold('╚══════════════════════════════════════════════════════╝\n'));
 
 function loadConfig() {
@@ -270,7 +273,6 @@ let client = null;
 
 function normalizeHWID(hwid) {
     hwid = hwid.trim().toUpperCase();
-    // Mantener APP- si existe, solo limpiar caracteres inválidos
     if (hwid.startsWith('APP-')) {
         return 'APP-' + hwid.substring(4).replace(/[^A-F0-9]/g, '');
     }
@@ -278,7 +280,6 @@ function normalizeHWID(hwid) {
 }
 
 function validateHWID(hwid) {
-    // Acepta APP-XXXXXXXXXXXXXXXX o 32 hex
     return /^APP-[A-F0-9]{16}$/.test(hwid) || /^[A-F0-9]{32}$/.test(hwid);
 }
 
@@ -384,24 +385,33 @@ function getHWIDInfo(hwid) {
 }
 
 // ================================================
-// FUNCIÓN PARA ENVIAR APK
+// FUNCIÓN CORREGIDA PARA ENVIAR APK
 // ================================================
 async function sendAPK(phone, apkPath) {
     try {
         if (!fs.existsSync(apkPath)) {
+            console.log(chalk.yellow(`⚠️ APK no encontrada en: ${apkPath}`));
             return { success: false, error: 'Archivo APK no encontrado' };
         }
         
-        await client.sendImage(
-            phone, 
-            apkPath, 
-            'MGVPN.apk', 
-            `📱 *MG VPN - APK*\n\n✅ *Última versión disponible*\n📦 *Tamaño:* ${(fs.statSync(apkPath).size / 1024 / 1024).toFixed(2)} MB\n\n🔧 *Instrucciones:*\n1. Instala la APK\n2. Abre la app\n3. Ingresa tu HWID\n4. ¡Conéctate!\n\n⚠️ *Habilita "Orígenes desconocidos" en ajustes*`
+        const stats = fs.statSync(apkPath);
+        const fileSizeMB = (stats.size / 1024 / 1024).toFixed(2);
+        
+        console.log(chalk.cyan(`📱 Enviando APK a ${phone} (${fileSizeMB} MB)...`));
+        
+        // USAR sendFile para archivos APK
+        await client.sendFile(
+            phone,
+            apkPath,
+            'SSH_BOT_PRO.apk',
+            `📱 *SSH BOT PRO - APK*\n\n✅ *Última versión disponible*\n📦 *Tamaño:* ${fileSizeMB} MB\n\n🔧 *Instrucciones:*\n1. Instala la APK\n2. Abre la app\n3. Ingresa tu HWID\n4. ¡Conéctate!\n\n⚠️ *Habilita "Orígenes desconocidos" en ajustes*`
         );
         
+        console.log(chalk.green(`✅ APK enviada a ${phone}`));
         return { success: true };
+        
     } catch (error) {
-        console.error('Error enviando APK:', error);
+        console.error(chalk.red('❌ Error enviando APK:'), error.message);
         return { success: false, error: error.message };
     }
 }
@@ -607,13 +617,13 @@ async function initializeBot() {
                 if (['menu', 'hola', 'start', 'hi', 'volver', '0'].includes(text)) {
                     await setUserState(from, 'main_menu');
                     await client.sendText(from,
-                        `🤖 *MG VPN -*\n\n` +
+                        `🤖 *SSH BOT PRO - CHUMOGH*\n\n` +
                         `┌─────────────────────────┐\n` +
                         `│ 1️⃣ • PROBAR INTERNET    │\n` +
                         `│ 2️⃣ • COMPRAR INTERNET   │\n` +
                         `│ 3️⃣ • VERIFICAR HWID     │\n` +
                         `│ 4️⃣ • DESCARGAR APP      │\n` +
-                        `│ 5️⃣ • 📱 ENVIAR APP │\n` +
+                        `│ 5️⃣ • 📱 ENVIAR APP POR WA│\n` +
                         `└─────────────────────────┘\n\n` +
                         `⚡ *2 horas de prueba gratis*\n` +
                         `💳 *Aceptamos MercadoPago*`
@@ -637,7 +647,7 @@ async function initializeBot() {
                 // OPCIÓN 3: VERIFICAR
                 else if (text === '3' && userState.state === 'main_menu') {
                     await setUserState(from, 'awaiting_check_hwid');
-                    await client.sendText(from, `🔍 VERIFICAR HWID\n\nEnvía tu HWID:\n\nEjemplo: APP-E3E4D5CBB7636907\n: `);
+                    await client.sendText(from, `🔍 VERIFICAR HWID\n\nEnvía tu HWID:\n\nEjemplo: APP-E3E4D5CBB7636907\no: ee0256c2867b737746aad97e15359a61`);
                 }
 
                 // OPCIÓN 4: DESCARGAR APP (LINK)
@@ -645,7 +655,7 @@ async function initializeBot() {
                     await client.sendText(from, `📱 DESCARGAR APLICACIÓN\n\n🔗 ${config.links.app_download}`);
                 }
 
-                // OPCIÓN 5: ENVIAR APK POR WHATSAPP
+                // OPCIÓN 5: ENVIAR APK POR WHATSAPP (CORREGIDO)
                 else if (text === '5' && userState.state === 'main_menu') {
                     const apkPath = '/opt/sshbot-pro/apps/sshbot.apk';
                     
@@ -677,7 +687,7 @@ async function initializeBot() {
                     }
                     await setUserState(from, 'awaiting_test_hwid', { nombre });
                     await client.sendText(from,
-                        `✅ Gracias ${nombre}\n\nAhora envía tu HWID:\n\nEjemplo:\nAPP-E3E4D5CBB7636907\n: \n\n⏳ Una prueba por día`
+                        `✅ Gracias ${nombre}\n\nAhora envía tu HWID:\n\nEjemplo:\nAPP-E3E4D5CBB7636907\no: ee0256c2867b737746aad97e15359a61\n\n⏳ Una prueba por día`
                     );
                 }
 
@@ -876,7 +886,7 @@ echo -e "\n${CYAN}🎛️  Creando panel de control...${NC}"
 
 cat > /usr/local/bin/sshbot-hwid << 'PANELEOF'
 #!/bin/bash
-RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; CYAN='\033[0;36m'; NC='\033[0m'
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
 
 DB="/opt/sshbot-pro/data/hwid.db"
 CONFIG="/opt/sshbot-pro/config/config.json"
@@ -1145,10 +1155,22 @@ else
     echo -e "${RED}❌ Uso:${NC}"
     echo -e "  subir-apk /ruta/local/app.apk"
     echo -e "  subir-apk https://ejemplo.com/app.apk"
+    echo -e ""
+    echo -e "${YELLOW}O también puedes copiar manualmente:${NC}"
+    echo -e "  scp tu_app.apk root@IP_SERVIDOR:/opt/sshbot-pro/apps/sshbot.apk"
 fi
 SUBIRAPK
 
 chmod +x /usr/local/bin/subir-apk
+
+# ================================================
+# CREAR APK DE EJEMPLO (TEXTO)
+# ================================================
+echo -e "\n${CYAN}📱 Creando archivo APK de ejemplo...${NC}"
+cat > /opt/sshbot-pro/apps/sshbot.apk << 'EOF'
+ESTE ES UN ARCHIVO DE EJEMPLO
+SUBRE UNA APK REAL CON: subir-apk /ruta/miapp.apk
+EOF
 
 # ================================================
 # INICIAR BOT
@@ -1171,7 +1193,7 @@ cat << "FINAL"
 ║  ✅ Expiración automática con chage                         ║
 ║  ✅ Limpieza automática de expirados                        ║
 ║  ✅ MercadoPago integrado                                   ║
-║  ✅ Envío de APK por WhatsApp (opción 5)                    ║
+║  ✅ ENVÍO DE APK POR WHATSAPP FUNCIONAL ✓                   ║
 ║  ✅ HWID válidos: APP-XXXXXXXXXXXXXX o 32 hex               ║
 ╚══════════════════════════════════════════════════════════════╝
 FINAL
@@ -1187,7 +1209,10 @@ echo -e "${YELLOW}📝 FORMATOS HWID ACEPTADOS:${NC}"
 echo -e "  ${GREEN}APP-E3E4D5CBB7636907${NC}  (con APP- y 16 hex)"
 echo -e "  ${GREEN}ee0256c2867b737746aad97e15359a61${NC} (32 hex)"
 echo -e ""
-echo -e "${YELLOW}📱 LOS USUARIOS SOLICITAN LA APP CON OPCIÓN 5${NC}"
+echo -e "${YELLOW}📱 PARA QUE FUNCIONE EL ENVÍO DE APK:${NC}"
+echo -e "  1. Sube tu APK real: ${GREEN}subir-apk /ruta/miapp.apk${NC}"
+echo -e "  2. Los usuarios envían ${GREEN}5${NC} al bot"
+echo -e "  3. Recibirán la app directamente por WhatsApp"
 
 read -p "$(echo -e "${YELLOW}¿Ver logs ahora? (s/N): ${NC}")" -n 1 -r
 echo
