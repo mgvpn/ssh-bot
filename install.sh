@@ -590,12 +590,12 @@ async function initializeBot() {
                 if (['menu', 'hola', 'start', 'hi', 'volver', '0'].includes(text)) {
                     await setUserState(from, 'main_menu');
                     await client.sendText(from,
-                        `🤖 *MGVPN - VPN SEGURA*\n\n` +
+                        `🚀 *BOT - MG VPN*\n\n` +
                         `┌─────────────────────────┐\n` +
                         `│ 1️⃣ • PROBAR INTERNET    │\n` +
                         `│ 2️⃣ • COMPRAR INTERNET   │\n` +
                         `│ 3️⃣ • VERIFICAR HWID     │\n` +
-                        `│ 4️⃣ • 📱 DESCARGAR MGVPN │\n` +
+                        `│ 4️⃣ • 📱 DESCARGAR APP │\n` +
                         `└─────────────────────────┘\n\n` +
                         `⚡ *2 horas de prueba gratis*\n` +
                         `💳 *Aceptamos MercadoPago*`
@@ -649,7 +649,7 @@ async function initializeBot() {
                     }
                     await setUserState(from, 'awaiting_test_hwid', { nombre });
                     await client.sendText(from,
-                        `✅ Gracias ${nombre}\n\nAhora envía tu HWID:\n\nEjemplo:\nAPP-E3E4D5CBB7636907\no: ee0256c2867b737746aad97e15359a61\n\n⏳ Una prueba por día`
+                        `✅ Gracias ${nombre}\n\nAhora envía tu HWID:\n\nEjemplo:\nAPP-E3E4D5CBB7636907\n\n\n⏳ Una prueba por día`
                     );
                 }
 
@@ -728,12 +728,12 @@ async function initializeBot() {
                 else if (text === '0' && userState.state === 'buying_hwid') {
                     await setUserState(from, 'main_menu');
                     await client.sendText(from,
-                        `🤖 *MGVPN - VPN SEGURA*\n\n` +
+                        `🚀 *BOT - MG VPN*\n\n` +
                         `┌─────────────────────────┐\n` +
                         `│ 1️⃣ • PROBAR INTERNET    │\n` +
                         `│ 2️⃣ • COMPRAR INTERNET   │\n` +
                         `│ 3️⃣ • VERIFICAR HWID     │\n` +
-                        `│ 4️⃣ • 📱 DESCARGAR MGVPN │\n` +
+                        `│ 4️⃣ • 📱 DESCARGAR APP │\n` +
                         `└─────────────────────────┘`
                     );
                 }
