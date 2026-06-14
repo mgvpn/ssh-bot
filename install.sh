@@ -653,14 +653,14 @@ async function initializeBot() {
                     await client.sendText(from,
                         `🚀 *MGVPN-BOT*\n\n` +
                         `┌─────────────────────────┐\n` +
-                        `│ 1️⃣ • PROBAR INTERNET    │\n` +
-                        `│ 2️⃣ • COMPRAR INTERNET   │\n` +
-                        `│ 3️⃣ • VERIFICAR HWID     │\n` +
+                        `│ 1️⃣ • ⌛️PROBAR INTERNET    │\n` +
+                        `│ 2️⃣ • 💰COMPRAR INTERNET   │\n` +
+                        `│ 3️⃣ • 🫆 VERIFICAR HWID     │\n` +
                         `│ 4️⃣ • 📱 DESCARGAR APP    │\n` +
-                        `│ 5️⃣ • 🎥 VIDEO TUTORIAL   │\n` +
+                        `│ 5️⃣ • 🎥 VIDEO TUTORIAL APP HWID  │\n` +
                         `└─────────────────────────┘\n\n` +
                         `⚡ *2 horas de prueba gratis*\n` +
-                        `💳 *Aceptamos MercadoPago*`
+                        ``
                     );
                 }
 
@@ -788,11 +788,11 @@ async function initializeBot() {
                     await client.sendText(from,
                         `🚀 *MGVPN-BOT*\n\n` +
                         `┌─────────────────────────┐\n` +
-                        `│ 1️⃣ • PROBAR INTERNET    │\n` +
-                        `│ 2️⃣ • COMPRAR INTERNET   │\n` +
-                        `│ 3️⃣ • VERIFICAR HWID     │\n` +
+                        `│ 1️⃣ • ⌛️PROBAR INTERNET    │\n` +
+                        `│ 2️⃣ • 💰COMPRAR INTERNET   │\n` +
+                        `│ 3️⃣ • 🫆 VERIFICAR HWID     │\n` +
                         `│ 4️⃣ • 📱 DESCARGAR APP    │\n` +
-                        `│ 5️⃣ • 🎥 VIDEO TUTORIAL   │\n` +
+                        `│ 5️⃣ • 🎥 VIDEO TUTORIAL APP HWID  │\n` +
                         `└─────────────────────────┘`
                     );
                 }
