@@ -326,20 +326,9 @@ async function sendTutorialVideo(phone) {
         console.log(chalk.green(`✅ Video tutorial enviado a ${phone}`));
         return true;
     } catch (error) {
-    console.error(chalk.red(`❌ Error enviando video: ${error.message}`));
-    await client.sendText(phone,
-        `🎥 *VIDEO TUTORIAL MGVPN*\n\n` +
-        `📲 Mirá el tutorial en nuestro canal:\n` +
-        `https://whatsapp.com/channel/0029VaeE35xEgGfKhmUfch11/117\n\n` +
-        `📋 *Pasos:*\n` +
-        `1️⃣ Instala la APK (opción 4️⃣)\n` +
-        `2️⃣ Abre la app\n` +
-        `3️⃣ Selecciona Personal 1\n` +
-        `4️⃣ ¡Conéctate y listo!\n\n` +
-        `❓ Soporte: ${config.links.support}`
-    );
-    return false;
-}
+        console.error(chalk.red(`❌ Error enviando video: ${error.message}`));
+        await client.sendText(phone,
+            `❌ *Error al enviar el tutorial*\n\n👨‍💻 Contacta soporte: ${config.links.support}`
         );
         return false;
     }
@@ -664,14 +653,14 @@ async function initializeBot() {
                     await client.sendText(from,
                         `🚀 *MGVPN-BOT*\n\n` +
                         `┌─────────────────────────┐\n` +
-                        `│ 1️⃣ • ⌛️PROBAR INTERNET    │\n` +
-                        `│ 2️⃣ • 💰COMPRAR INTERNET   │\n` +
-                        `│ 3️⃣ • 🫆 VERIFICAR HWID     │\n` +
+                        `│ 1️⃣ • PROBAR INTERNET    │\n` +
+                        `│ 2️⃣ • COMPRAR INTERNET   │\n` +
+                        `│ 3️⃣ • VERIFICAR HWID     │\n` +
                         `│ 4️⃣ • 📱 DESCARGAR APP    │\n` +
-                        `│ 5️⃣ • 🎥 VIDEO TUTORIAL APP HWID  │\n` +
+                        `│ 5️⃣ • 🎥 VIDEO TUTORIAL   │\n` +
                         `└─────────────────────────┘\n\n` +
                         `⚡ *2 horas de prueba gratis*\n` +
-                        ``
+                        `💳 *Aceptamos MercadoPago*`
                     );
                 }
 
@@ -799,11 +788,11 @@ async function initializeBot() {
                     await client.sendText(from,
                         `🚀 *MGVPN-BOT*\n\n` +
                         `┌─────────────────────────┐\n` +
-                        `│ 1️⃣ • ⌛️PROBAR INTERNET    │\n` +
-                        `│ 2️⃣ • 💰COMPRAR INTERNET   │\n` +
-                        `│ 3️⃣ • 🫆 VERIFICAR HWID     │\n` +
+                        `│ 1️⃣ • PROBAR INTERNET    │\n` +
+                        `│ 2️⃣ • COMPRAR INTERNET   │\n` +
+                        `│ 3️⃣ • VERIFICAR HWID     │\n` +
                         `│ 4️⃣ • 📱 DESCARGAR APP    │\n` +
-                        `│ 5️⃣ • 🎥 VIDEO TUTORIAL APP HWID  │\n` +
+                        `│ 5️⃣ • 🎥 VIDEO TUTORIAL   │\n` +
                         `└─────────────────────────┘`
                     );
                 }
