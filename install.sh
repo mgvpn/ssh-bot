@@ -2,7 +2,7 @@
 # ================================================
 # SSH BOT PRO - WPPCONNECT + MERCADOPAGO + HWID
 # INTEGRADO CON CHUMOGH - CREA USUARIOS EN /etc/passwd
-# VERSION CORREGIDA - ENVÍA APP Y VIDEO POR WHATSAPP
+# VERSION HTTP CUSTOM - ENVÍA ARCHIVOS .HC
 # ================================================
 
 set -e
@@ -17,9 +17,9 @@ clear
 echo -e "${CYAN}"
 cat << "BANNER"
 ╔══════════════════════════════════════════════════════════════╗
-║         🤖 SSH BOT PRO - MGVPN + MERCADOPAGO              ║
+║         🤖 SSH BOT PRO - HTTP CUSTOM + HWID                ║
 ║         🔐 Crea usuarios HWID en /etc/passwd                ║
-║         📲 ENVÍA APP Y VIDEO POR WHATSAPP                  ║
+║         📲 ENVÍA ARCHIVO .HC POR WHATSAPP                   ║
 ║         ⏱️  PRUEBA 2 HORAS - PAGO AUTOMATICO                ║
 ╚══════════════════════════════════════════════════════════════╝
 BANNER
@@ -42,28 +42,48 @@ if [[ ! $REPLY =~ ^[Ss]$ ]]; then
 fi
 
 # ================================================
+# FUNCIÓN DE VERIFICACIÓN DE ERRORES
+# ================================================
+check_error() {
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}❌ Error: $1${NC}"
+        exit 1
+    fi
+}
+
+# ================================================
 # INSTALAR DEPENDENCIAS
 # ================================================
-echo -e "\n${CYAN}📦 Instalando dependencias...${NC}"
+echo -e "\n${CYAN}📦 Actualizando sistema...${NC}"
 
 apt-get update -y
 apt-get upgrade -y
 
-apt-get remove -y libnode-dev libnode-devel nodejs-doc 2>/dev/null || true
-apt-get autoremove -y
+echo -e "\n${CYAN}📦 Instalando Node.js 18...${NC}"
+if ! command -v node &> /dev/null; then
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+    apt-get install -y nodejs
+    check_error "Instalando Node.js"
+fi
 
-curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-apt-get install -y nodejs gcc g++ make
+echo -e "\n${CYAN}📦 Instalando Google Chrome...${NC}"
+if ! command -v google-chrome &> /dev/null; then
+    wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
+    apt-get update -y
+    apt-get install -y google-chrome-stable
+    check_error "Instalando Chrome"
+fi
 
-wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add -
-echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
-apt-get update -y
-apt-get install -y google-chrome-stable
-
+echo -e "\n${CYAN}📦 Instalando dependencias adicionales...${NC}"
 apt-get install -y git curl wget sqlite3 jq build-essential \
     libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev \
-    librsvg2-dev python3 python3-pip ffmpeg unzip cron ufw
+    librsvg2-dev python3 python3-pip ffmpeg unzip cron ufw \
+    gcc g++ make
 
+check_error "Instalando dependencias"
+
+echo -e "\n${CYAN}🔧 Configurando firewall...${NC}"
 ufw allow 22/tcp
 ufw allow 80/tcp
 ufw allow 443/tcp
@@ -71,9 +91,12 @@ ufw allow 8001/tcp
 ufw allow 3000/tcp
 ufw --force enable
 
+echo -e "\n${CYAN}📦 Instalando PM2...${NC}"
 npm install -g pm2
 pm2 update
+check_error "Instalando PM2"
 
+echo -e "\n${CYAN}👥 Creando grupo cloudvpn...${NC}"
 if ! getent group cloudvpn > /dev/null 2>&1; then
     groupadd cloudvpn
     echo -e "${GREEN}✅ Grupo cloudvpn creado${NC}"
@@ -86,19 +109,21 @@ echo -e "${GREEN}✅ Dependencias instaladas${NC}"
 # ================================================
 # PREPARAR ESTRUCTURA
 # ================================================
-echo -e "\n${CYAN}📁 Creando estructura...${NC}"
+echo -e "\n${CYAN}📁 Creando estructura de directorios...${NC}"
 
 INSTALL_DIR="/opt/sshbot-pro"
 USER_HOME="/root/sshbot-pro"
 DB_FILE="$INSTALL_DIR/data/hwid.db"
 CONFIG_FILE="$INSTALL_DIR/config/config.json"
-APK_PATH="/opt/sshbot-pro/apps/MGVPN.apk"
+HC_PATH="/opt/sshbot-pro/apps/config.hc"
 VIDEO_PATH="/opt/sshbot-pro/apps/tutorial.mp4"
 
+# Limpiar instalación anterior
 pm2 delete sshbot-pro 2>/dev/null || true
 rm -rf "$INSTALL_DIR" "$USER_HOME" 2>/dev/null || true
 rm -rf /root/.wppconnect 2>/dev/null || true
 
+# Crear directorios
 mkdir -p "$INSTALL_DIR"/{data,config,sessions,logs,qr_codes,apps}
 mkdir -p "$USER_HOME"
 mkdir -p /root/.wppconnect
@@ -107,8 +132,8 @@ chmod -R 755 "$INSTALL_DIR"
 cat > "$CONFIG_FILE" << CONFIGEOF
 {
     "bot": {
-        "name": "SSH Bot Pro HWID",
-        "version": "5.0-CHUMOGH",
+        "name": "SSH Bot Pro HTTP Custom",
+        "version": "6.0-HC-STABLE",
         "server_ip": "$SERVER_IP"
     },
     "prices": {
@@ -125,21 +150,22 @@ cat > "$CONFIG_FILE" << CONFIGEOF
         "public_key": ""
     },
     "links": {
-        "app_download": "https://play.google.com/store/apps/details?id=google.android.b6",
+        "app_download": "https://play.google.com/store/apps/details?id=com.evozi.httpcustom",
         "support": "https://wa.me/54"
     },
     "paths": {
         "database": "$DB_FILE",
         "qr_codes": "$INSTALL_DIR/qr_codes",
         "sessions": "/root/.wppconnect",
-        "apk_file": "$APK_PATH",
+        "hc_file": "$HC_PATH",
         "video_file": "$VIDEO_PATH"
     }
 }
 CONFIGEOF
 
+echo -e "\n${CYAN}🗄️ Creando base de datos...${NC}"
 sqlite3 "$DB_FILE" << 'SQL'
-CREATE TABLE hwid_users (
+CREATE TABLE IF NOT EXISTS hwid_users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     phone TEXT,
     nombre TEXT,
@@ -149,7 +175,7 @@ CREATE TABLE hwid_users (
     status INTEGER DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
-CREATE TABLE daily_tests (
+CREATE TABLE IF NOT EXISTS daily_tests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     phone TEXT,
     nombre TEXT,
@@ -157,7 +183,7 @@ CREATE TABLE daily_tests (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(phone, date)
 );
-CREATE TABLE payments (
+CREATE TABLE IF NOT EXISTS payments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     payment_id TEXT UNIQUE,
     phone TEXT,
@@ -173,14 +199,14 @@ CREATE TABLE payments (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     approved_at DATETIME
 );
-CREATE TABLE user_state (
+CREATE TABLE IF NOT EXISTS user_state (
     phone TEXT PRIMARY KEY,
     state TEXT DEFAULT 'main_menu',
     data TEXT,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
-CREATE INDEX idx_hwid_users_hwid ON hwid_users(hwid);
-CREATE INDEX idx_payments_status ON payments(status);
+CREATE INDEX IF NOT EXISTS idx_hwid_users_hwid ON hwid_users(hwid);
+CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
 SQL
 
 echo -e "${GREEN}✅ Estructura creada${NC}"
@@ -188,14 +214,14 @@ echo -e "${GREEN}✅ Estructura creada${NC}"
 # ================================================
 # CREAR BOT
 # ================================================
-echo -e "\n${CYAN}🤖 Creando bot...${NC}"
+echo -e "\n${CYAN}🤖 Creando bot principal...${NC}"
 
 cd "$USER_HOME"
 
 cat > package.json << 'PKGEOF'
 {
-    "name": "sshbot-pro-chumogh",
-    "version": "5.0.0",
+    "name": "sshbot-pro-hc-stable",
+    "version": "6.0.0",
     "main": "bot.js",
     "dependencies": {
         "@wppconnect-team/wppconnect": "^1.24.0",
@@ -229,9 +255,9 @@ const execPromise = util.promisify(exec);
 moment.locale('es');
 
 console.log(chalk.cyan.bold('\n╔══════════════════════════════════════════════════════╗'));
-console.log(chalk.cyan.bold('║   🤖 SSH BOT PRO - CHUMOGH                          ║'));
+console.log(chalk.cyan.bold('║   🤖 SSH BOT PRO - HTTP CUSTOM STABLE               ║'));
 console.log(chalk.cyan.bold('║   🔐 Crea usuarios HWID en /etc/passwd              ║'));
-console.log(chalk.cyan.bold('║   📱 ENVÍA APP Y VIDEO POR WHATSAPP                 ║'));
+console.log(chalk.cyan.bold('║   📱 ENVÍA ARCHIVO .HC POR WHATSAPP                 ║'));
 console.log(chalk.cyan.bold('╚══════════════════════════════════════════════════════╝\n'));
 
 function loadConfig() {
@@ -273,63 +299,112 @@ initMercadoPago();
 let client = null;
 
 // ================================================
-// ENVIAR APK POR WHATSAPP
+// ENVIAR ARCHIVO .HC POR WHATSAPP
 // ================================================
-async function sendAPK(phone) {
-    const apkPath = '/opt/sshbot-pro/apps/MGVPN.apk';
-
-    if (!fs.existsSync(apkPath)) {
-        await client.sendText(phone,
-            `❌ *APP NO DISPONIBLE*\n\n📱 La aplicación no está disponible actualmente.\n👨‍💻 Contacta al administrador.\n\n🔗 Link alternativo:\n${config.links.app_download}`
-        );
-        return false;
-    }
-
+async function sendHCFile(phone) {
     try {
+        const hcPath = '/opt/sshbot-pro/apps/config.hc';
+
+        if (!fs.existsSync(hcPath)) {
+            console.log(chalk.yellow(`⚠️ Archivo .HC no encontrado en ${hcPath}`));
+            try {
+                await client.sendText(phone,
+                    `❌ *ARCHIVO .HC NO DISPONIBLE*\n\n📁 El archivo de configuración no está cargado actualmente.\n👨‍💻 Contacta al administrador.\n\n🔗 Link alternativo:\n${config.links.app_download}`
+                );
+            } catch (e) {
+                console.error('Error enviando texto HC:', e.message);
+            }
+            return false;
+        }
+
+        const fileSize = fs.statSync(hcPath).size;
+        const fileSizeKB = (fileSize / 1024).toFixed(2);
+        
+        if (fileSize > 50 * 1024 * 1024) {
+            try {
+                await client.sendText(phone,
+                    `❌ *ARCHIVO MUY GRANDE*\n\n📦 Tamaño: ${fileSizeKB} KB\n📱 Máximo: 50 MB\n\n🔗 Descarga directa:\n${config.links.app_download}`
+                );
+            } catch (e) {
+                console.error('Error enviando texto tamaño:', e.message);
+            }
+            return false;
+        }
+
+        console.log(chalk.yellow(`📤 Enviando archivo .HC (${fileSizeKB} KB) a ${phone}...`));
+        
         await client.sendFile(
             phone,
-            apkPath,
-            'MGVPN.apk',
-            `📲 *APP MGVPN*\n\n✅ *APK LISTA PARA INSTALAR*\n\n⚠️ *IMPORTANTE:*\nSi te sale el cartel de advertencia, dale en:\n\n🔹 *MÁS DETALLES*\n🔹 *INSTALAR DE TODAS FORMAS*\n\n📦 *Tamaño:* ${(fs.statSync(apkPath).size / 1024 / 1024).toFixed(2)} MB\n\n🔧 *Pasos:*\n1️⃣ Instala la APK\n2️⃣ Abre la app\n3️⃣ Selecciona Personal 1\n4️⃣ ¡Conéctate!\n\n🌐 *Soporte:* ${config.links.support}`
+            hcPath,
+            'config.hc',
+            `📁 *CONFIGURACIÓN HTTP CUSTOM*\n\n✅ *ARCHIVO .HC LISTO*\n\n📦 *Tamaño:* ${fileSizeKB} KB\n\n🔧 *Pasos:*\n1️⃣ Descarga HTTP Custom de la Play Store\n2️⃣ Abre la app\n3️⃣ Importa este archivo .hc\n4️⃣ Selecciona el perfil\n5️⃣ ¡Conéctate!\n\n🌐 *Soporte:* ${config.links.support}`
         );
-        console.log(chalk.green(`✅ APK enviado a ${phone}`));
+        
+        console.log(chalk.green(`✅ Archivo .HC enviado correctamente a ${phone}`));
         return true;
+        
     } catch (error) {
-        console.error(chalk.red(`❌ Error enviando APK: ${error.message}`));
-        await client.sendText(phone,
-            `❌ *Error al enviar la app*\n\n🔗 Descarga directa:\n${config.links.app_download}\n\n👨‍💻 Contacta soporte: ${config.links.support}`
-        );
+        console.error(chalk.red(`❌ Error enviando .HC: ${error.message}`));
+        console.error(chalk.red('Stack:'), error.stack);
+        
+        try {
+            await client.sendText(phone,
+                `❌ *Error al enviar el archivo .HC*\n\n🔗 Descarga directa:\n${config.links.app_download}\n\n👨‍💻 Contacta soporte: ${config.links.support}`
+            );
+        } catch (e) {
+            console.error('Error enviando mensaje de fallback:', e.message);
+        }
+        
         return false;
     }
 }
 
 // ================================================
-// ENVIAR VIDEO TUTORIAL POR WHATSAPP
+// ENVIAR VIDEO TUTORIAL
 // ================================================
 async function sendTutorialVideo(phone) {
-    const videoPath = '/opt/sshbot-pro/apps/tutorial.mp4';
-
-    if (!fs.existsSync(videoPath)) {
-        await client.sendText(phone,
-            `❌ *TUTORIAL NO DISPONIBLE*\n\n📹 El video tutorial no está cargado aún.\n👨‍💻 Contacta al administrador:\n${config.links.support}`
-        );
-        return false;
-    }
-
     try {
+        const videoPath = '/opt/sshbot-pro/apps/tutorial.mp4';
+
+        if (!fs.existsSync(videoPath)) {
+            console.log(chalk.yellow(`⚠️ Video no encontrado en ${videoPath}`));
+            try {
+                await client.sendText(phone,
+                    `❌ *TUTORIAL NO DISPONIBLE*\n\n📹 El video tutorial no está cargado aún.\n👨‍💻 Contacta al administrador:\n${config.links.support}`
+                );
+            } catch (e) {
+                console.error('Error enviando texto video:', e.message);
+            }
+            return false;
+        }
+
+        const fileSize = fs.statSync(videoPath).size;
+        const fileSizeMB = (fileSize / 1024 / 1024).toFixed(2);
+        
+        console.log(chalk.yellow(`🎥 Enviando video (${fileSizeMB} MB) a ${phone}...`));
+        
         await client.sendFile(
             phone,
             videoPath,
             'tutorial.mp4',
-            `🎥 *VIDEO TUTORIAL MGVPN*\n\n📋 *Pasos:*\n1️⃣ Instala la APK (opción 4️⃣)\n2️⃣ Abre la app\n3️⃣ Selecciona Personal 1\n4️⃣ ¡Conéctate y listo!\n\n❓ Dudas: ${config.links.support}`
+            `🎥 *VIDEO TUTORIAL HTTP CUSTOM*\n\n📋 *Pasos:*\n1️⃣ Descarga HTTP Custom de la Play Store\n2️⃣ Importa el archivo .hc (opción 4️⃣)\n3️⃣ Selecciona el perfil\n4️⃣ ¡Conéctate y listo!\n\n❓ Dudas: ${config.links.support}`
         );
+        
         console.log(chalk.green(`✅ Video tutorial enviado a ${phone}`));
         return true;
+        
     } catch (error) {
         console.error(chalk.red(`❌ Error enviando video: ${error.message}`));
-        await client.sendText(phone,
-            `❌ *Error al enviar el tutorial*\n\n👨‍💻 Contacta soporte: ${config.links.support}`
-        );
+        console.error(chalk.red('Stack:'), error.stack);
+        
+        try {
+            await client.sendText(phone,
+                `❌ *Error al enviar el tutorial*\n\n👨‍💻 Contacta soporte: ${config.links.support}`
+            );
+        } catch (e) {
+            console.error('Error enviando mensaje de fallback:', e.message);
+        }
+        
         return false;
     }
 }
@@ -451,7 +526,7 @@ function getHWIDInfo(hwid) {
 }
 
 // ================================================
-// ESTADOS
+// ESTADOS DEL USUARIO
 // ================================================
 function getUserState(phone) {
     return new Promise((resolve) => {
@@ -563,7 +638,7 @@ async function checkPendingPayments() {
 }
 
 // ================================================
-// NOTIFICACIONES DE VENCIMIENTO
+// NOTIFICACIONES Y LIMPIEZA
 // ================================================
 async function checkExpiringHWIDs() {
     try {
@@ -586,9 +661,6 @@ async function checkExpiringHWIDs() {
     }
 }
 
-// ================================================
-// LIMPIAR EXPIRADOS
-// ================================================
 async function cleanExpiredHWIDs() {
     try {
         const expired = await new Promise((resolve, reject) => {
@@ -651,12 +723,12 @@ async function initializeBot() {
                 if (['menu', 'hola', 'start', 'hi', 'volver', '0'].includes(text)) {
                     await setUserState(from, 'main_menu');
                     await client.sendText(from,
-                        `🚀 *MGVPN-BOT*\n\n` +
+                        `🚀 *HTTP CUSTOM BOT*\n\n` +
                         `┌─────────────────────────┐\n` +
-                        `│ 1️⃣ • PROBAR INTERNET    │\n` +
-                        `│ 2️⃣ • COMPRAR INTERNET   │\n` +
-                        `│ 3️⃣ • VERIFICAR HWID     │\n` +
-                        `│ 4️⃣ • 📱 DESCARGAR APP    │\n` +
+                        `│ 1️⃣ • ⌛️ PROBAR INTERNET    │\n` +
+                        `│ 2️⃣ • 💰 COMPRAR INTERNET   │\n` +
+                        `│ 3️⃣ • 🫆 VERIFICAR HWID     │\n` +
+                        `│ 4️⃣ • 📁 ARCHIVO .HC        │\n` +
                         `│ 5️⃣ • 🎥 VIDEO TUTORIAL   │\n` +
                         `└─────────────────────────┘\n\n` +
                         `⚡ *2 horas de prueba gratis*\n` +
@@ -684,10 +756,10 @@ async function initializeBot() {
                     await client.sendText(from, `🔍 VERIFICAR HWID\n\nEnvía tu HWID:\n\nEjemplo: APP-E3E4D5CBB7636907\n`);
                 }
 
-                // OPCIÓN 4: DESCARGAR APP
+                // OPCIÓN 4: ENVIAR ARCHIVO .HC
                 else if (text === '4' && userState.state === 'main_menu') {
-                    await client.sendText(from, '⏳ *Preparando envío de la app...*\n\n📱 Un momento por favor');
-                    await sendAPK(from);
+                    await client.sendText(from, '⏳ *Preparando envío del archivo .HC...*\n\n📁 Un momento por favor');
+                    await sendHCFile(from);
                 }
 
                 // OPCIÓN 5: VIDEO TUTORIAL
@@ -740,7 +812,7 @@ async function initializeBot() {
                         registerTest(from, nombre);
                         const expireTime = moment(result.expires).format('HH:mm DD/MM/YYYY');
                         await client.sendText(from,
-                            `✅ PRUEBA ACTIVADA ${nombre}\n\n🔐 HWID: ${result.hwid}\n⏰ Expira: ${expireTime}\n⚡ Tipo: PRUEBA (2 horas)\n\n📱 Abre la app y conéctate`
+                            `✅ PRUEBA ACTIVADA ${nombre}\n\n🔐 HWID: ${result.hwid}\n⏰ Expira: ${expireTime}\n⚡ Tipo: PRUEBA (2 horas)\n\n📱 Abre HTTP Custom y conéctate`
                         );
                         console.log(chalk.green(`✅ Test activado: ${result.hwid} - ${nombre}`));
                     } else {
@@ -786,12 +858,12 @@ async function initializeBot() {
                 else if (text === '0' && userState.state === 'buying_hwid') {
                     await setUserState(from, 'main_menu');
                     await client.sendText(from,
-                        `🚀 *MGVPN-BOT*\n\n` +
+                        `🚀 *HTTP CUSTOM BOT*\n\n` +
                         `┌─────────────────────────┐\n` +
-                        `│ 1️⃣ • PROBAR INTERNET    │\n` +
-                        `│ 2️⃣ • COMPRAR INTERNET   │\n` +
-                        `│ 3️⃣ • VERIFICAR HWID     │\n` +
-                        `│ 4️⃣ • 📱 DESCARGAR APP    │\n` +
+                        `│ 1️⃣ • ⌛️ PROBAR INTERNET    │\n` +
+                        `│ 2️⃣ • 💰 COMPRAR INTERNET   │\n` +
+                        `│ 3️⃣ • 🫆 VERIFICAR HWID     │\n` +
+                        `│ 4️⃣ • 📁 ARCHIVO .HC        │\n` +
                         `│ 5️⃣ • 🎥 VIDEO TUTORIAL   │\n` +
                         `└─────────────────────────┘`
                     );
@@ -863,7 +935,7 @@ async function initializeBot() {
                             [result.hwid, nombre, userState.data.payment_id]);
                         const expireDate = moment(result.expires).format('DD/MM/YYYY');
                         await client.sendText(from,
-                            `✅ ACTIVADO ${nombre}\n\n🔐 HWID: ${result.hwid}\n⏰ Válido hasta: ${expireDate}\n\n¡Ya puedes usar la app!`
+                            `✅ ACTIVADO ${nombre}\n\n🔐 HWID: ${result.hwid}\n⏰ Válido hasta: ${expireDate}\n\n¡Ya puedes usar HTTP Custom!`
                         );
                         console.log(chalk.green(`✅ Premium activado: ${result.hwid} - ${nombre}`));
                     } else {
@@ -873,7 +945,22 @@ async function initializeBot() {
                 }
 
             } catch (error) {
-                console.error(chalk.red('❌ Error mensaje:'), error.message);
+                console.error(chalk.red('❌ ERROR GLOBAL en mensaje:'), error.message);
+                console.error(chalk.red('Stack:'), error.stack);
+                
+                try {
+                    await client.sendText(message.from, 
+                        '❌ *Error inesperado*\n\nEl bot encontró un error. Por favor intenta de nuevo.\n\nSi el problema persiste, contacta al administrador.'
+                    );
+                } catch (e) {
+                    console.error('No se pudo notificar al usuario:', e.message);
+                }
+                
+                try {
+                    await setUserState(message.from, 'main_menu');
+                } catch (e) {
+                    console.error('Error reseteando estado:', e.message);
+                }
             }
         });
 
@@ -900,6 +987,15 @@ process.on('SIGINT', async () => {
     if (client) await client.close();
     process.exit();
 });
+
+process.on('uncaughtException', (error) => {
+    console.error(chalk.red('❌ EXCEPCIÓN NO CAPTURADA:'), error.message);
+    console.error(chalk.red('Stack:'), error.stack);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error(chalk.red('❌ PROMESA RECHAZADA NO MANEJADA:'), reason);
+});
 BOTEOF
 
 echo -e "${GREEN}✅ Bot creado${NC}"
@@ -916,7 +1012,7 @@ RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; CYAN='\033[0;36m'; NC
 DB="/opt/sshbot-pro/data/hwid.db"
 CONFIG="/opt/sshbot-pro/config/config.json"
 APPS_DIR="/opt/sshbot-pro/apps"
-APK_PATH="$APPS_DIR/MGVPN.apk"
+HC_PATH="$APPS_DIR/config.hc"
 VIDEO_PATH="$APPS_DIR/tutorial.mp4"
 
 get_val() { jq -r "$1" "$CONFIG" 2>/dev/null; }
@@ -930,21 +1026,24 @@ normalize_hwid() {
 show_header() {
     clear
     echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║      🎛️  PANEL SSH BOT PRO - MGVPN                          ║${NC}"
+    echo -e "${CYAN}║      🎛️  PANEL SSH BOT PRO - HTTP CUSTOM                    ║${NC}"
     echo -e "${CYAN}║      🔐 Usuarios HWID en /etc/passwd                        ║${NC}"
     echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
 }
 
-upload_apk() {
+upload_hc() {
     clear
-    echo -e "${CYAN}📤 SUBIR APK PARA ENVIAR POR WHATSAPP${NC}\n"
+    echo -e "${CYAN}╔════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║     📤 SUBIR ARCHIVO .HC PARA WHATSAPP        ║${NC}"
+    echo -e "${CYAN}║     Los usuarios escriben 4 para recibirlo     ║${NC}"
+    echo -e "${CYAN}╚════════════════════════════════════════════════╝${NC}\n"
 
     mkdir -p "$APPS_DIR"
 
-    if [[ -f "$APK_PATH" ]]; then
-        echo -e "${GREEN}✅ App actual: $(du -h "$APK_PATH" | cut -f1)${NC}\n"
+    if [[ -f "$HC_PATH" ]]; then
+        echo -e "${GREEN}✅ Archivo .HC actual: $(du -h "$HC_PATH" | cut -f1)${NC}\n"
     else
-        echo -e "${YELLOW}⚠️ No hay APK cargada actualmente${NC}\n"
+        echo -e "${YELLOW}⚠️ No hay archivo .HC cargado actualmente${NC}\n"
     fi
 
     echo -e "  ${CYAN}[1]${NC} Descargar por URL"
@@ -954,28 +1053,31 @@ upload_apk() {
 
     case $METODO in
         1)
-            read -p "URL del archivo APK: " APK_URL
+            read -p "URL del archivo .HC: " HC_URL
             echo -e "\n${YELLOW}⬇️ Descargando...${NC}"
-            wget --show-progress -O "$APK_PATH" "$APK_URL"
-            if [ $? -eq 0 ]; then
-                chmod 644 "$APK_PATH"
-                echo -e "${GREEN}✅ APK descargada: $(du -h "$APK_PATH" | cut -f1)${NC}"
-                echo -e "${GREEN}✅ Los usuarios pueden escribir 4 en el menú para recibirla${NC}"
+            wget --show-progress -O "$HC_PATH" "$HC_URL"
+            if [ $? -eq 0 ] && [ -s "$HC_PATH" ]; then
+                chmod 644 "$HC_PATH"
+                echo -e "${GREEN}✅ Archivo .HC descargado: $(du -h "$HC_PATH" | cut -f1)${NC}"
+                echo -e "${GREEN}✅ Los usuarios pueden escribir 4 en el menú para recibirlo${NC}"
             else
                 echo -e "${RED}❌ Error en la descarga${NC}"
             fi
             ;;
         2)
             echo -e "\n${YELLOW}Comando SCP desde tu PC:${NC}"
-            echo -e "  ${CYAN}scp tu_app.apk root@$(curl -4 -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}'):$APK_PATH${NC}"
+            echo -e "  ${CYAN}scp tu_config.hc root@$(curl -4 -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}'):$HC_PATH${NC}"
             read -p "Presiona ENTER después de subir el archivo..."
-            if [ -f "$APK_PATH" ]; then
-                chmod 644 "$APK_PATH"
-                echo -e "${GREEN}✅ APK encontrada: $(du -h "$APK_PATH" | cut -f1)${NC}"
-                echo -e "${GREEN}✅ Los usuarios pueden escribir 4 en el menú para recibirla${NC}"
+            if [ -f "$HC_PATH" ] && [ -s "$HC_PATH" ]; then
+                chmod 644 "$HC_PATH"
+                echo -e "${GREEN}✅ Archivo .HC encontrado: $(du -h "$HC_PATH" | cut -f1)${NC}"
+                echo -e "${GREEN}✅ Los usuarios pueden escribir 4 en el menú para recibirlo${NC}"
             else
-                echo -e "${RED}❌ No se encontró el archivo en $APK_PATH${NC}"
+                echo -e "${RED}❌ No se encontró el archivo en $HC_PATH${NC}"
             fi
+            ;;
+        0)
+            return
             ;;
     esac
 
@@ -985,7 +1087,10 @@ upload_apk() {
 
 upload_video() {
     clear
-    echo -e "${CYAN}🎥 SUBIR VIDEO TUTORIAL POR URL${NC}\n"
+    echo -e "${CYAN}╔════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║     🎥 SUBIR VIDEO TUTORIAL                    ║${NC}"
+    echo -e "${CYAN}║     Los usuarios escriben 5 para recibirlo      ║${NC}"
+    echo -e "${CYAN}╚════════════════════════════════════════════════╝${NC}\n"
 
     mkdir -p "$APPS_DIR"
 
@@ -995,30 +1100,85 @@ upload_video() {
         echo -e "${YELLOW}⚠️ No hay video cargado actualmente${NC}\n"
     fi
 
-    read -p "URL del video (.mp4): " VIDEO_URL
+    echo -e "  ${CYAN}[1]${NC} Descargar por URL"
+    echo -e "  ${CYAN}[2]${NC} Subir por SCP (manual)"
+    echo -e "  ${CYAN}[3]${NC} Eliminar video actual"
+    echo -e "  ${CYAN}[0]${NC} Cancelar"
+    echo ""
+    read -p "👉 Selecciona: " VID_OPT
 
-    if [[ -z "$VIDEO_URL" ]]; then
-        echo -e "${RED}❌ URL vacía, cancelado${NC}"
-        read -p "Enter para continuar..."
-        return
-    fi
+    case $VID_OPT in
+        1)
+            read -p "URL del video (.mp4): " VIDEO_URL
+            if [[ -z "$VIDEO_URL" ]]; then
+                echo -e "${RED}❌ URL vacía, cancelado${NC}"
+                read -p "Enter para continuar..."
+                return
+            fi
 
-    echo -e "\n${YELLOW}⬇️ Descargando video...${NC}"
-    wget --show-progress -O "$VIDEO_PATH" "$VIDEO_URL"
+            echo -e "\n${YELLOW}⬇️ Descargando video...${NC}"
+            
+            if [[ -f "$VIDEO_PATH" ]]; then
+                mv "$VIDEO_PATH" "${VIDEO_PATH}.backup.$(date +%s)" 2>/dev/null
+            fi
 
-    if [ $? -eq 0 ]; then
-        chmod 644 "$VIDEO_PATH"
-        echo -e "\n${GREEN}✅ Video descargado correctamente${NC}"
-        echo -e "   🎥 Archivo: tutorial.mp4"
-        echo -e "   💾 Tamaño: $(du -h "$VIDEO_PATH" | cut -f1)"
-        echo -e "\n${GREEN}✅ Los usuarios pueden escribir 5 en el menú para recibirlo${NC}"
-    else
-        rm -f "$VIDEO_PATH" 2>/dev/null
-        echo -e "${RED}❌ Error en la descarga. Verifica la URL e intenta de nuevo${NC}"
-    fi
+            wget --show-progress -O "$VIDEO_PATH" "$VIDEO_URL" 2>&1
+
+            if [ $? -eq 0 ] && [ -f "$VIDEO_PATH" ] && [ -s "$VIDEO_PATH" ]; then
+                chmod 644 "$VIDEO_PATH"
+                local VSIZE=$(du -h "$VIDEO_PATH" | cut -f1)
+                echo -e "\n${GREEN}✅ Video descargado correctamente${NC}"
+                echo -e "   🎥 Archivo: tutorial.mp4"
+                echo -e "   💾 Tamaño: $VSIZE"
+                echo -e "   📁 Ruta: $VIDEO_PATH"
+                echo -e "\n${GREEN}✅ Los usuarios pueden escribir ${CYAN}5${GREEN} en el menú para recibirlo${NC}"
+                
+                local BOT_STATUS=$(pm2 jlist 2>/dev/null | jq -r '.[] | select(.name=="sshbot-pro") | .pm2_env.status' 2>/dev/null)
+                if [[ "$BOT_STATUS" == "online" ]]; then
+                    echo -e "${GREEN}✅ Bot está activo y listo para enviar videos${NC}"
+                else
+                    echo -e "${YELLOW}⚠️ El bot no está corriendo. Inicia con opción 1 del panel${NC}"
+                fi
+            else
+                rm -f "$VIDEO_PATH" 2>/dev/null
+                echo -e "\n${RED}❌ Error en la descarga${NC}"
+                echo -e "${YELLOW}💡 Verifica que:${NC}"
+                echo -e "   • La URL sea correcta y accesible"
+                echo -e "   • El archivo sea un video .mp4 válido"
+                echo -e "   • Haya espacio en disco (df -h)"
+            fi
+            ;;
+        2)
+            echo -e "\n${YELLOW}📤 Para subir el video manualmente:${NC}\n"
+            echo -e "${CYAN}Desde tu PC con SCP:${NC}"
+            echo -e "  ${GREEN}scp tu_video.mp4 root@$(curl -4 -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}'):$VIDEO_PATH${NC}\n"
+            echo -e "${YELLOW}Presiona ENTER después de subir el archivo...${NC}"
+            read
+            
+            if [ -f "$VIDEO_PATH" ] && [ -s "$VIDEO_PATH" ]; then
+                chmod 644 "$VIDEO_PATH"
+                echo -e "${GREEN}✅ Video encontrado: $(du -h "$VIDEO_PATH" | cut -f1)${NC}"
+                echo -e "${GREEN}✅ Listo para ser enviado${NC}"
+            else
+                echo -e "${RED}❌ No se encontró el archivo en $VIDEO_PATH${NC}"
+                echo -e "${YELLOW}💡 Asegúrate de subirlo exactamente a esa ruta${NC}"
+            fi
+            ;;
+        3)
+            if [[ -f "$VIDEO_PATH" ]]; then
+                rm -f "$VIDEO_PATH"
+                echo -e "${GREEN}✅ Video eliminado${NC}"
+            else
+                echo -e "${YELLOW}⚠️ No hay video para eliminar${NC}"
+            fi
+            ;;
+        0)
+            return
+            ;;
+    esac
 
     echo ""
-    read -p "Enter para continuar..."
+    read -p "Presiona Enter para continuar..."
 }
 
 habilitar_prueba_extra() {
@@ -1071,8 +1231,8 @@ while true; do
     MP_TOKEN=$(get_val '.mercadopago.access_token')
     [[ -n "$MP_TOKEN" && "$MP_TOKEN" != "null" && "$MP_TOKEN" != "" ]] && MP_STATUS="${GREEN}✅ CONFIG${NC}" || MP_STATUS="${RED}❌ NO CONFIG${NC}"
 
-    APK_INFO="${RED}❌ NO CARGADA${NC}"
-    [ -f "$APK_PATH" ] && APK_INFO="${GREEN}✅ $(du -h "$APK_PATH" | cut -f1)${NC}"
+    HC_INFO="${RED}❌ NO CARGADO${NC}"
+    [ -f "$HC_PATH" ] && HC_INFO="${GREEN}✅ $(du -h "$HC_PATH" | cut -f1)${NC}"
 
     VIDEO_INFO="${RED}❌ NO CARGADO${NC}"
     [ -f "$VIDEO_PATH" ] && VIDEO_INFO="${GREEN}✅ $(du -h "$VIDEO_PATH" | cut -f1)${NC}"
@@ -1082,7 +1242,7 @@ while true; do
     echo -e "  HWIDs activos:   ${CYAN}$ACTIVOS/$TOTAL${NC}"
     echo -e "  Tests hoy:       ${CYAN}$TESTS${NC}"
     echo -e "  MercadoPago:     $MP_STATUS"
-    echo -e "  APK (opción 4):  $APK_INFO"
+    echo -e "  .HC (opción 4):  $HC_INFO"
     echo -e "  Video (opción 5): $VIDEO_INFO"
     echo -e ""
     echo -e "${YELLOW}💰 PRECIOS:${NC}"
@@ -1098,9 +1258,9 @@ while true; do
     echo -e "${CYAN}[8]${NC}  📊 Estadísticas"
     echo -e "${CYAN}[9]${NC}  🔄 Limpiar sesión WhatsApp"
     echo -e "${CYAN}[10]${NC} 🗑️  Eliminar HWID"
-    echo -e "${CYAN}[11]${NC} 📱 Subir/Actualizar APK"
-    echo -e "${CYAN}[12]${NC} 🎥 Subir/Actualizar Video Tutorial (URL)"
-    echo -e "${CYAN}[13]${NC} 🔓 Habilitar prueba extra a cliente"
+    echo -e "${CYAN}[11]${NC} 📁 Subir/Actualizar archivo .HC"
+    echo -e "${CYAN}[12]${NC} 🎥 Subir/Actualizar Video Tutorial"
+    echo -e "${CYAN}[13]${NC} 🔓 Habilitar prueba extra"
     echo -e "${CYAN}[0]${NC}  🚪 Salir"
     echo -e ""
     read -p "👉 Selecciona: " OPT
@@ -1217,7 +1377,7 @@ while true; do
             read -p "Enter..."
             ;;
         11)
-            upload_apk
+            upload_hc
             ;;
         12)
             upload_video
@@ -1237,31 +1397,32 @@ chmod +x /usr/local/bin/sshbot-hwid
 ln -sf /usr/local/bin/sshbot-hwid /usr/local/bin/sshbot
 
 # ================================================
-# COMANDO RÁPIDO SUBIR APK
+# COMANDO RÁPIDO SUBIR .HC
 # ================================================
-cat > /usr/local/bin/subir-apk << 'SUBIRAPK'
+cat > /usr/local/bin/subir-hc << 'SUBIRHC'
 #!/bin/bash
 GREEN='\033[0;32m'; RED='\033[0;31m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
 APPS_DIR="/opt/sshbot-pro/apps"
-APK_PATH="$APPS_DIR/MGVPN.apk"
+HC_PATH="$APPS_DIR/config.hc"
 mkdir -p "$APPS_DIR"
 
-echo -e "${CYAN}╔════════════════════════════════╗${NC}"
-echo -e "${CYAN}║   📤 SUBIR APK POR WHATSAPP    ║${NC}"
-echo -e "${CYAN}╚════════════════════════════════╝${NC}\n"
+echo -e "${CYAN}╔════════════════════════════════════════════════╗${NC}"
+echo -e "${CYAN}║   📁 SUBIR ARCHIVO .HC POR WHATSAPP           ║${NC}"
+echo -e "${CYAN}║   Los usuarios escriben 4 para recibirlo      ║${NC}"
+echo -e "${CYAN}╚════════════════════════════════════════════════╝${NC}\n"
 
 if [ $# -gt 0 ]; then
     if [[ "$1" =~ ^https?:// ]]; then
         echo -e "${YELLOW}⬇️ Descargando...${NC}"
-        wget -O "$APK_PATH" "$1" && chmod 644 "$APK_PATH" && echo -e "${GREEN}✅ APK descargada${NC}" || echo -e "${RED}❌ Error${NC}"
+        wget -O "$HC_PATH" "$1" && chmod 644 "$HC_PATH" && echo -e "${GREEN}✅ Archivo .HC descargado${NC}" || echo -e "${RED}❌ Error${NC}"
     elif [ -f "$1" ]; then
-        cp "$1" "$APK_PATH" && chmod 644 "$APK_PATH"
-        echo -e "${GREEN}✅ APK copiada${NC}"
+        cp "$1" "$HC_PATH" && chmod 644 "$HC_PATH"
+        echo -e "${GREEN}✅ Archivo .HC copiado${NC}"
     else
         echo -e "${RED}❌ Archivo no encontrado: $1${NC}"
     fi
-    [ -f "$APK_PATH" ] && ls -lh "$APK_PATH"
-    echo -e "\n${GREEN}✅ Los usuarios escriben ${CYAN}4${GREEN} para recibir la app${NC}"
+    [ -f "$HC_PATH" ] && ls -lh "$HC_PATH"
+    echo -e "\n${GREEN}✅ Los usuarios escriben ${CYAN}4${GREEN} para recibir el archivo .HC${NC}"
     exit 0
 fi
 
@@ -1270,21 +1431,21 @@ echo -e "  ${CYAN}[2]${NC} Por SCP (manual)"
 read -p "Opción: " opt
 case $opt in
     1)
-        read -p "URL: " url
-        wget -O "$APK_PATH" "$url" && chmod 644 "$APK_PATH"
-        ls -lh "$APK_PATH"
+        read -p "URL del archivo .HC: " url
+        wget -O "$HC_PATH" "$url" && chmod 644 "$HC_PATH"
+        ls -lh "$HC_PATH"
         ;;
     2)
         echo -e "\n${YELLOW}Comando SCP:${NC}"
-        echo "scp tu_app.apk root@$(curl -4 -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}'):$APK_PATH"
+        echo "scp tu_config.hc root@$(curl -4 -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}'):$HC_PATH"
         read -p "Presiona ENTER después de subir..."
-        [ -f "$APK_PATH" ] && chmod 644 "$APK_PATH" && ls -lh "$APK_PATH" || echo -e "${RED}❌ No se encontró APK${NC}"
+        [ -f "$HC_PATH" ] && chmod 644 "$HC_PATH" && ls -lh "$HC_PATH" || echo -e "${RED}❌ No se encontró el archivo .HC${NC}"
         ;;
 esac
-echo -e "\n${GREEN}✅ Los usuarios escriben ${CYAN}4${GREEN} para recibir la app${NC}"
-SUBIRAPK
+echo -e "\n${GREEN}✅ Los usuarios escriben ${CYAN}4${GREEN} para recibir el archivo .HC${NC}"
+SUBIRHC
 
-chmod +x /usr/local/bin/subir-apk
+chmod +x /usr/local/bin/subir-hc
 
 # ================================================
 # INICIAR BOT
@@ -1299,15 +1460,17 @@ clear
 echo -e "${GREEN}"
 cat << "FINAL"
 ╔══════════════════════════════════════════════════════════════╗
-║         🎉 INSTALACIÓN COMPLETADA                           ║
+║         🎉 INSTALACIÓN COMPLETADA - HTTP CUSTOM             ║
 ║                                                              ║
 ║  ✅ Bot integrado con ChumoGH                               ║
 ║  ✅ Crea usuarios en /etc/passwd con useradd                ║
-║  ✅ Opción 4: ENVÍA APK POR WHATSAPP                        ║
+║  ✅ Opción 4: ENVÍA ARCHIVO .HC POR WHATSAPP                ║
 ║  ✅ Opción 5: ENVÍA VIDEO TUTORIAL POR WHATSAPP             ║
 ║  ✅ Prueba extra desde el panel (opción 13)                  ║
 ║  ✅ Expiración automática con chage                         ║
-║  ✅ Limpieza automática de expirados                        ║
+║  ✅ Manejo de errores mejorado                               ║
+║  ✅ No se detiene al enviar archivos                         ║
+║  ✅ Protección contra crashes                                ║
 ║  ✅ MercadoPago integrado                                   ║
 ╚══════════════════════════════════════════════════════════════╝
 FINAL
@@ -1315,7 +1478,7 @@ echo -e "${NC}"
 
 echo -e "${YELLOW}📋 COMANDOS:${NC}"
 echo -e "  ${GREEN}sshbot${NC}               - Panel de control"
-echo -e "  ${GREEN}subir-apk${NC}            - Subir APK (archivo o URL)"
+echo -e "  ${GREEN}subir-hc${NC}             - Subir archivo .HC (archivo o URL)"
 echo -e "  ${GREEN}pm2 logs sshbot-pro${NC}  - Ver logs y QR"
 echo -e "  ${GREEN}pm2 restart sshbot-pro${NC} - Reiniciar bot"
 echo -e ""
@@ -1323,13 +1486,13 @@ echo -e "${YELLOW}📱 MENÚ DEL BOT (usuarios):${NC}"
 echo -e "  1️⃣  PROBAR INTERNET"
 echo -e "  2️⃣  COMPRAR INTERNET"
 echo -e "  3️⃣  VERIFICAR HWID"
-echo -e "  4️⃣  📱 DESCARGAR APP (envía el APK)"
-echo -e "  5️⃣  🎥 VIDEO TUTORIAL (envía el video)"
+echo -e "  4️⃣  📁 ARCHIVO .HC (envía configuración HTTP Custom)"
+echo -e "  5️⃣  🎥 VIDEO TUTORIAL"
 echo -e ""
 echo -e "${YELLOW}🎛️  PANEL (admin):${NC}"
-echo -e "  Opción 11 → Subir APK"
+echo -e "  Opción 11 → Subir archivo .HC"
 echo -e "  Opción 12 → Subir Video por URL"
-echo -e "  Opción 13 → Habilitar prueba extra a cliente"
+echo -e "  Opción 13 → Habilitar prueba extra"
 
 read -p "$(echo -e "${YELLOW}¿Ver logs ahora? (s/N): ${NC}")" -n 1 -r
 echo
