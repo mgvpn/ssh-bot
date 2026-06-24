@@ -1,8 +1,9 @@
 #!/bin/bash
 # ================================================
-# SSH BOT PRO - HTTP CUSTOM + HWID 32 HEX
+# SSH BOT PRO - WPPCONNECT + MERCADOPAGO + HWID
 # INTEGRADO CON CHUMOGH - CREA USUARIOS EN /etc/passwd
-# VERSION CORREGIDA - SOPORTE HWID 32 CARACTERES
+# VERSION HTTP CUSTOM - ENVÍA ARCHIVOS .HC
+# SOLO ACEPTA HWID HEXADECIMAL DE 32 CARACTERES
 # ================================================
 
 set -e
@@ -18,7 +19,7 @@ echo -e "${CYAN}"
 cat << "BANNER"
 ╔══════════════════════════════════════════════════════════════╗
 ║         🤖 SSH BOT PRO - HTTP CUSTOM + HWID                ║
-║         🔐 Crea usuarios HWID en /etc/passwd                ║
+║         🔐 SOLO HEXADECIMAL DE 32 CARACTERES                ║
 ║         📲 ENVÍA ARCHIVO .HC POR WHATSAPP                   ║
 ║         ⏱️  PRUEBA 2 HORAS - PAGO AUTOMATICO                ║
 ╚══════════════════════════════════════════════════════════════╝
@@ -212,7 +213,7 @@ SQL
 echo -e "${GREEN}✅ Estructura creada${NC}"
 
 # ================================================
-# CREAR BOT
+# CREAR BOT (VERSIÓN MODIFICADA - SOLO HEX 32 CARACTERES)
 # ================================================
 echo -e "\n${CYAN}🤖 Creando bot principal...${NC}"
 
@@ -256,9 +257,8 @@ moment.locale('es');
 
 console.log(chalk.cyan.bold('\n╔══════════════════════════════════════════════════════╗'));
 console.log(chalk.cyan.bold('║   🤖 SSH BOT PRO - HTTP CUSTOM STABLE               ║'));
-console.log(chalk.cyan.bold('║   🔐 Crea usuarios HWID en /etc/passwd              ║'));
+console.log(chalk.cyan.bold('║   🔐 SOLO HEXADECIMAL DE 32 CARACTERES              ║'));
 console.log(chalk.cyan.bold('║   📱 ENVÍA ARCHIVO .HC POR WHATSAPP                 ║'));
-console.log(chalk.cyan.bold('║   ✅ SOPORTE HWID 32 HEX (HTTP CUSTOM)              ║'));
 console.log(chalk.cyan.bold('╚══════════════════════════════════════════════════════╝\n'));
 
 function loadConfig() {
@@ -411,21 +411,19 @@ async function sendTutorialVideo(phone) {
 }
 
 // ================================================
-// FUNCIONES HWID - SOPORTE 32 HEX (HTTP CUSTOM)
+// FUNCIONES HWID - SOLO HEXADECIMAL DE 32 CARACTERES
 // ================================================
 function normalizeHWID(hwid) {
-    hwid = hwid.trim().toUpperCase();
-    // Si tiene prefijo APP-, lo extraemos y lo normalizamos
-    if (hwid.startsWith('APP-')) {
-        return 'APP-' + hwid.substring(4).replace(/[^A-F0-9]/g, '');
-    }
-    // Si es de 32 caracteres, lo devolvemos tal cual
-    return hwid.replace(/[^A-F0-9]/g, '');
+    // Limpiar y convertir a minúsculas
+    hwid = hwid.trim().toLowerCase();
+    // Eliminar caracteres no hexadecimales (0-9, a-f)
+    hwid = hwid.replace(/[^0-9a-f]/g, '');
+    return hwid;
 }
 
 function validateHWID(hwid) {
-    // Acepta APP-XXXXXXXXXXXXXXX (16 hex) O 32 hex (HTTP Custom)
-    return /^APP-[A-F0-9]{16}$/.test(hwid) || /^[A-F0-9]{32}$/.test(hwid);
+    // Solo acepta hexadecimal de 32 caracteres
+    return /^[0-9a-f]{32}$/.test(hwid);
 }
 
 function hwidExistsInSystem(hwid) {
@@ -464,6 +462,10 @@ async function deleteSystemUser(hwid) {
 async function registerHWID(phone, nombre, rawHwid, days, tipo = 'premium') {
     try {
         const hwid = normalizeHWID(rawHwid);
+
+        if (!validateHWID(hwid)) {
+            return { success: false, error: 'HWID debe ser hexadecimal de 32 caracteres (0-9, a-f)' };
+        }
 
         if (hwidExistsInSystem(hwid)) {
             return { success: false, error: 'HWID ya registrado en el sistema' };
@@ -757,9 +759,7 @@ async function initializeBot() {
                 // OPCIÓN 3: VERIFICAR
                 else if (text === '3' && userState.state === 'main_menu') {
                     await setUserState(from, 'awaiting_check_hwid');
-                    await client.sendText(from, 
-                        `🔍 VERIFICAR HWID\n\n📱 *Envía tu HWID:*\n\n📋 *Ejemplos:*\n• \`APP-E3E4D5CBB7636907\`\n• \`822ab8c5d5de5341bb92535f61d5509c\`\n\n📌 *Cómo obtenerlo:* HTTP Custom → SSH → Copiar HWID`
-                    );
+                    await client.sendText(from, `🔍 VERIFICAR HWID\n\nEnvía tu HWID:\n\nEjemplo: 822ab8c5d5de5341bb92535f61d5509c\n`);
                 }
 
                 // OPCIÓN 4: ENVIAR ARCHIVO .HC
@@ -783,7 +783,7 @@ async function initializeBot() {
                     }
                     await setUserState(from, 'awaiting_test_hwid', { nombre });
                     await client.sendText(from,
-                        `✅ Gracias ${nombre}\n\n📱 *Envía tu HWID:*\n\n📋 *Ejemplos:*\n• \`APP-E3E4D5CBB7636907\`\n• \`822ab8c5d5de5341bb92535f61d5509c\`\n\n📌 *Copialo de HTTP Custom → SSH → HWID*\n\n⏳ *Una prueba por día*`
+                        `✅ Gracias ${nombre}\n\nAhora envía tu HWID:\n\nEjemplo:\n822ab8c5d5de5341bb92535f61d5509c\n\n⏳ Una prueba por día`
                     );
                 }
 
@@ -793,9 +793,7 @@ async function initializeBot() {
                     const nombre = userState.data.nombre;
 
                     if (!validateHWID(rawHwid)) {
-                        await client.sendText(from, 
-                            `❌ *HWID inválido*\n\n📱 *Formato correcto:*\n\n🔹 *Opción 1 (HTTP Custom):*\n\`822ab8c5d5de5341bb92535f61d5509c\` (32 hex)\n\n🔹 *Opción 2:*\n\`APP-XXXXXXXXXXXXXXXX\` (16 hex)\n\n📋 *Cómo obtener tu HWID:*\n1️⃣ Abre HTTP Custom\n2️⃣ Ve a la pestaña SSH\n3️⃣ Copia el código que dice HWID\n\n🔄 *Intenta de nuevo:*`
-                        );
+                        await client.sendText(from, `❌ HWID inválido\n\nFormato: hexadecimal de 32 caracteres\nEjemplo: 822ab8c5d5de5341bb92535f61d5509c\n\nIntenta de nuevo:`);
                         return;
                     }
 
@@ -820,7 +818,7 @@ async function initializeBot() {
                         registerTest(from, nombre);
                         const expireTime = moment(result.expires).format('HH:mm DD/MM/YYYY');
                         await client.sendText(from,
-                            `✅ *PRUEBA ACTIVADA* ${nombre}\n\n🔐 *HWID:* ${result.hwid}\n⏰ *Expira:* ${expireTime}\n⚡ *Tipo:* PRUEBA (2 horas)\n\n📱 Abre HTTP Custom y conéctate`
+                            `✅ PRUEBA ACTIVADA ${nombre}\n\n🔐 HWID: ${result.hwid}\n⏰ Expira: ${expireTime}\n⚡ Tipo: PRUEBA (2 horas)\n\n📱 Abre HTTP Custom y conéctate`
                         );
                         console.log(chalk.green(`✅ Test activado: ${result.hwid} - ${nombre}`));
                     } else {
@@ -845,7 +843,7 @@ async function initializeBot() {
 
                         if (payment.success) {
                             await client.sendText(from,
-                                `💰 *PAGO PARA HWID*\n\n🌐 Plan: ${plan.name}\n💰 Precio: $${payment.amount}\n\n🔗 *LINK DE PAGO:*\n${payment.paymentUrl}\n\n⏰ Válido 24 horas\n\n📌 *Después de pagar:*\n1. Espera la confirmación\n2. Te pediremos tu nombre\n3. Luego tu HWID\n4. Se activa automático`
+                                `💰 PAGO PARA HWID\n\n🌐 Plan: ${plan.name}\n💰 Precio: $${payment.amount}\n\nLINK DE PAGO:\n${payment.paymentUrl}\n\n⏰ Válido 24 horas\n\n📌 Después de pagar:\n1. Espera la confirmación\n2. Te pediremos tu nombre\n3. Luego tu HWID\n4. Se activa automático`
                             );
                             if (fs.existsSync(payment.qrPath)) {
                                 await client.sendImage(from, payment.qrPath, 'qr-pago.jpg',
@@ -857,7 +855,7 @@ async function initializeBot() {
                         }
                     } else {
                         await client.sendText(from,
-                            `📋 *PLAN:* ${plan.name}\n*Precio:* $${plan.price} ARS\n\nContacta al administrador:\n${config.links.support}`
+                            `📋 PLAN: ${plan.name}\nPrecio: $${plan.price} ARS\n\nContacta al administrador:\n${config.links.support}`
                         );
                     }
                     await setUserState(from, 'main_menu');
@@ -882,9 +880,7 @@ async function initializeBot() {
                     const rawHwid = message.body.trim();
 
                     if (!validateHWID(rawHwid)) {
-                        await client.sendText(from, 
-                            `❌ *Formato inválido*\n\n📱 *Ejemplos válidos:*\n\n• \`APP-E3E4D5CBB7636907\`\n• \`822ab8c5d5de5341bb92535f61d5509c\`\n\n📋 *Copialo desde HTTP Custom → SSH → HWID*`
-                        );
+                        await client.sendText(from, `❌ Formato inválido\n\nEjemplo: 822ab8c5d5de5341bb92535f61d5509c`);
                         return;
                     }
 
@@ -896,11 +892,11 @@ async function initializeBot() {
                         const expires = moment(info.expires_at).format('DD/MM/YYYY HH:mm');
                         const remaining = moment(info.expires_at).fromNow();
                         await client.sendText(from,
-                            `✅ *HWID ACTIVO*\n\n👤 ${info.nombre}\n🔐 ${hwid}\n📅 ${info.tipo === 'test' ? 'PRUEBA' : 'PREMIUM'}\n⏰ Hasta: ${expires}\n⌛ ${remaining}`
+                            `✅ HWID ACTIVO\n\n👤 ${info.nombre}\n🔐 ${hwid}\n📅 ${info.tipo === 'test' ? 'PRUEBA' : 'PREMIUM'}\n⏰ Hasta: ${expires}\n⌛ ${remaining}`
                         );
                     } else {
                         await client.sendText(from,
-                            `❌ *HWID NO ACTIVO*\n\nEnvía *1* para prueba gratis o *2* para comprar`
+                            `❌ HWID NO ACTIVO\n\nEnvía 1 para prueba gratis o 2 para comprar`
                         );
                     }
                     await setUserState(from, 'main_menu');
@@ -917,7 +913,7 @@ async function initializeBot() {
                         userState.data.nombre = nombre;
                         await setUserState(from, 'awaiting_hwid', userState.data);
                         await client.sendText(from,
-                            `✅ Gracias ${nombre}\n\nAhora envía tu HWID:\n\n📋 *Ejemplos:*\n• \`APP-E3E4D5CBB7636907\`\n• \`822ab8c5d5de5341bb92535f61d5509c\``
+                            `✅ Gracias ${nombre}\n\nAhora envía tu HWID:\nEjemplo: 822ab8c5d5de5341bb92535f61d5509c`
                         );
                         return;
                     }
@@ -926,9 +922,7 @@ async function initializeBot() {
                     const nombre = userState.data.nombre;
 
                     if (!validateHWID(rawHwid)) {
-                        await client.sendText(from, 
-                            `❌ *Formato incorrecto*\n\n📱 *Ejemplos válidos:*\n\n• \`APP-E3E4D5CBB7636907\`\n• \`822ab8c5d5de5341bb92535f61d5509c\`\n\n📋 Copia tu HWID de HTTP Custom → SSH`
-                        );
+                        await client.sendText(from, `❌ Formato incorrecto\n\nEjemplo: 822ab8c5d5de5341bb92535f61d5509c`);
                         return;
                     }
 
@@ -1031,16 +1025,21 @@ get_val() { jq -r "$1" "$CONFIG" 2>/dev/null; }
 set_val() { local t=$(mktemp); jq "$1 = $2" "$CONFIG" > "$t" && mv "$t" "$CONFIG"; }
 
 normalize_hwid() {
-    local h=$(echo "$1" | tr 'a-z' 'A-Z')
+    # Limpiar y convertir a minúsculas - SOLO HEXADECIMAL DE 32 CARACTERES
+    local h=$(echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^0-9a-f]//g')
     echo "$h"
+}
+
+validate_hwid() {
+    # Valida que sea hexadecimal de 32 caracteres
+    [[ "$1" =~ ^[0-9a-f]{32}$ ]]
 }
 
 show_header() {
     clear
     echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${CYAN}║      🎛️  PANEL SSH BOT PRO - HTTP CUSTOM                    ║${NC}"
-    echo -e "${CYAN}║      🔐 Usuarios HWID en /etc/passwd                        ║${NC}"
-    echo -e "${CYAN}║      ✅ SOPORTE HWID 32 HEX (HTTP CUSTOM)                   ║${NC}"
+    echo -e "${CYAN}║      🔐 SOLO HEXADECIMAL DE 32 CARACTERES                   ║${NC}"
     echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
 }
 
@@ -1297,12 +1296,21 @@ while true; do
         4)
             clear
             echo -e "${CYAN}🔐 REGISTRAR HWID MANUAL${NC}\n"
+            echo -e "${YELLOW}⚠️  El HWID debe ser hexadecimal de 32 caracteres${NC}"
+            echo -e "${YELLOW}   Ejemplo: 822ab8c5d5de5341bb92535f61d5509c${NC}\n"
             read -p "Teléfono (ej: 5491122334455): " PHONE
             read -p "Nombre: " NOMBRE
-            read -p "HWID (32 hex o APP-XXXX): " RAWHWID
-            read -p "Días (0=prueba 2h, 7/15/30/50): " DAYS
+            read -p "HWID (32 caracteres hex): " RAWHWID
 
             HWID=$(normalize_hwid "$RAWHWID")
+
+            if ! validate_hwid "$HWID"; then
+                echo -e "${RED}❌ HWID inválido. Debe ser hexadecimal de 32 caracteres${NC}"
+                read -p "Enter..."
+                continue
+            fi
+
+            read -p "Días (0=prueba 2h, 7/15/30/50): " DAYS
 
             if [[ "$DAYS" == "0" ]]; then
                 EXPIRE_DATE=$(date -d "+1 day" +"%Y-%m-%d")
@@ -1477,12 +1485,14 @@ cat << "FINAL"
 ║                                                              ║
 ║  ✅ Bot integrado con ChumoGH                               ║
 ║  ✅ Crea usuarios en /etc/passwd con useradd                ║
-║  ✅ SOPORTE HWID DE 32 HEX (HTTP CUSTOM)                    ║
+║  ✅ SOLO ACEPTA HEXADECIMAL DE 32 CARACTERES               ║
 ║  ✅ Opción 4: ENVÍA ARCHIVO .HC POR WHATSAPP                ║
 ║  ✅ Opción 5: ENVÍA VIDEO TUTORIAL POR WHATSAPP             ║
 ║  ✅ Prueba extra desde el panel (opción 13)                  ║
 ║  ✅ Expiración automática con chage                         ║
 ║  ✅ Manejo de errores mejorado                               ║
+║  ✅ No se detiene al enviar archivos                         ║
+║  ✅ Protección contra crashes                                ║
 ║  ✅ MercadoPago integrado                                   ║
 ╚══════════════════════════════════════════════════════════════╝
 FINAL
@@ -1505,9 +1515,6 @@ echo -e "${YELLOW}🎛️  PANEL (admin):${NC}"
 echo -e "  Opción 11 → Subir archivo .HC"
 echo -e "  Opción 12 → Subir Video por URL"
 echo -e "  Opción 13 → Habilitar prueba extra"
-echo -e ""
-echo -e "${YELLOW}✅ AHORA ACEPTA HWID DE 32 HEX COMO:${NC}"
-echo -e "  ${CYAN}822ab8c5d5de5341bb92535f61d5509c${NC}"
 
 read -p "$(echo -e "${YELLOW}¿Ver logs ahora? (s/N): ${NC}")" -n 1 -r
 echo
