@@ -337,8 +337,8 @@ async function sendHCFile(phone) {
         await client.sendFile(
             phone,
             hcPath,
-            'config.hc',
-            `📁 *CONFIGURACIÓN HTTP CUSTOM*\n\n✅ *ARCHIVO .HC LISTO*\n\n📦 *Tamaño:* ${fileSizeKB} KB\n\n🔧 *Pasos:*\n1️⃣ Descarga HTTP Custom de la Play Store\n2️⃣ Abre la app\n3️⃣ Importa este archivo .hc\n4️⃣ Selecciona el perfil\n5️⃣ ¡Conéctate!\n\n🌐 *Soporte:* ${config.links.support}`
+            '🫆PERSONAL🔵.hc',
+            `📁 *CONFIGURACIÓN HTTP CUSTOM*\n\n✅ *ARCHIVO .HC LISTO*\n\n📦 *Tamaño:* ${fileSizeKB} KB\n\n `
         );
         
         console.log(chalk.green(`✅ Archivo .HC enviado correctamente a ${phone}`));
