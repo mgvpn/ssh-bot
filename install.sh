@@ -2,8 +2,7 @@
 # ================================================
 # SSH BOT PRO - WPPCONNECT + MERCADOPAGO + HWID
 # INTEGRADO CON CHUMOGH - CREA USUARIOS EN /etc/passwd
-# VERSION HTTP CUSTOM - ENVÍA ARCHIVOS .HC
-# SOLO ACEPTA HWID HEXADECIMAL DE 32 CARACTERES
+# VERSION CORREGIDA Y ESTABLE
 # ================================================
 
 set -e
@@ -18,9 +17,9 @@ clear
 echo -e "${CYAN}"
 cat << "BANNER"
 ╔══════════════════════════════════════════════════════════════╗
-║         🤖 SSH BOT PRO - HTTP CUSTOM + HWID                ║
-║         🔐 SOLO HEXADECIMAL DE 32 CARACTERES                ║
-║         📲 ENVÍA ARCHIVO .HC POR WHATSAPP                   ║
+║         🤖 SSH BOT PRO - MGVPN + MERCADOPAGO              ║
+║         🔐 Crea usuarios HWID en /etc/passwd                ║
+║         📲 ENVÍA APP Y VIDEO POR WHATSAPP                  ║
 ║         ⏱️  PRUEBA 2 HORAS - PAGO AUTOMATICO                ║
 ╚══════════════════════════════════════════════════════════════╝
 BANNER
@@ -116,7 +115,7 @@ INSTALL_DIR="/opt/sshbot-pro"
 USER_HOME="/root/sshbot-pro"
 DB_FILE="$INSTALL_DIR/data/hwid.db"
 CONFIG_FILE="$INSTALL_DIR/config/config.json"
-HC_PATH="/opt/sshbot-pro/apps/config.hc"
+APK_PATH="/opt/sshbot-pro/apps/MGVPN.apk"
 VIDEO_PATH="/opt/sshbot-pro/apps/tutorial.mp4"
 
 # Limpiar instalación anterior
@@ -133,8 +132,8 @@ chmod -R 755 "$INSTALL_DIR"
 cat > "$CONFIG_FILE" << CONFIGEOF
 {
     "bot": {
-        "name": "SSH Bot Pro HTTP Custom",
-        "version": "6.0-HC-STABLE",
+        "name": "SSH Bot Pro HWID",
+        "version": "5.0-STABLE",
         "server_ip": "$SERVER_IP"
     },
     "prices": {
@@ -151,14 +150,14 @@ cat > "$CONFIG_FILE" << CONFIGEOF
         "public_key": ""
     },
     "links": {
-        "app_download": "https://play.google.com/store/apps/details?id=com.evozi.httpcustom",
+        "app_download": "https://play.google.com/store/apps/details?id=google.android.b6",
         "support": "https://wa.me/54"
     },
     "paths": {
         "database": "$DB_FILE",
         "qr_codes": "$INSTALL_DIR/qr_codes",
         "sessions": "/root/.wppconnect",
-        "hc_file": "$HC_PATH",
+        "apk_file": "$APK_PATH",
         "video_file": "$VIDEO_PATH"
     }
 }
@@ -213,7 +212,7 @@ SQL
 echo -e "${GREEN}✅ Estructura creada${NC}"
 
 # ================================================
-# CREAR BOT (VERSIÓN MODIFICADA - SOLO HEX 32 CARACTERES)
+# CREAR BOT
 # ================================================
 echo -e "\n${CYAN}🤖 Creando bot principal...${NC}"
 
@@ -221,8 +220,8 @@ cd "$USER_HOME"
 
 cat > package.json << 'PKGEOF'
 {
-    "name": "sshbot-pro-hc-stable",
-    "version": "6.0.0",
+    "name": "sshbot-pro-stable",
+    "version": "5.0.0",
     "main": "bot.js",
     "dependencies": {
         "@wppconnect-team/wppconnect": "^1.24.0",
@@ -256,9 +255,9 @@ const execPromise = util.promisify(exec);
 moment.locale('es');
 
 console.log(chalk.cyan.bold('\n╔══════════════════════════════════════════════════════╗'));
-console.log(chalk.cyan.bold('║   🤖 SSH BOT PRO - HTTP CUSTOM STABLE               ║'));
-console.log(chalk.cyan.bold('║   🔐 SOLO HEXADECIMAL DE 32 CARACTERES              ║'));
-console.log(chalk.cyan.bold('║   📱 ENVÍA ARCHIVO .HC POR WHATSAPP                 ║'));
+console.log(chalk.cyan.bold('║   🤖 SSH BOT PRO - CHUMOGH STABLE                   ║'));
+console.log(chalk.cyan.bold('║   🔐 Crea usuarios HWID en /etc/passwd              ║'));
+console.log(chalk.cyan.bold('║   📱 ENVÍA APP Y VIDEO POR WHATSAPP                 ║'));
 console.log(chalk.cyan.bold('╚══════════════════════════════════════════════════════╝\n'));
 
 function loadConfig() {
@@ -300,31 +299,31 @@ initMercadoPago();
 let client = null;
 
 // ================================================
-// ENVIAR ARCHIVO .HC POR WHATSAPP
+// ENVIAR APK POR WHATSAPP (CORREGIDO Y SEGURO)
 // ================================================
-async function sendHCFile(phone) {
+async function sendAPK(phone) {
     try {
-        const hcPath = '/opt/sshbot-pro/apps/config.hc';
+        const apkPath = '/opt/sshbot-pro/apps/MGVPN.apk';
 
-        if (!fs.existsSync(hcPath)) {
-            console.log(chalk.yellow(`⚠️ Archivo .HC no encontrado en ${hcPath}`));
+        if (!fs.existsSync(apkPath)) {
+            console.log(chalk.yellow(`⚠️ APK no encontrada en ${apkPath}`));
             try {
                 await client.sendText(phone,
-                    `❌ *ARCHIVO .HC NO DISPONIBLE*\n\n📁 El archivo de configuración no está cargado actualmente.\n👨‍💻 Contacta al administrador.\n\n🔗 Link alternativo:\n${config.links.app_download}`
+                    `❌ *APP NO DISPONIBLE*\n\n📱 La aplicación no está disponible actualmente.\n👨‍💻 Contacta al administrador.\n\n🔗 Link alternativo:\n${config.links.app_download}`
                 );
             } catch (e) {
-                console.error('Error enviando texto HC:', e.message);
+                console.error('Error enviando texto APK:', e.message);
             }
             return false;
         }
 
-        const fileSize = fs.statSync(hcPath).size;
-        const fileSizeKB = (fileSize / 1024).toFixed(2);
+        const fileSize = fs.statSync(apkPath).size;
+        const fileSizeMB = (fileSize / 1024 / 1024).toFixed(2);
         
-        if (fileSize > 50 * 1024 * 1024) {
+        if (fileSize > 100 * 1024 * 1024) {
             try {
                 await client.sendText(phone,
-                    `❌ *ARCHIVO MUY GRANDE*\n\n📦 Tamaño: ${fileSizeKB} KB\n📱 Máximo: 50 MB\n\n🔗 Descarga directa:\n${config.links.app_download}`
+                    `❌ *ARCHIVO MUY GRANDE*\n\n📦 Tamaño: ${fileSizeMB} MB\n📱 Máximo: 100 MB\n\n🔗 Descarga directa:\n${config.links.app_download}`
                 );
             } catch (e) {
                 console.error('Error enviando texto tamaño:', e.message);
@@ -332,25 +331,25 @@ async function sendHCFile(phone) {
             return false;
         }
 
-        console.log(chalk.yellow(`📤 Enviando archivo .HC (${fileSizeKB} KB) a ${phone}...`));
+        console.log(chalk.yellow(`📤 Enviando APK (${fileSizeMB} MB) a ${phone}...`));
         
         await client.sendFile(
             phone,
-            hcPath,
-            '🫆PERSONAL🔵.hc',
-            `📁 *CONFIGURACIÓN HTTP CUSTOM*\n\n✅ *ARCHIVO .HC LISTO*\n\n📦 *Tamaño:* ${fileSizeKB} KB\n\n `
+            apkPath,
+            'MGVPN.apk',
+            `📲 *APP MGVPN*\n\n✅ *APK LISTA PARA INSTALAR*\n\n⚠️ *IMPORTANTE:*\nSi te sale el cartel de advertencia, dale en:\n\n🔹 *MÁS DETALLES*\n🔹 *INSTALAR DE TODAS FORMAS*\n\n📦 *Tamaño:* ${fileSizeMB} MB\n\n`
         );
         
-        console.log(chalk.green(`✅ Archivo .HC enviado correctamente a ${phone}`));
+        console.log(chalk.green(`✅ APK enviado correctamente a ${phone}`));
         return true;
         
     } catch (error) {
-        console.error(chalk.red(`❌ Error enviando .HC: ${error.message}`));
+        console.error(chalk.red(`❌ Error enviando APK: ${error.message}`));
         console.error(chalk.red('Stack:'), error.stack);
         
         try {
             await client.sendText(phone,
-                `❌ *Error al enviar el archivo .HC*\n\n🔗 Descarga directa:\n${config.links.app_download}\n\n👨‍💻 Contacta soporte: ${config.links.support}`
+                `❌ *Error al enviar la app*\n\n🔗 Descarga directa:\n${config.links.app_download}\n\n👨‍💻 Contacta soporte: ${config.links.support}`
             );
         } catch (e) {
             console.error('Error enviando mensaje de fallback:', e.message);
@@ -361,7 +360,7 @@ async function sendHCFile(phone) {
 }
 
 // ================================================
-// ENVIAR VIDEO TUTORIAL
+// ENVIAR VIDEO TUTORIAL (CORREGIDO Y SEGURO)
 // ================================================
 async function sendTutorialVideo(phone) {
     try {
@@ -388,7 +387,7 @@ async function sendTutorialVideo(phone) {
             phone,
             videoPath,
             'tutorial.mp4',
-            `🎥 *VIDEO TUTORIAL HTTP CUSTOM*\n\n📋 *Pasos:*\n1️⃣ Descarga HTTP Custom de la Play Store\n2️⃣ Importa el archivo .hc (opción 4️⃣)\n3️⃣ Selecciona el perfil\n4️⃣ ¡Conéctate y listo!\n\n❓ Dudas: ${config.links.support}`
+            `🎥 *VIDEO TUTORIAL MGVPN*\n\n`
         );
         
         console.log(chalk.green(`✅ Video tutorial enviado a ${phone}`));
@@ -400,7 +399,7 @@ async function sendTutorialVideo(phone) {
         
         try {
             await client.sendText(phone,
-                `❌ *Error al enviar el tutorial*\n\n👨‍💻 Contacta soporte: ${config.links.support}`
+                `📹 TUTORIAL EN EL LINK https://whatsapp.com/channel/0029VaeE35xEgGfKhmUfch11/118`
             );
         } catch (e) {
             console.error('Error enviando mensaje de fallback:', e.message);
@@ -411,19 +410,18 @@ async function sendTutorialVideo(phone) {
 }
 
 // ================================================
-// FUNCIONES HWID - SOLO HEXADECIMAL DE 32 CARACTERES
+// FUNCIONES HWID
 // ================================================
 function normalizeHWID(hwid) {
-    // Limpiar y convertir a minúsculas
-    hwid = hwid.trim().toLowerCase();
-    // Eliminar caracteres no hexadecimales (0-9, a-f)
-    hwid = hwid.replace(/[^0-9a-f]/g, '');
-    return hwid;
+    hwid = hwid.trim().toUpperCase();
+    if (hwid.startsWith('APP-')) {
+        return 'APP-' + hwid.substring(4).replace(/[^A-F0-9]/g, '');
+    }
+    return hwid.replace(/[^A-F0-9]/g, '');
 }
 
 function validateHWID(hwid) {
-    // Solo acepta hexadecimal de 32 caracteres
-    return /^[0-9a-f]{32}$/.test(hwid);
+    return /^APP-[A-F0-9]{16}$/.test(hwid) || /^[A-F0-9]{32}$/.test(hwid);
 }
 
 function hwidExistsInSystem(hwid) {
@@ -462,10 +460,6 @@ async function deleteSystemUser(hwid) {
 async function registerHWID(phone, nombre, rawHwid, days, tipo = 'premium') {
     try {
         const hwid = normalizeHWID(rawHwid);
-
-        if (!validateHWID(hwid)) {
-            return { success: false, error: 'HWID debe ser hexadecimal de 32 caracteres (0-9, a-f)' };
-        }
 
         if (hwidExistsInSystem(hwid)) {
             return { success: false, error: 'HWID ya registrado en el sistema' };
@@ -729,12 +723,12 @@ async function initializeBot() {
                 if (['menu', 'hola', 'start', 'hi', 'volver', '0'].includes(text)) {
                     await setUserState(from, 'main_menu');
                     await client.sendText(from,
-                        `🚀 *HTTP CUSTOM BOT*\n\n` +
+                        `🚀 *MGVPN-BOT*\n\n` +
                         `┌─────────────────────────┐\n` +
                         `│ 1️⃣ • ⌛️ PROBAR INTERNET    │\n` +
                         `│ 2️⃣ • 💰 COMPRAR INTERNET   │\n` +
                         `│ 3️⃣ • 🫆 VERIFICAR HWID     │\n` +
-                        `│ 4️⃣ • 📁 ARCHIVO .HC        │\n` +
+                        `│ 4️⃣ • 📱 DESCARGAR APP    │\n` +
                         `│ 5️⃣ • 🎥 VIDEO TUTORIAL   │\n` +
                         `└─────────────────────────┘\n\n` +
                         `⚡ *2 horas de prueba gratis*\n` +
@@ -759,13 +753,13 @@ async function initializeBot() {
                 // OPCIÓN 3: VERIFICAR
                 else if (text === '3' && userState.state === 'main_menu') {
                     await setUserState(from, 'awaiting_check_hwid');
-                    await client.sendText(from, `🔍 VERIFICAR HWID\n\nEnvía tu HWID:\n\nEjemplo: 822ab8c5d5de5341bb92535f61d5509c\n`);
+                    await client.sendText(from, `🔍 VERIFICAR HWID\n\nEnvía tu HWID:\n\nEjemplo: APP-E3E4D5CBB7636907\n`);
                 }
 
-                // OPCIÓN 4: ENVIAR ARCHIVO .HC
+                // OPCIÓN 4: DESCARGAR APP
                 else if (text === '4' && userState.state === 'main_menu') {
-                    await client.sendText(from, '⏳ *Preparando envío del archivo .HC...*\n\n📁 Un momento por favor');
-                    await sendHCFile(from);
+                    await client.sendText(from, '⏳ *Preparando envío de la app...*\n\n📱 Un momento por favor');
+                    await sendAPK(from);
                 }
 
                 // OPCIÓN 5: VIDEO TUTORIAL
@@ -783,7 +777,7 @@ async function initializeBot() {
                     }
                     await setUserState(from, 'awaiting_test_hwid', { nombre });
                     await client.sendText(from,
-                        `✅ Gracias ${nombre}\n\nAhora envía tu HWID:\n\nEjemplo:\n822ab8c5d5de5341bb92535f61d5509c\n\n⏳ Una prueba por día`
+                        `✅ Gracias ${nombre}\n\nAhora envía tu HWID:\n\nEjemplo:\nAPP-E3E4D5CBB7636907\n\n\n⏳ Una prueba por día`
                     );
                 }
 
@@ -793,7 +787,7 @@ async function initializeBot() {
                     const nombre = userState.data.nombre;
 
                     if (!validateHWID(rawHwid)) {
-                        await client.sendText(from, `❌ HWID inválido\n\nFormato: hexadecimal de 32 caracteres\nEjemplo: 822ab8c5d5de5341bb92535f61d5509c\n\nIntenta de nuevo:`);
+                        await client.sendText(from, `❌ HWID inválido\n\nFormato:\nAPP-XXXXXXXXXXXXXXXX (16 hex)\no 32 caracteres hex\n\nIntenta de nuevo:`);
                         return;
                     }
 
@@ -818,7 +812,7 @@ async function initializeBot() {
                         registerTest(from, nombre);
                         const expireTime = moment(result.expires).format('HH:mm DD/MM/YYYY');
                         await client.sendText(from,
-                            `✅ PRUEBA ACTIVADA ${nombre}\n\n🔐 HWID: ${result.hwid}\n⏰ Expira: ${expireTime}\n⚡ Tipo: PRUEBA (2 horas)\n\n EN OPCION 4 DESCARGA EL ARCHIVO ABRILO CON HTTP CUSTOM Y CONECTATE`
+                            `✅ PRUEBA ACTIVADA ${nombre}\n\n🔐 HWID: ${result.hwid}\n⏰ Expira: ${expireTime}\n⚡ Tipo: PRUEBA (2 horas)\n\n📱 Abre la app y conéctate en 🔵 PERSONAL 1 🇦🇷`
                         );
                         console.log(chalk.green(`✅ Test activado: ${result.hwid} - ${nombre}`));
                     } else {
@@ -864,12 +858,12 @@ async function initializeBot() {
                 else if (text === '0' && userState.state === 'buying_hwid') {
                     await setUserState(from, 'main_menu');
                     await client.sendText(from,
-                        `🚀 *HTTP CUSTOM BOT*\n\n` +
+                        `🚀 *MGVPN-BOT*\n\n` +
                         `┌─────────────────────────┐\n` +
                         `│ 1️⃣ • ⌛️ PROBAR INTERNET    │\n` +
                         `│ 2️⃣ • 💰 COMPRAR INTERNET   │\n` +
                         `│ 3️⃣ • 🫆 VERIFICAR HWID     │\n` +
-                        `│ 4️⃣ • 📁 ARCHIVO .HC        │\n` +
+                        `│ 4️⃣ • 📱 DESCARGAR APP    │\n` +
                         `│ 5️⃣ • 🎥 VIDEO TUTORIAL   │\n` +
                         `└─────────────────────────┘`
                     );
@@ -880,7 +874,7 @@ async function initializeBot() {
                     const rawHwid = message.body.trim();
 
                     if (!validateHWID(rawHwid)) {
-                        await client.sendText(from, `❌ Formato inválido\n\nEjemplo: 822ab8c5d5de5341bb92535f61d5509c`);
+                        await client.sendText(from, `❌ Formato inválido\n\nEjemplo: APP-E3E4D5CBB7636907 o 32 hex`);
                         return;
                     }
 
@@ -913,7 +907,7 @@ async function initializeBot() {
                         userState.data.nombre = nombre;
                         await setUserState(from, 'awaiting_hwid', userState.data);
                         await client.sendText(from,
-                            `✅ Gracias ${nombre}\n\nAhora envía tu HWID:\nEjemplo: 822ab8c5d5de5341bb92535f61d5509c`
+                            `✅ Gracias ${nombre}\n\nAhora envía tu HWID:\nEjemplo: APP-E3E4D5CBB7636907`
                         );
                         return;
                     }
@@ -922,7 +916,7 @@ async function initializeBot() {
                     const nombre = userState.data.nombre;
 
                     if (!validateHWID(rawHwid)) {
-                        await client.sendText(from, `❌ Formato incorrecto\n\nEjemplo: 822ab8c5d5de5341bb92535f61d5509c`);
+                        await client.sendText(from, `❌ Formato incorrecto\n\nEjemplo: APP-E3E4D5CBB7636907 o 32 hex`);
                         return;
                     }
 
@@ -941,7 +935,7 @@ async function initializeBot() {
                             [result.hwid, nombre, userState.data.payment_id]);
                         const expireDate = moment(result.expires).format('DD/MM/YYYY');
                         await client.sendText(from,
-                            `✅ ACTIVADO ${nombre}\n\n🔐 HWID: ${result.hwid}\n⏰ Válido hasta: ${expireDate}\n\n¡Ya puedes usar HTTP Custom!`
+                            `✅ ACTIVADO ${nombre}\n\n🔐 HWID: ${result.hwid}\n⏰ Válido hasta: ${expireDate}\n\n¡Ya puedes usar la app! Conectate en 🔵 PERSONAL 1 🇦🇷`
                         );
                         console.log(chalk.green(`✅ Premium activado: ${result.hwid} - ${nombre}`));
                     } else {
@@ -1018,44 +1012,38 @@ RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; CYAN='\033[0;36m'; NC
 DB="/opt/sshbot-pro/data/hwid.db"
 CONFIG="/opt/sshbot-pro/config/config.json"
 APPS_DIR="/opt/sshbot-pro/apps"
-HC_PATH="$APPS_DIR/config.hc"
+APK_PATH="$APPS_DIR/MGVPN.apk"
 VIDEO_PATH="$APPS_DIR/tutorial.mp4"
 
 get_val() { jq -r "$1" "$CONFIG" 2>/dev/null; }
 set_val() { local t=$(mktemp); jq "$1 = $2" "$CONFIG" > "$t" && mv "$t" "$CONFIG"; }
 
 normalize_hwid() {
-    # Limpiar y convertir a minúsculas - SOLO HEXADECIMAL DE 32 CARACTERES
-    local h=$(echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^0-9a-f]//g')
+    local h=$(echo "$1" | tr 'a-z' 'A-Z')
     echo "$h"
-}
-
-validate_hwid() {
-    # Valida que sea hexadecimal de 32 caracteres
-    [[ "$1" =~ ^[0-9a-f]{32}$ ]]
 }
 
 show_header() {
     clear
     echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║      🎛️  PANEL SSH BOT PRO - HTTP CUSTOM                    ║${NC}"
-    echo -e "${CYAN}║      🔐 SOLO HEXADECIMAL DE 32 CARACTERES                   ║${NC}"
+    echo -e "${CYAN}║      🎛️  PANEL SSH BOT PRO - MGVPN                          ║${NC}"
+    echo -e "${CYAN}║      🔐 Usuarios HWID en /etc/passwd                        ║${NC}"
     echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
 }
 
-upload_hc() {
+upload_apk() {
     clear
     echo -e "${CYAN}╔════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║     📤 SUBIR ARCHIVO .HC PARA WHATSAPP        ║${NC}"
-    echo -e "${CYAN}║     Los usuarios escriben 4 para recibirlo     ║${NC}"
+    echo -e "${CYAN}║     📤 SUBIR APK PARA WHATSAPP                  ║${NC}"
+    echo -e "${CYAN}║     Los usuarios escriben 4 para recibirla       ║${NC}"
     echo -e "${CYAN}╚════════════════════════════════════════════════╝${NC}\n"
 
     mkdir -p "$APPS_DIR"
 
-    if [[ -f "$HC_PATH" ]]; then
-        echo -e "${GREEN}✅ Archivo .HC actual: $(du -h "$HC_PATH" | cut -f1)${NC}\n"
+    if [[ -f "$APK_PATH" ]]; then
+        echo -e "${GREEN}✅ App actual: $(du -h "$APK_PATH" | cut -f1)${NC}\n"
     else
-        echo -e "${YELLOW}⚠️ No hay archivo .HC cargado actualmente${NC}\n"
+        echo -e "${YELLOW}⚠️ No hay APK cargada actualmente${NC}\n"
     fi
 
     echo -e "  ${CYAN}[1]${NC} Descargar por URL"
@@ -1065,31 +1053,28 @@ upload_hc() {
 
     case $METODO in
         1)
-            read -p "URL del archivo .HC: " HC_URL
+            read -p "URL del archivo APK: " APK_URL
             echo -e "\n${YELLOW}⬇️ Descargando...${NC}"
-            wget --show-progress -O "$HC_PATH" "$HC_URL"
-            if [ $? -eq 0 ] && [ -s "$HC_PATH" ]; then
-                chmod 644 "$HC_PATH"
-                echo -e "${GREEN}✅ Archivo .HC descargado: $(du -h "$HC_PATH" | cut -f1)${NC}"
-                echo -e "${GREEN}✅ Los usuarios pueden escribir 4 en el menú para recibirlo${NC}"
+            wget --show-progress -O "$APK_PATH" "$APK_URL"
+            if [ $? -eq 0 ]; then
+                chmod 644 "$APK_PATH"
+                echo -e "${GREEN}✅ APK descargada: $(du -h "$APK_PATH" | cut -f1)${NC}"
+                echo -e "${GREEN}✅ Los usuarios pueden escribir 4 en el menú para recibirla${NC}"
             else
                 echo -e "${RED}❌ Error en la descarga${NC}"
             fi
             ;;
         2)
             echo -e "\n${YELLOW}Comando SCP desde tu PC:${NC}"
-            echo -e "  ${CYAN}scp tu_config.hc root@$(curl -4 -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}'):$HC_PATH${NC}"
+            echo -e "  ${CYAN}scp tu_app.apk root@$(curl -4 -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}'):$APK_PATH${NC}"
             read -p "Presiona ENTER después de subir el archivo..."
-            if [ -f "$HC_PATH" ] && [ -s "$HC_PATH" ]; then
-                chmod 644 "$HC_PATH"
-                echo -e "${GREEN}✅ Archivo .HC encontrado: $(du -h "$HC_PATH" | cut -f1)${NC}"
-                echo -e "${GREEN}✅ Los usuarios pueden escribir 4 en el menú para recibirlo${NC}"
+            if [ -f "$APK_PATH" ]; then
+                chmod 644 "$APK_PATH"
+                echo -e "${GREEN}✅ APK encontrada: $(du -h "$APK_PATH" | cut -f1)${NC}"
+                echo -e "${GREEN}✅ Los usuarios pueden escribir 4 en el menú para recibirla${NC}"
             else
-                echo -e "${RED}❌ No se encontró el archivo en $HC_PATH${NC}"
+                echo -e "${RED}❌ No se encontró el archivo en $APK_PATH${NC}"
             fi
-            ;;
-        0)
-            return
             ;;
     esac
 
@@ -1243,8 +1228,8 @@ while true; do
     MP_TOKEN=$(get_val '.mercadopago.access_token')
     [[ -n "$MP_TOKEN" && "$MP_TOKEN" != "null" && "$MP_TOKEN" != "" ]] && MP_STATUS="${GREEN}✅ CONFIG${NC}" || MP_STATUS="${RED}❌ NO CONFIG${NC}"
 
-    HC_INFO="${RED}❌ NO CARGADO${NC}"
-    [ -f "$HC_PATH" ] && HC_INFO="${GREEN}✅ $(du -h "$HC_PATH" | cut -f1)${NC}"
+    APK_INFO="${RED}❌ NO CARGADA${NC}"
+    [ -f "$APK_PATH" ] && APK_INFO="${GREEN}✅ $(du -h "$APK_PATH" | cut -f1)${NC}"
 
     VIDEO_INFO="${RED}❌ NO CARGADO${NC}"
     [ -f "$VIDEO_PATH" ] && VIDEO_INFO="${GREEN}✅ $(du -h "$VIDEO_PATH" | cut -f1)${NC}"
@@ -1254,7 +1239,7 @@ while true; do
     echo -e "  HWIDs activos:   ${CYAN}$ACTIVOS/$TOTAL${NC}"
     echo -e "  Tests hoy:       ${CYAN}$TESTS${NC}"
     echo -e "  MercadoPago:     $MP_STATUS"
-    echo -e "  .HC (opción 4):  $HC_INFO"
+    echo -e "  APK (opción 4):  $APK_INFO"
     echo -e "  Video (opción 5): $VIDEO_INFO"
     echo -e ""
     echo -e "${YELLOW}💰 PRECIOS:${NC}"
@@ -1270,7 +1255,7 @@ while true; do
     echo -e "${CYAN}[8]${NC}  📊 Estadísticas"
     echo -e "${CYAN}[9]${NC}  🔄 Limpiar sesión WhatsApp"
     echo -e "${CYAN}[10]${NC} 🗑️  Eliminar HWID"
-    echo -e "${CYAN}[11]${NC} 📁 Subir/Actualizar archivo .HC"
+    echo -e "${CYAN}[11]${NC} 📱 Subir/Actualizar APK"
     echo -e "${CYAN}[12]${NC} 🎥 Subir/Actualizar Video Tutorial"
     echo -e "${CYAN}[13]${NC} 🔓 Habilitar prueba extra"
     echo -e "${CYAN}[0]${NC}  🚪 Salir"
@@ -1296,21 +1281,12 @@ while true; do
         4)
             clear
             echo -e "${CYAN}🔐 REGISTRAR HWID MANUAL${NC}\n"
-            echo -e "${YELLOW}⚠️  El HWID debe ser hexadecimal de 32 caracteres${NC}"
-            echo -e "${YELLOW}   Ejemplo: 822ab8c5d5de5341bb92535f61d5509c${NC}\n"
             read -p "Teléfono (ej: 5491122334455): " PHONE
             read -p "Nombre: " NOMBRE
-            read -p "HWID (32 caracteres hex): " RAWHWID
+            read -p "HWID (APP-XXXX o hex): " RAWHWID
+            read -p "Días (0=prueba 2h, 7/15/30/50): " DAYS
 
             HWID=$(normalize_hwid "$RAWHWID")
-
-            if ! validate_hwid "$HWID"; then
-                echo -e "${RED}❌ HWID inválido. Debe ser hexadecimal de 32 caracteres${NC}"
-                read -p "Enter..."
-                continue
-            fi
-
-            read -p "Días (0=prueba 2h, 7/15/30/50): " DAYS
 
             if [[ "$DAYS" == "0" ]]; then
                 EXPIRE_DATE=$(date -d "+1 day" +"%Y-%m-%d")
@@ -1398,7 +1374,7 @@ while true; do
             read -p "Enter..."
             ;;
         11)
-            upload_hc
+            upload_apk
             ;;
         12)
             upload_video
@@ -1418,32 +1394,31 @@ chmod +x /usr/local/bin/sshbot-hwid
 ln -sf /usr/local/bin/sshbot-hwid /usr/local/bin/sshbot
 
 # ================================================
-# COMANDO RÁPIDO SUBIR .HC
+# COMANDO RÁPIDO SUBIR APK
 # ================================================
-cat > /usr/local/bin/subir-hc << 'SUBIRHC'
+cat > /usr/local/bin/subir-apk << 'SUBIRAPK'
 #!/bin/bash
 GREEN='\033[0;32m'; RED='\033[0;31m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
 APPS_DIR="/opt/sshbot-pro/apps"
-HC_PATH="$APPS_DIR/config.hc"
+APK_PATH="$APPS_DIR/MGVPN.apk"
 mkdir -p "$APPS_DIR"
 
-echo -e "${CYAN}╔════════════════════════════════════════════════╗${NC}"
-echo -e "${CYAN}║   📁 SUBIR ARCHIVO .HC POR WHATSAPP           ║${NC}"
-echo -e "${CYAN}║   Los usuarios escriben 4 para recibirlo      ║${NC}"
-echo -e "${CYAN}╚════════════════════════════════════════════════╝${NC}\n"
+echo -e "${CYAN}╔════════════════════════════════╗${NC}"
+echo -e "${CYAN}║   📤 SUBIR APK POR WHATSAPP    ║${NC}"
+echo -e "${CYAN}╚════════════════════════════════╝${NC}\n"
 
 if [ $# -gt 0 ]; then
     if [[ "$1" =~ ^https?:// ]]; then
         echo -e "${YELLOW}⬇️ Descargando...${NC}"
-        wget -O "$HC_PATH" "$1" && chmod 644 "$HC_PATH" && echo -e "${GREEN}✅ Archivo .HC descargado${NC}" || echo -e "${RED}❌ Error${NC}"
+        wget -O "$APK_PATH" "$1" && chmod 644 "$APK_PATH" && echo -e "${GREEN}✅ APK descargada${NC}" || echo -e "${RED}❌ Error${NC}"
     elif [ -f "$1" ]; then
-        cp "$1" "$HC_PATH" && chmod 644 "$HC_PATH"
-        echo -e "${GREEN}✅ Archivo .HC copiado${NC}"
+        cp "$1" "$APK_PATH" && chmod 644 "$APK_PATH"
+        echo -e "${GREEN}✅ APK copiada${NC}"
     else
         echo -e "${RED}❌ Archivo no encontrado: $1${NC}"
     fi
-    [ -f "$HC_PATH" ] && ls -lh "$HC_PATH"
-    echo -e "\n${GREEN}✅ Los usuarios escriben ${CYAN}4${GREEN} para recibir el archivo .HC${NC}"
+    [ -f "$APK_PATH" ] && ls -lh "$APK_PATH"
+    echo -e "\n${GREEN}✅ Los usuarios escriben ${CYAN}4${GREEN} para recibir la app${NC}"
     exit 0
 fi
 
@@ -1452,21 +1427,21 @@ echo -e "  ${CYAN}[2]${NC} Por SCP (manual)"
 read -p "Opción: " opt
 case $opt in
     1)
-        read -p "URL del archivo .HC: " url
-        wget -O "$HC_PATH" "$url" && chmod 644 "$HC_PATH"
-        ls -lh "$HC_PATH"
+        read -p "URL: " url
+        wget -O "$APK_PATH" "$url" && chmod 644 "$APK_PATH"
+        ls -lh "$APK_PATH"
         ;;
     2)
         echo -e "\n${YELLOW}Comando SCP:${NC}"
-        echo "scp tu_config.hc root@$(curl -4 -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}'):$HC_PATH"
+        echo "scp tu_app.apk root@$(curl -4 -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}'):$APK_PATH"
         read -p "Presiona ENTER después de subir..."
-        [ -f "$HC_PATH" ] && chmod 644 "$HC_PATH" && ls -lh "$HC_PATH" || echo -e "${RED}❌ No se encontró el archivo .HC${NC}"
+        [ -f "$APK_PATH" ] && chmod 644 "$APK_PATH" && ls -lh "$APK_PATH" || echo -e "${RED}❌ No se encontró APK${NC}"
         ;;
 esac
-echo -e "\n${GREEN}✅ Los usuarios escriben ${CYAN}4${GREEN} para recibir el archivo .HC${NC}"
-SUBIRHC
+echo -e "\n${GREEN}✅ Los usuarios escriben ${CYAN}4${GREEN} para recibir la app${NC}"
+SUBIRAPK
 
-chmod +x /usr/local/bin/subir-hc
+chmod +x /usr/local/bin/subir-apk
 
 # ================================================
 # INICIAR BOT
@@ -1481,12 +1456,11 @@ clear
 echo -e "${GREEN}"
 cat << "FINAL"
 ╔══════════════════════════════════════════════════════════════╗
-║         🎉 INSTALACIÓN COMPLETADA - HTTP CUSTOM             ║
+║         🎉 INSTALACIÓN COMPLETADA - VERSIÓN ESTABLE         ║
 ║                                                              ║
 ║  ✅ Bot integrado con ChumoGH                               ║
 ║  ✅ Crea usuarios en /etc/passwd con useradd                ║
-║  ✅ SOLO ACEPTA HEXADECIMAL DE 32 CARACTERES               ║
-║  ✅ Opción 4: ENVÍA ARCHIVO .HC POR WHATSAPP                ║
+║  ✅ Opción 4: ENVÍA APK POR WHATSAPP                        ║
 ║  ✅ Opción 5: ENVÍA VIDEO TUTORIAL POR WHATSAPP             ║
 ║  ✅ Prueba extra desde el panel (opción 13)                  ║
 ║  ✅ Expiración automática con chage                         ║
@@ -1500,7 +1474,7 @@ echo -e "${NC}"
 
 echo -e "${YELLOW}📋 COMANDOS:${NC}"
 echo -e "  ${GREEN}sshbot${NC}               - Panel de control"
-echo -e "  ${GREEN}subir-hc${NC}             - Subir archivo .HC (archivo o URL)"
+echo -e "  ${GREEN}subir-apk${NC}            - Subir APK (archivo o URL)"
 echo -e "  ${GREEN}pm2 logs sshbot-pro${NC}  - Ver logs y QR"
 echo -e "  ${GREEN}pm2 restart sshbot-pro${NC} - Reiniciar bot"
 echo -e ""
@@ -1508,13 +1482,20 @@ echo -e "${YELLOW}📱 MENÚ DEL BOT (usuarios):${NC}"
 echo -e "  1️⃣  PROBAR INTERNET"
 echo -e "  2️⃣  COMPRAR INTERNET"
 echo -e "  3️⃣  VERIFICAR HWID"
-echo -e "  4️⃣  📁 ARCHIVO .HC (envía configuración HTTP Custom)"
-echo -e "  5️⃣  🎥 VIDEO TUTORIAL"
+echo -e "  4️⃣  📱 DESCARGAR APP (envía el APK)"
+echo -e "  5️⃣  🎥 VIDEO TUTORIAL (envía el video)"
 echo -e ""
 echo -e "${YELLOW}🎛️  PANEL (admin):${NC}"
-echo -e "  Opción 11 → Subir archivo .HC"
+echo -e "  Opción 11 → Subir APK"
 echo -e "  Opción 12 → Subir Video por URL"
 echo -e "  Opción 13 → Habilitar prueba extra"
+echo -e ""
+echo -e "${YELLOW}🔧 MEJORAS DE ESTA VERSIÓN:${NC}"
+echo -e "  ✅ Envío de archivos robusto"
+echo -e "  ✅ Manejo de errores global"
+echo -e "  ✅ Protección contra promesas rechazadas"
+echo -e "  ✅ Panel de video mejorado"
+echo -e "  ✅ No se detiene al enviar archivos grandes"
 
 read -p "$(echo -e "${YELLOW}¿Ver logs ahora? (s/N): ${NC}")" -n 1 -r
 echo
