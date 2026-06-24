@@ -20,7 +20,7 @@ cat << "BANNER"
 ╔══════════════════════════════════════════════════════════════╗
 ║         🤖 SSH BOT PRO - HTTP CUSTOM + HWID                ║
 ║         🔐 SOLO HEXADECIMAL DE 32 CARACTERES                ║
-║         📲 ENVÍA ARCHIVO personal.hc POR WHATSAPP          ║
+║         📲 ENVÍA ARCHIVO .HC POR WHATSAPP                   ║
 ║         ⏱️  PRUEBA 2 HORAS - PAGO AUTOMATICO                ║
 ╚══════════════════════════════════════════════════════════════╝
 BANNER
@@ -116,7 +116,7 @@ INSTALL_DIR="/opt/sshbot-pro"
 USER_HOME="/root/sshbot-pro"
 DB_FILE="$INSTALL_DIR/data/hwid.db"
 CONFIG_FILE="$INSTALL_DIR/config/config.json"
-HC_PATH="/opt/sshbot-pro/apps/personal.hc"
+HC_PATH="/opt/sshbot-pro/apps/config.hc"
 VIDEO_PATH="/opt/sshbot-pro/apps/tutorial.mp4"
 
 # Limpiar instalación anterior
@@ -258,7 +258,7 @@ moment.locale('es');
 console.log(chalk.cyan.bold('\n╔══════════════════════════════════════════════════════╗'));
 console.log(chalk.cyan.bold('║   🤖 SSH BOT PRO - HTTP CUSTOM STABLE               ║'));
 console.log(chalk.cyan.bold('║   🔐 SOLO HEXADECIMAL DE 32 CARACTERES              ║'));
-console.log(chalk.cyan.bold('║   📱 ENVÍA ARCHIVO personal.hc POR WHATSAPP        ║'));
+console.log(chalk.cyan.bold('║   📱 ENVÍA ARCHIVO .HC POR WHATSAPP                 ║'));
 console.log(chalk.cyan.bold('╚══════════════════════════════════════════════════════╝\n'));
 
 function loadConfig() {
@@ -300,17 +300,17 @@ initMercadoPago();
 let client = null;
 
 // ================================================
-// ENVIAR ARCHIVO personal.hc POR WHATSAPP
+// ENVIAR ARCHIVO .HC POR WHATSAPP
 // ================================================
 async function sendHCFile(phone) {
     try {
-        const hcPath = '/opt/sshbot-pro/apps/personal.hc';
+        const hcPath = '/opt/sshbot-pro/apps/config.hc';
 
         if (!fs.existsSync(hcPath)) {
-            console.log(chalk.yellow(`⚠️ Archivo personal.hc no encontrado en ${hcPath}`));
+            console.log(chalk.yellow(`⚠️ Archivo .HC no encontrado en ${hcPath}`));
             try {
                 await client.sendText(phone,
-                    `❌ *ARCHIVO PERSONAL.HC NO DISPONIBLE*\n\n📁 El archivo de configuración no está cargado actualmente.\n👨‍💻 Contacta al administrador.`
+                    `❌ *ARCHIVO .HC NO DISPONIBLE*\n\n📁 El archivo de configuración no está cargado actualmente.\n👨‍💻 Contacta al administrador.\n\n🔗 Link alternativo:\n${config.links.app_download}`
                 );
             } catch (e) {
                 console.error('Error enviando texto HC:', e.message);
@@ -324,7 +324,7 @@ async function sendHCFile(phone) {
         if (fileSize > 50 * 1024 * 1024) {
             try {
                 await client.sendText(phone,
-                    `❌ *ARCHIVO MUY GRANDE*\n\n📦 Tamaño: ${fileSizeKB} KB\n📱 Máximo: 50 MB`
+                    `❌ *ARCHIVO MUY GRANDE*\n\n📦 Tamaño: ${fileSizeKB} KB\n📱 Máximo: 50 MB\n\n🔗 Descarga directa:\n${config.links.app_download}`
                 );
             } catch (e) {
                 console.error('Error enviando texto tamaño:', e.message);
@@ -332,26 +332,25 @@ async function sendHCFile(phone) {
             return false;
         }
 
-        console.log(chalk.yellow(`📤 Enviando archivo personal.hc (${fileSizeKB} KB) a ${phone}...`));
+        console.log(chalk.yellow(`📤 Enviando archivo .HC (${fileSizeKB} KB) a ${phone}...`));
         
-        // SOLO ENVÍA EL ARCHIVO, SIN TEXTO
         await client.sendFile(
             phone,
             hcPath,
-            'personal.hc',
-            ''
+            'config.hc',
+            `📁 *CONFIGURACIÓN HTTP CUSTOM*\n\n✅ *ARCHIVO .HC LISTO*\n\n📦 *Tamaño:* ${fileSizeKB} KB\n\n🔧 *Pasos:*\n1️⃣ Descarga HTTP Custom de la Play Store\n2️⃣ Abre la app\n3️⃣ Importa este archivo .hc\n4️⃣ Selecciona el perfil\n5️⃣ ¡Conéctate!\n\n🌐 *Soporte:* ${config.links.support}`
         );
         
-        console.log(chalk.green(`✅ Archivo personal.hc enviado correctamente a ${phone}`));
+        console.log(chalk.green(`✅ Archivo .HC enviado correctamente a ${phone}`));
         return true;
         
     } catch (error) {
-        console.error(chalk.red(`❌ Error enviando personal.hc: ${error.message}`));
+        console.error(chalk.red(`❌ Error enviando .HC: ${error.message}`));
         console.error(chalk.red('Stack:'), error.stack);
         
         try {
             await client.sendText(phone,
-                `❌ *Error al enviar el archivo*\n\n👨‍💻 Contacta soporte: ${config.links.support}`
+                `❌ *Error al enviar el archivo .HC*\n\n🔗 Descarga directa:\n${config.links.app_download}\n\n👨‍💻 Contacta soporte: ${config.links.support}`
             );
         } catch (e) {
             console.error('Error enviando mensaje de fallback:', e.message);
@@ -389,7 +388,7 @@ async function sendTutorialVideo(phone) {
             phone,
             videoPath,
             'tutorial.mp4',
-            `🎥 *VIDEO TUTORIAL HTTP CUSTOM*\n\n📋 *Pasos:*\n1️⃣ Descarga HTTP Custom de la Play Store\n2️⃣ Importa el archivo personal.hc\n3️⃣ Selecciona el perfil\n4️⃣ ¡Conéctate y listo!\n\n❓ Dudas: ${config.links.support}`
+            `🎥 *VIDEO TUTORIAL HTTP CUSTOM*\n\n📋 *Pasos:*\n1️⃣ Descarga HTTP Custom de la Play Store\n2️⃣ Importa el archivo .hc (opción 4️⃣)\n3️⃣ Selecciona el perfil\n4️⃣ ¡Conéctate y listo!\n\n❓ Dudas: ${config.links.support}`
         );
         
         console.log(chalk.green(`✅ Video tutorial enviado a ${phone}`));
@@ -735,7 +734,7 @@ async function initializeBot() {
                         `│ 1️⃣ • ⌛️ PROBAR INTERNET    │\n` +
                         `│ 2️⃣ • 💰 COMPRAR INTERNET   │\n` +
                         `│ 3️⃣ • 🫆 VERIFICAR HWID     │\n` +
-                        `│ 4️⃣ • 📁 ARCHIVO personal.hc│\n` +
+                        `│ 4️⃣ • 📁 ARCHIVO .HC        │\n` +
                         `│ 5️⃣ • 🎥 VIDEO TUTORIAL   │\n` +
                         `└─────────────────────────┘\n\n` +
                         `⚡ *2 horas de prueba gratis*\n` +
@@ -763,8 +762,9 @@ async function initializeBot() {
                     await client.sendText(from, `🔍 VERIFICAR HWID\n\nEnvía tu HWID:\n\nEjemplo: 822ab8c5d5de5341bb92535f61d5509c\n`);
                 }
 
-                // OPCIÓN 4: ENVIAR ARCHIVO personal.hc
+                // OPCIÓN 4: ENVIAR ARCHIVO .HC
                 else if (text === '4' && userState.state === 'main_menu') {
+                    await client.sendText(from, '⏳ *Preparando envío del archivo .HC...*\n\n📁 Un momento por favor');
                     await sendHCFile(from);
                 }
 
@@ -817,15 +817,9 @@ async function initializeBot() {
                     if (result.success) {
                         registerTest(from, nombre);
                         const expireTime = moment(result.expires).format('HH:mm DD/MM/YYYY');
-                        
-                        // ENVIAR MENSAJE DE CONFIRMACIÓN
                         await client.sendText(from,
                             `✅ PRUEBA ACTIVADA ${nombre}\n\n🔐 HWID: ${result.hwid}\n⏰ Expira: ${expireTime}\n⚡ Tipo: PRUEBA (2 horas)\n\n📱 Abre HTTP Custom y conéctate`
                         );
-                        
-                        // ENVIAR ARCHIVO personal.hc AUTOMÁTICAMENTE
-                        await sendHCFile(from);
-                        
                         console.log(chalk.green(`✅ Test activado: ${result.hwid} - ${nombre}`));
                     } else {
                         await client.sendText(from, `❌ Error: ${result.error}`);
@@ -875,7 +869,7 @@ async function initializeBot() {
                         `│ 1️⃣ • ⌛️ PROBAR INTERNET    │\n` +
                         `│ 2️⃣ • 💰 COMPRAR INTERNET   │\n` +
                         `│ 3️⃣ • 🫆 VERIFICAR HWID     │\n` +
-                        `│ 4️⃣ • 📁 ARCHIVO personal.hc│\n` +
+                        `│ 4️⃣ • 📁 ARCHIVO .HC        │\n` +
                         `│ 5️⃣ • 🎥 VIDEO TUTORIAL   │\n` +
                         `└─────────────────────────┘`
                     );
@@ -946,15 +940,9 @@ async function initializeBot() {
                         db.run(`UPDATE payments SET hwid = ?, nombre = ? WHERE payment_id = ?`,
                             [result.hwid, nombre, userState.data.payment_id]);
                         const expireDate = moment(result.expires).format('DD/MM/YYYY');
-                        
-                        // ENVIAR MENSAJE DE CONFIRMACIÓN
                         await client.sendText(from,
                             `✅ ACTIVADO ${nombre}\n\n🔐 HWID: ${result.hwid}\n⏰ Válido hasta: ${expireDate}\n\n¡Ya puedes usar HTTP Custom!`
                         );
-                        
-                        // ENVIAR ARCHIVO personal.hc AUTOMÁTICAMENTE
-                        await sendHCFile(from);
-                        
                         console.log(chalk.green(`✅ Premium activado: ${result.hwid} - ${nombre}`));
                     } else {
                         await client.sendText(from, `❌ Error: ${result.error}`);
@@ -1030,7 +1018,7 @@ RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; CYAN='\033[0;36m'; NC
 DB="/opt/sshbot-pro/data/hwid.db"
 CONFIG="/opt/sshbot-pro/config/config.json"
 APPS_DIR="/opt/sshbot-pro/apps"
-HC_PATH="$APPS_DIR/personal.hc"
+HC_PATH="$APPS_DIR/config.hc"
 VIDEO_PATH="$APPS_DIR/tutorial.mp4"
 
 get_val() { jq -r "$1" "$CONFIG" 2>/dev/null; }
@@ -1058,16 +1046,16 @@ show_header() {
 upload_hc() {
     clear
     echo -e "${CYAN}╔════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║     📤 SUBIR ARCHIVO personal.hc              ║${NC}"
+    echo -e "${CYAN}║     📤 SUBIR ARCHIVO .HC PARA WHATSAPP        ║${NC}"
     echo -e "${CYAN}║     Los usuarios escriben 4 para recibirlo     ║${NC}"
     echo -e "${CYAN}╚════════════════════════════════════════════════╝${NC}\n"
 
     mkdir -p "$APPS_DIR"
 
     if [[ -f "$HC_PATH" ]]; then
-        echo -e "${GREEN}✅ Archivo personal.hc actual: $(du -h "$HC_PATH" | cut -f1)${NC}\n"
+        echo -e "${GREEN}✅ Archivo .HC actual: $(du -h "$HC_PATH" | cut -f1)${NC}\n"
     else
-        echo -e "${YELLOW}⚠️ No hay archivo personal.hc cargado actualmente${NC}\n"
+        echo -e "${YELLOW}⚠️ No hay archivo .HC cargado actualmente${NC}\n"
     fi
 
     echo -e "  ${CYAN}[1]${NC} Descargar por URL"
@@ -1077,12 +1065,12 @@ upload_hc() {
 
     case $METODO in
         1)
-            read -p "URL del archivo personal.hc: " HC_URL
+            read -p "URL del archivo .HC: " HC_URL
             echo -e "\n${YELLOW}⬇️ Descargando...${NC}"
             wget --show-progress -O "$HC_PATH" "$HC_URL"
             if [ $? -eq 0 ] && [ -s "$HC_PATH" ]; then
                 chmod 644 "$HC_PATH"
-                echo -e "${GREEN}✅ Archivo personal.hc descargado: $(du -h "$HC_PATH" | cut -f1)${NC}"
+                echo -e "${GREEN}✅ Archivo .HC descargado: $(du -h "$HC_PATH" | cut -f1)${NC}"
                 echo -e "${GREEN}✅ Los usuarios pueden escribir 4 en el menú para recibirlo${NC}"
             else
                 echo -e "${RED}❌ Error en la descarga${NC}"
@@ -1090,11 +1078,11 @@ upload_hc() {
             ;;
         2)
             echo -e "\n${YELLOW}Comando SCP desde tu PC:${NC}"
-            echo -e "  ${CYAN}scp tu_personal.hc root@$(curl -4 -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}'):$HC_PATH${NC}"
+            echo -e "  ${CYAN}scp tu_config.hc root@$(curl -4 -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}'):$HC_PATH${NC}"
             read -p "Presiona ENTER después de subir el archivo..."
             if [ -f "$HC_PATH" ] && [ -s "$HC_PATH" ]; then
                 chmod 644 "$HC_PATH"
-                echo -e "${GREEN}✅ Archivo personal.hc encontrado: $(du -h "$HC_PATH" | cut -f1)${NC}"
+                echo -e "${GREEN}✅ Archivo .HC encontrado: $(du -h "$HC_PATH" | cut -f1)${NC}"
                 echo -e "${GREEN}✅ Los usuarios pueden escribir 4 en el menú para recibirlo${NC}"
             else
                 echo -e "${RED}❌ No se encontró el archivo en $HC_PATH${NC}"
@@ -1266,7 +1254,7 @@ while true; do
     echo -e "  HWIDs activos:   ${CYAN}$ACTIVOS/$TOTAL${NC}"
     echo -e "  Tests hoy:       ${CYAN}$TESTS${NC}"
     echo -e "  MercadoPago:     $MP_STATUS"
-    echo -e "  personal.hc (opción 4): $HC_INFO"
+    echo -e "  .HC (opción 4):  $HC_INFO"
     echo -e "  Video (opción 5): $VIDEO_INFO"
     echo -e ""
     echo -e "${YELLOW}💰 PRECIOS:${NC}"
@@ -1282,7 +1270,7 @@ while true; do
     echo -e "${CYAN}[8]${NC}  📊 Estadísticas"
     echo -e "${CYAN}[9]${NC}  🔄 Limpiar sesión WhatsApp"
     echo -e "${CYAN}[10]${NC} 🗑️  Eliminar HWID"
-    echo -e "${CYAN}[11]${NC} 📁 Subir/Actualizar archivo personal.hc"
+    echo -e "${CYAN}[11]${NC} 📁 Subir/Actualizar archivo .HC"
     echo -e "${CYAN}[12]${NC} 🎥 Subir/Actualizar Video Tutorial"
     echo -e "${CYAN}[13]${NC} 🔓 Habilitar prueba extra"
     echo -e "${CYAN}[0]${NC}  🚪 Salir"
@@ -1430,32 +1418,32 @@ chmod +x /usr/local/bin/sshbot-hwid
 ln -sf /usr/local/bin/sshbot-hwid /usr/local/bin/sshbot
 
 # ================================================
-# COMANDO RÁPIDO SUBIR personal.hc
+# COMANDO RÁPIDO SUBIR .HC
 # ================================================
 cat > /usr/local/bin/subir-hc << 'SUBIRHC'
 #!/bin/bash
 GREEN='\033[0;32m'; RED='\033[0;31m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
 APPS_DIR="/opt/sshbot-pro/apps"
-HC_PATH="$APPS_DIR/personal.hc"
+HC_PATH="$APPS_DIR/config.hc"
 mkdir -p "$APPS_DIR"
 
 echo -e "${CYAN}╔════════════════════════════════════════════════╗${NC}"
-echo -e "${CYAN}║   📁 SUBIR ARCHIVO personal.hc POR WHATSAPP   ║${NC}"
+echo -e "${CYAN}║   📁 SUBIR ARCHIVO .HC POR WHATSAPP           ║${NC}"
 echo -e "${CYAN}║   Los usuarios escriben 4 para recibirlo      ║${NC}"
 echo -e "${CYAN}╚════════════════════════════════════════════════╝${NC}\n"
 
 if [ $# -gt 0 ]; then
     if [[ "$1" =~ ^https?:// ]]; then
         echo -e "${YELLOW}⬇️ Descargando...${NC}"
-        wget -O "$HC_PATH" "$1" && chmod 644 "$HC_PATH" && echo -e "${GREEN}✅ Archivo personal.hc descargado${NC}" || echo -e "${RED}❌ Error${NC}"
+        wget -O "$HC_PATH" "$1" && chmod 644 "$HC_PATH" && echo -e "${GREEN}✅ Archivo .HC descargado${NC}" || echo -e "${RED}❌ Error${NC}"
     elif [ -f "$1" ]; then
         cp "$1" "$HC_PATH" && chmod 644 "$HC_PATH"
-        echo -e "${GREEN}✅ Archivo personal.hc copiado${NC}"
+        echo -e "${GREEN}✅ Archivo .HC copiado${NC}"
     else
         echo -e "${RED}❌ Archivo no encontrado: $1${NC}"
     fi
     [ -f "$HC_PATH" ] && ls -lh "$HC_PATH"
-    echo -e "\n${GREEN}✅ Los usuarios escriben ${CYAN}4${GREEN} para recibir el archivo personal.hc${NC}"
+    echo -e "\n${GREEN}✅ Los usuarios escriben ${CYAN}4${GREEN} para recibir el archivo .HC${NC}"
     exit 0
 fi
 
@@ -1464,18 +1452,18 @@ echo -e "  ${CYAN}[2]${NC} Por SCP (manual)"
 read -p "Opción: " opt
 case $opt in
     1)
-        read -p "URL del archivo personal.hc: " url
+        read -p "URL del archivo .HC: " url
         wget -O "$HC_PATH" "$url" && chmod 644 "$HC_PATH"
         ls -lh "$HC_PATH"
         ;;
     2)
         echo -e "\n${YELLOW}Comando SCP:${NC}"
-        echo "scp tu_personal.hc root@$(curl -4 -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}'):$HC_PATH"
+        echo "scp tu_config.hc root@$(curl -4 -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}'):$HC_PATH"
         read -p "Presiona ENTER después de subir..."
-        [ -f "$HC_PATH" ] && chmod 644 "$HC_PATH" && ls -lh "$HC_PATH" || echo -e "${RED}❌ No se encontró el archivo personal.hc${NC}"
+        [ -f "$HC_PATH" ] && chmod 644 "$HC_PATH" && ls -lh "$HC_PATH" || echo -e "${RED}❌ No se encontró el archivo .HC${NC}"
         ;;
 esac
-echo -e "\n${GREEN}✅ Los usuarios escriben ${CYAN}4${GREEN} para recibir el archivo personal.hc${NC}"
+echo -e "\n${GREEN}✅ Los usuarios escriben ${CYAN}4${GREEN} para recibir el archivo .HC${NC}"
 SUBIRHC
 
 chmod +x /usr/local/bin/subir-hc
@@ -1498,22 +1486,21 @@ cat << "FINAL"
 ║  ✅ Bot integrado con ChumoGH                               ║
 ║  ✅ Crea usuarios en /etc/passwd con useradd                ║
 ║  ✅ SOLO ACEPTA HEXADECIMAL DE 32 CARACTERES               ║
-║  ✅ Opción 4: ENVÍA ARCHIVO personal.hc (SOLO ARCHIVO)    ║
-║  ✅ Opción 5: ENVÍA VIDEO TUTORIAL                         ║
-║  ✅ Envío AUTOMÁTICO al activar prueba o premium           ║
-║  ✅ Prueba extra desde el panel (opción 13)                ║
-║  ✅ Expiración automática con chage                        ║
-║  ✅ Manejo de errores mejorado                             ║
-║  ✅ No se detiene al enviar archivos                       ║
-║  ✅ Protección contra crashes                              ║
-║  ✅ MercadoPago integrado                                  ║
+║  ✅ Opción 4: ENVÍA ARCHIVO .HC POR WHATSAPP                ║
+║  ✅ Opción 5: ENVÍA VIDEO TUTORIAL POR WHATSAPP             ║
+║  ✅ Prueba extra desde el panel (opción 13)                  ║
+║  ✅ Expiración automática con chage                         ║
+║  ✅ Manejo de errores mejorado                               ║
+║  ✅ No se detiene al enviar archivos                         ║
+║  ✅ Protección contra crashes                                ║
+║  ✅ MercadoPago integrado                                   ║
 ╚══════════════════════════════════════════════════════════════╝
 FINAL
 echo -e "${NC}"
 
 echo -e "${YELLOW}📋 COMANDOS:${NC}"
 echo -e "  ${GREEN}sshbot${NC}               - Panel de control"
-echo -e "  ${GREEN}subir-hc${NC}             - Subir archivo personal.hc (archivo o URL)"
+echo -e "  ${GREEN}subir-hc${NC}             - Subir archivo .HC (archivo o URL)"
 echo -e "  ${GREEN}pm2 logs sshbot-pro${NC}  - Ver logs y QR"
 echo -e "  ${GREEN}pm2 restart sshbot-pro${NC} - Reiniciar bot"
 echo -e ""
@@ -1521,15 +1508,13 @@ echo -e "${YELLOW}📱 MENÚ DEL BOT (usuarios):${NC}"
 echo -e "  1️⃣  PROBAR INTERNET"
 echo -e "  2️⃣  COMPRAR INTERNET"
 echo -e "  3️⃣  VERIFICAR HWID"
-echo -e "  4️⃣  📁 ARCHIVO personal.hc (envía SOLO el archivo)"
+echo -e "  4️⃣  📁 ARCHIVO .HC (envía configuración HTTP Custom)"
 echo -e "  5️⃣  🎥 VIDEO TUTORIAL"
 echo -e ""
 echo -e "${YELLOW}🎛️  PANEL (admin):${NC}"
-echo -e "  Opción 11 → Subir archivo personal.hc"
+echo -e "  Opción 11 → Subir archivo .HC"
 echo -e "  Opción 12 → Subir Video por URL"
 echo -e "  Opción 13 → Habilitar prueba extra"
-echo -e ""
-echo -e "${GREEN}📌 IMPORTANTE: El archivo personal.hc se envía AUTOMÁTICAMENTE al activar prueba o premium${NC}"
 
 read -p "$(echo -e "${YELLOW}¿Ver logs ahora? (s/N): ${NC}")" -n 1 -r
 echo
